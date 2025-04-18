@@ -1,0 +1,86 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { TableData, SpreadsheetConfig, EditingCell } from '../types/sheet';
+import { createInitialData } from '../utils/sheet';
+import { Canvas } from './Canvas';
+
+const Spreadsheet: React.FC<{
+  config?: SpreadsheetConfig;
+  onChange?: (data: TableData) => void;
+}> = ({ config = { rows: 200, cols: 26 }, onChange }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
+  const [editingCell, setEditingCell] = useState<EditingCell>(null);
+  const [cellWidth] = useState(100);
+  const [cellHeight] = useState(30);
+  const [wrapperWidth, setWrapperWidth] = useState(0);
+  const [wrapperHeight, setWrapperHeight] = useState(0);
+  const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
+
+  const handleCellClick = (rowIndex: number, colIndex: number) => {
+    setEditingCell({ row: rowIndex, col: colIndex });
+    if (inputRef.current) {
+      inputRef.current.value = data[rowIndex][colIndex].value;
+      inputRef.current.style.left = `${colIndex * cellWidth}px`;
+      inputRef.current.style.top = `${rowIndex * cellHeight}px`;
+      inputRef.current.style.width = `${cellWidth}px`;
+      inputRef.current.style.height = `${cellHeight}px`;
+      inputRef.current.style.display = 'block';
+      inputRef.current.focus();
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (editingCell) {
+      const newData = [...data];
+      newData[editingCell.row][editingCell.col].value = e.target.value;
+      setData(newData);
+    }
+  };
+
+  const handleInputBlur = () => {
+    setEditingCell(null);
+    if (inputRef.current) {
+      inputRef.current.style.display = 'none';
+    }
+  };
+  useEffect(() => {
+    if (wrapperRef.current) {
+      setWrapperWidth(wrapperRef.current.clientWidth);
+      setWrapperHeight(wrapperRef.current.clientHeight);
+    }
+  }, [])
+  const handleScroll = (position: { x: number; y: number }) => {
+    setScrollPosition(position);
+  };
+  useEffect(() => {
+    if (onChange) {
+      onChange(data);
+    }
+  }, [data, onChange]);
+  return (
+    <div className="relative h-screen overflow-hidden bg-gray-100" ref={wrapperRef}>
+      <Canvas
+        data={data}
+        wrapperWidth={wrapperWidth}
+        wrapperHeight={wrapperHeight}
+        cellWidth={cellWidth}
+        cellHeight={cellHeight}
+        onCellClick={handleCellClick}
+        onScroll={handleScroll}
+      />
+      <input
+        ref={inputRef}
+        className="absolute border border-blue-600 bg-white text-black px-2 py-1 outline-none"
+        style={{
+          display: 'none',
+          transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`
+        }}
+        onChange={handleInputChange}
+        onBlur={handleInputBlur}
+      />
+    </div>
+  );
+};
+
+export default Spreadsheet;
