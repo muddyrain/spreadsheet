@@ -50,7 +50,7 @@ const Spreadsheet: React.FC<{
       inputRef.current.style.left = `${colIndex * cellWidth}px`;
       inputRef.current.style.top = `${rowIndex * cellHeight}px`;
       inputRef.current.style.width = `${cellWidth}px`;
-      inputRef.current.style.height = `${cellHeight + 2}px`;
+      inputRef.current.style.height = `${cellHeight}px`;
       inputRef.current.style.display = 'block';
       inputRef.current.focus();
     }
