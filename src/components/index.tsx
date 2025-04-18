@@ -4,10 +4,23 @@ import { createInitialData } from '../utils/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../utils/filterData';
 
+export const SpreadsheetContext = React.createContext<{
+  data: TableData;
+  config: SpreadsheetConfig;
+}>({
+  data: [],
+  config: {}
+})
 const Spreadsheet: React.FC<{
   config?: SpreadsheetConfig;
   onChange?: (data: TableData) => void;
-}> = ({ config = { rows: 200, cols: 26 }, onChange }) => {
+}> = ({ config: _config, onChange }) => {
+  const config: Required<SpreadsheetConfig> = {
+    rows: 200,
+    cols: 26,
+    fontSize: 14,
+    ..._config
+  }
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [beforeBlurValue, setBeforeBlurValue] = useState('');
@@ -68,27 +81,31 @@ const Spreadsheet: React.FC<{
     setScrollPosition(position);
   };
   return (
-    <div className="relative h-screen overflow-hidden bg-gray-100" ref={wrapperRef}>
-      <Canvas
-        data={data}
-        wrapperWidth={wrapperWidth}
-        wrapperHeight={wrapperHeight}
-        cellWidth={cellWidth}
-        cellHeight={cellHeight}
-        onCellClick={handleCellClick}
-        onScroll={handleScroll}
-      />
-      <input
-        ref={inputRef}
-        className="absolute border border-blue-600 bg-white text-black px-2 py-1 outline-none"
-        style={{
-          display: 'none',
-          transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`
-        }}
-        onChange={handleInputChange}
-        onBlur={handleInputBlur}
-      />
-    </div>
+    <SpreadsheetContext.Provider value={{ data, config }}>
+      <div className="relative h-screen overflow-hidden" ref={wrapperRef}>
+        <Canvas
+          data={data}
+          wrapperRef={wrapperRef}
+          wrapperWidth={wrapperWidth}
+          wrapperHeight={wrapperHeight}
+          cellWidth={cellWidth}
+          cellHeight={cellHeight}
+          onCellClick={handleCellClick}
+          onScroll={handleScroll}
+        />
+        <input
+          ref={inputRef}
+          className="absolute border border-blue-600 bg-white text-black px-2 py-1 outline-none"
+          style={{
+            display: 'none',
+            fontSize: `${config.fontSize}px`,
+            transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`
+          }}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
+        />
+      </div>
+    </SpreadsheetContext.Provider>
   );
 };
 

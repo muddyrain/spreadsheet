@@ -2,22 +2,23 @@ import { TableData, CellData } from '../types/sheet';
 
 export const createInitialData = (rows: number, cols: number): TableData => {
   const initialData: TableData = [];
+  const readOnlyStyle: CellData['style'] = {
+    background: '#F1F3F3', textAlign: 'center'
+  }
   // 第一行：左上角空白，然后A-Z  取名为 列头
   const headerRow: CellData[] = [{
-    value: '', style: {}
+    value: '', style: readOnlyStyle
   }];
   for (let i = 0;i < cols;i++) {
     headerRow.push({
-      value: String.fromCharCode(65 + i), readOnly: true, style: {
-        background: '#f4f6fa', fontWeight: 'bold', textAlign: 'center'
-      }
+      value: String.fromCharCode(65 + i), readOnly: true, style: readOnlyStyle
     });
   }
   initialData.push(headerRow);
 
   for (let i = 1;i <= rows;i++) {
     // 每一行：第一列是行号，其余列都是空白 取名为 行头
-    const rowData: CellData[] = [{ value: `${i}`, readOnly: true, style: { background: '#f4f6fa', fontWeight: 'bold', textAlign: 'center' } }];
+    const rowData: CellData[] = [{ value: `${i}`, readOnly: true, style: readOnlyStyle }];
     for (let j = 0;j < cols;j++) {
       rowData.push({ value: ``, style: {} });
     }

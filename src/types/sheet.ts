@@ -1,8 +1,9 @@
 export type CellStyle = {
   color?: string;
-  fontWeight?: string;
+  fontWeight?: string | number;
   background?: string;
   textAlign?: string;
+  fontSize?: number;
 };
 
 export type CellData = {
@@ -14,8 +15,9 @@ export type CellData = {
 export type TableData = CellData[][];
 
 export type SpreadsheetConfig = {
-  rows: number;
-  cols: number;
+  rows?: number;
+  cols?: number;
+  fontSize?: number;
 };
 
 export type EditingCell = {

@@ -10,6 +10,7 @@ interface CanvasProps {
     cellHeight: number;
     wrapperWidth: number;
     wrapperHeight: number;
+    wrapperRef: React.RefObject<HTMLDivElement | null>;
     onCellClick: (row: number, col: number) => void;
     onScroll: (position: { x: number; y: number }) => void;  // 新增
 }
@@ -21,7 +22,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     wrapperWidth,
     wrapperHeight,
     onCellClick,
-    onScroll
+    onScroll,
+    wrapperRef
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -62,9 +64,18 @@ export const Canvas: React.FC<CanvasProps> = ({
     useEffect(() => {
         onScroll?.(scrollPosition);
     }, [scrollPosition, onScroll]);
-
+    useEffect(() => {
+        if (wrapperRef.current) {
+            wrapperRef.current.addEventListener("wheel", handleWheel)
+        }
+        return () => {
+            if (wrapperRef.current) {
+                wrapperRef.current.removeEventListener("wheel", handleWheel)
+            }
+        }
+    }, [wrapperRef, handleWheel])
     return (
-        <div 
+        <div
             ref={containerRef}
             style={{
                 width: '100%',
@@ -72,7 +83,6 @@ export const Canvas: React.FC<CanvasProps> = ({
                 position: 'relative',
                 overflow: 'hidden'
             }}
-            onWheel={handleWheel}
         >
             <div
                 style={{
@@ -103,7 +113,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                     }}
                 />
             </div>
-            
+
             <ScrollBar
                 type="vertical"
                 viewportSize={wrapperHeight}
@@ -111,7 +121,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 scrollPosition={scrollPosition.y}
                 onDragStart={handleScrollbarDragStart}
             />
-            
+
             <ScrollBar
                 type="horizontal"
                 viewportSize={wrapperWidth}

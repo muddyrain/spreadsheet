@@ -78,7 +78,7 @@ export const useSheetScroll = (config: {
         };
     }, [scrollPosition]);
 
-    const handleWheel = useCallback((e: React.WheelEvent) => {
+    const handleWheel = useCallback((e: WheelEvent) => {
         const maxScrollX = config.totalWidth - config.viewportWidth;
         const maxScrollY = config.totalHeight - config.viewportHeight;
 
