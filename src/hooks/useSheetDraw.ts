@@ -25,7 +25,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
             startCol + Math.ceil(drawConfig.wrapperWidth / drawConfig.cellWidth),
             data[0].length
         );
-
+        ctx.translate(0.5, 0.5)
         for (let rowIndex = startRow;rowIndex < endRow;rowIndex++) {
             for (let colIndex = startCol;colIndex < endCol;colIndex++) {
                 const cell = data[rowIndex][colIndex];
@@ -33,7 +33,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
                 const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
 
                 // 绘制网格
-                ctx.strokeStyle = '#ddd';
+                ctx.strokeStyle = '#999999';
                 ctx.strokeRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
 
                 // 设置背景颜色

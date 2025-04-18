@@ -19,6 +19,8 @@ const Spreadsheet: React.FC<{
     rows: 200,
     cols: 26,
     fontSize: 14,
+    width: 100,    // 默认单元格宽度
+    height: 30,    // 默认单元格高度
     ..._config
   }
   const inputRef = useRef<HTMLInputElement>(null);
@@ -26,12 +28,11 @@ const Spreadsheet: React.FC<{
   const [beforeBlurValue, setBeforeBlurValue] = useState('');
   const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
-  const [cellWidth] = useState(100);
-  const [cellHeight] = useState(30);
   const [wrapperWidth, setWrapperWidth] = useState(0);
   const [wrapperHeight, setWrapperHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
-
+  const cellWidth = config.width;
+  const cellHeight = config.height;
   const handleCellClick = (rowIndex: number, colIndex: number) => {
     setEditingCell({ row: rowIndex, col: colIndex });
     if (inputRef.current) {

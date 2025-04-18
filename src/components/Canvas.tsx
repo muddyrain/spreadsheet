@@ -54,8 +54,12 @@ export const Canvas: React.FC<CanvasProps> = ({
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        canvas.width = wrapperWidth;
-        canvas.height = wrapperHeight;
+        // 适配高分屏
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = (wrapperWidth + 10) * dpr;
+        canvas.height = (wrapperHeight + 10) * dpr;
+        canvas.style.width = `${wrapperWidth}px`;
+        canvas.style.height = `${wrapperHeight}px`;
         const ctx = canvas.getContext('2d');
         if (ctx) {
             drawTable(ctx, scrollPosition);
@@ -84,36 +88,26 @@ export const Canvas: React.FC<CanvasProps> = ({
                 overflow: 'hidden'
             }}
         >
-            <div
-                style={{
-                    width: `${data[0].length * cellWidth}px`,
-                    height: `${data.length * cellHeight}px`,
-                    position: 'relative'
-                }}
-            >
-                <canvas
-                    ref={canvasRef}
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        width: `${wrapperWidth}px`,
-                        height: `${wrapperHeight}px`
-                    }}
-                    onClick={(e) => {
-                        const canvas = canvasRef.current;
-                        if (canvas) {
-                            const rect = canvas.getBoundingClientRect();
-                            const x = e.clientX - rect.left + scrollPosition.x;
-                            const y = e.clientY - rect.top + scrollPosition.y;
-                            const colIndex = Math.floor(x / cellWidth);
-                            const rowIndex = Math.floor(y / cellHeight);
-                            onCellClick(rowIndex, colIndex);
-                        }
-                    }}
-                />
-            </div>
 
+            <canvas
+                ref={canvasRef}
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                }}
+                onClick={(e) => {
+                    const canvas = canvasRef.current;
+                    if (canvas) {
+                        const rect = canvas.getBoundingClientRect();
+                        const x = e.clientX - rect.left + scrollPosition.x;
+                        const y = e.clientY - rect.top + scrollPosition.y;
+                        const colIndex = Math.floor(x / cellWidth);
+                        const rowIndex = Math.floor(y / cellHeight);
+                        onCellClick(rowIndex, colIndex);
+                    }
+                }}
+            />
             <ScrollBar
                 type="vertical"
                 viewportSize={wrapperHeight}
