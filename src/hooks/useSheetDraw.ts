@@ -1,6 +1,6 @@
 import { useCallback, useContext } from 'react';
 import { TableData } from '../types/sheet';
-import { SpreadsheetContext } from '../components';
+import { SpreadsheetContext } from '../components/spreadsheet';
 
 interface DrawConfig {
     cellWidth: number;
@@ -32,7 +32,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
                 const x = colIndex * drawConfig.cellWidth - scrollPosition.x;
                 const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
                 // 绘制网格
-                ctx.strokeStyle = '#999999';
+                ctx.strokeStyle = '#dfdfdf';
                 ctx.strokeRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
 
                 // 设置背景颜色

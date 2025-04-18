@@ -7,7 +7,7 @@ export const createInitialData = (rows: number, cols: number): TableData => {
   }
   // 第一行：左上角空白，然后A-Z  取名为 列头
   const headerRow: CellData[] = [{
-    value: '', style: readOnlyStyle
+    value: '', style: readOnlyStyle, readOnly: true
   }];
   for (let i = 0;i < cols;i++) {
     headerRow.push({

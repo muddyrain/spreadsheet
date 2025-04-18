@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { TableData } from '../types/sheet';
-import { useSheetScroll } from '../hooks/useSheetScroll';
-import { useSheetDraw } from '../hooks/useSheetDraw';
+import { TableData } from '../../types/sheet';
+import { useSheetScroll } from '../../hooks/useSheetScroll';
+import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
 
 interface CanvasProps {

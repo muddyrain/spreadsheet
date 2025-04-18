@@ -1,4 +1,4 @@
-import Spreadsheet from "./components";
+import Spreadsheet from "./components/spreadsheet";
 
 function App() {
   return (
