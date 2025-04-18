@@ -28,8 +28,6 @@ const Spreadsheet: React.FC<{
   const [beforeBlurValue, setBeforeBlurValue] = useState('');
   const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
-  const [wrapperWidth, setWrapperWidth] = useState(0);
-  const [wrapperHeight, setWrapperHeight] = useState(0);
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const cellWidth = config.width;
   const cellHeight = config.height;
@@ -72,12 +70,6 @@ const Spreadsheet: React.FC<{
     }
     onChange?.(filterData(data))
   };
-  useEffect(() => {
-    if (wrapperRef.current) {
-      setWrapperWidth(wrapperRef.current.clientWidth);
-      setWrapperHeight(wrapperRef.current.clientHeight);
-    }
-  }, [])
   const handleScroll = (position: { x: number; y: number }) => {
     setScrollPosition(position);
   };
@@ -87,8 +79,6 @@ const Spreadsheet: React.FC<{
         <Canvas
           data={data}
           wrapperRef={wrapperRef}
-          wrapperWidth={wrapperWidth}
-          wrapperHeight={wrapperHeight}
           cellWidth={cellWidth}
           cellHeight={cellHeight}
           onCellClick={handleCellClick}
