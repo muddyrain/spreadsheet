@@ -94,11 +94,6 @@ export const Canvas: React.FC<CanvasProps> = ({
             >
                 <canvas
                     ref={canvasRef}
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                    }}
                     onClick={(e) => {
                         const canvas = canvasRef.current;
                         if (canvas) {

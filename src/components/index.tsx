@@ -3,6 +3,7 @@ import { TableData, SpreadsheetConfig, EditingCell } from '../types/sheet';
 import { createInitialData } from '../utils/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../utils/filterData';
+import { Header } from './Header';
 
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
@@ -75,26 +76,31 @@ const Spreadsheet: React.FC<{
   };
   return (
     <SpreadsheetContext.Provider value={{ data, config }}>
-      <div className="relative overflow-hidden h-full w-full" ref={wrapperRef}>
-        <Canvas
-          data={data}
-          wrapperRef={wrapperRef}
-          cellWidth={cellWidth}
-          cellHeight={cellHeight}
-          onCellClick={handleCellClick}
-          onScroll={handleScroll}
-        />
-        <input
-          ref={inputRef}
-          className="absolute border border-blue-600 bg-white text-black px-2 py-1 outline-none"
-          style={{
-            display: 'none',
-            fontSize: `${config.fontSize}px`,
-            transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`
-          }}
-          onChange={handleInputChange}
-          onBlur={handleInputBlur}
-        />
+      <div className='flex flex-col w-full h-full overflow-hidden'>
+        <Header />
+        <div className="relative overflow-hidden flex-1 flex flex-col" ref={wrapperRef}>
+          <div className="flex-1 overflow-hidden">
+            <Canvas
+              data={data}
+              wrapperRef={wrapperRef}
+              cellWidth={cellWidth}
+              cellHeight={cellHeight}
+              onCellClick={handleCellClick}
+              onScroll={handleScroll}
+            />
+          </div>
+          <input
+            ref={inputRef}
+            className="absolute border border-blue-600 bg-white text-black px-2 py-1 outline-none"
+            style={{
+              display: 'none',
+              fontSize: `${config.fontSize}px`,
+              transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`
+            }}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+          />
+        </div>
       </div>
     </SpreadsheetContext.Provider>
   );
