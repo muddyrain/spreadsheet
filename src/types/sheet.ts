@@ -3,12 +3,12 @@ export type CellStyle = {
   fontWeight?: string;
   background?: string;
   textAlign?: string;
-  readOnly?: boolean;
 };
 
 export type CellData = {
   value: string;
   style: CellStyle;
+  readOnly?: boolean;
 };
 
 export type TableData = CellData[][];

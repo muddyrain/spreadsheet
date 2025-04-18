@@ -8,8 +8,8 @@ export const createInitialData = (rows: number, cols: number): TableData => {
   }];
   for (let i = 0;i < cols;i++) {
     headerRow.push({
-      value: String.fromCharCode(65 + i), style: {
-        background: '#f4f6fa', fontWeight: 'bold', textAlign: 'center', readOnly: true
+      value: String.fromCharCode(65 + i), readOnly: true, style: {
+        background: '#f4f6fa', fontWeight: 'bold', textAlign: 'center'
       }
     });
   }
@@ -17,7 +17,7 @@ export const createInitialData = (rows: number, cols: number): TableData => {
 
   for (let i = 1;i <= rows;i++) {
     // 每一行：第一列是行号，其余列都是空白 取名为 行头
-    const rowData: CellData[] = [{ value: `${i}`, style: { background: '#f4f6fa', fontWeight: 'bold', textAlign: 'center' } }];
+    const rowData: CellData[] = [{ value: `${i}`, readOnly: true, style: { background: '#f4f6fa', fontWeight: 'bold', textAlign: 'center' } }];
     for (let j = 0;j < cols;j++) {
       rowData.push({ value: ``, style: {} });
     }

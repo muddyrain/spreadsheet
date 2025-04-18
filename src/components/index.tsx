@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { TableData, SpreadsheetConfig, EditingCell } from '../types/sheet';
 import { createInitialData } from '../utils/sheet';
 import { Canvas } from './Canvas';
+import { filterData } from '../utils/filterData';
 
 const Spreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -9,6 +10,7 @@ const Spreadsheet: React.FC<{
 }> = ({ config = { rows: 200, cols: 26 }, onChange }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [beforeBlurValue, setBeforeBlurValue] = useState('');
   const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
   const [cellWidth] = useState(100);
@@ -20,7 +22,12 @@ const Spreadsheet: React.FC<{
   const handleCellClick = (rowIndex: number, colIndex: number) => {
     setEditingCell({ row: rowIndex, col: colIndex });
     if (inputRef.current) {
-      inputRef.current.value = data[rowIndex][colIndex].value;
+      const currentCell = data[rowIndex][colIndex];
+      if (currentCell.readOnly) {
+        return
+      }
+      inputRef.current.value = currentCell.value;
+      setBeforeBlurValue(currentCell.value);
       inputRef.current.style.left = `${colIndex * cellWidth}px`;
       inputRef.current.style.top = `${rowIndex * cellHeight}px`;
       inputRef.current.style.width = `${cellWidth}px`;
@@ -33,16 +40,23 @@ const Spreadsheet: React.FC<{
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (editingCell) {
       const newData = [...data];
-      newData[editingCell.row][editingCell.col].value = e.target.value;
+      const targetCell = newData[editingCell.row][editingCell.col];
+      targetCell.value = e.target.value;
       setData(newData);
     }
   };
 
   const handleInputBlur = () => {
-    setEditingCell(null);
     if (inputRef.current) {
       inputRef.current.style.display = 'none';
     }
+    setEditingCell(null);
+    const inputValue = inputRef.current?.value;
+    if (beforeBlurValue === inputValue) {
+      // 如果值没有变化，不更新数据
+      return;
+    }
+    onChange?.(filterData(data))
   };
   useEffect(() => {
     if (wrapperRef.current) {
@@ -53,11 +67,6 @@ const Spreadsheet: React.FC<{
   const handleScroll = (position: { x: number; y: number }) => {
     setScrollPosition(position);
   };
-  useEffect(() => {
-    if (onChange) {
-      onChange(data);
-    }
-  }, [data, onChange]);
   return (
     <div className="relative h-screen overflow-hidden bg-gray-100" ref={wrapperRef}>
       <Canvas
