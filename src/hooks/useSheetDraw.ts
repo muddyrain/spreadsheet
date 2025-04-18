@@ -47,16 +47,23 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
                 ctx.font = `${fontWeight} ${fontSize}px Arial`;
                 ctx.fillStyle = cell.style.color || '#000';
 
+                // 设置剪裁区域
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(x - 12, y, drawConfig.cellWidth, drawConfig.cellHeight);
+                ctx.clip();
+
                 // 设置文本对齐
                 ctx.textAlign = cell.style.textAlign as CanvasTextAlign || 'left';
                 ctx.textBaseline = 'middle';
-
                 // 计算文本位置
                 let textX = x + 10;
                 if (ctx.textAlign === 'center') textX = x + drawConfig.cellWidth / 2;
                 if (ctx.textAlign === 'right') textX = x + drawConfig.cellWidth - 10;
-                const textY = y + drawConfig.cellHeight / 2;
+                const textY = y + drawConfig.cellHeight / 2 + 2;
                 ctx.fillText(cell.value, textX, textY);
+                // 恢复剪裁
+                ctx.restore();
             }
         }
     }, [data, drawConfig]);

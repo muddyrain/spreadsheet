@@ -9,11 +9,15 @@ import { Header } from './Header';
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
   config: SpreadsheetConfig;
-  currentCell: TableData[0][0] | null
+  currentCell: TableData[0][0] | null,
+  updater: number,
+  setUpdater: (updater: number) => void
 }>({
   data: [],
   config: {},
-  currentCell: null
+  currentCell: null,
+  updater: 0,
+  setUpdater: () => { }
 })
 const Spreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -27,7 +31,8 @@ const Spreadsheet: React.FC<{
     height: 30,    // 默认单元格高度
     ..._config
   }
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [updater, setUpdater] = useState(+ new Date());
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
@@ -45,13 +50,13 @@ const Spreadsheet: React.FC<{
       inputRef.current.style.left = `${colIndex * cellWidth}px`;
       inputRef.current.style.top = `${rowIndex * cellHeight}px`;
       inputRef.current.style.width = `${cellWidth}px`;
-      inputRef.current.style.height = `${cellHeight}px`;
+      inputRef.current.style.height = `${cellHeight + 2}px`;
       inputRef.current.style.display = 'block';
       inputRef.current.focus();
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (editingCell) {
       const newData = [...data];
       const targetCell = newData[editingCell.row][editingCell.col];
@@ -69,8 +74,13 @@ const Spreadsheet: React.FC<{
   const handleScroll = (position: { x: number; y: number }) => {
     setScrollPosition(position);
   };
+  const currentCell = data[editingCell?.row || 0][editingCell?.col || 0]
   return (
-    <SpreadsheetContext.Provider value={{ data, config, currentCell: data[editingCell?.row || 0][editingCell?.col || 0] }}>
+    <SpreadsheetContext.Provider value={{
+      data, config, currentCell,
+      updater,
+      setUpdater
+    }}>
       <div className='flex flex-col w-full h-full overflow-hidden'>
         <Header />
         <div className="relative overflow-hidden flex-1 flex flex-col" ref={wrapperRef}>
@@ -84,12 +94,14 @@ const Spreadsheet: React.FC<{
               onScroll={handleScroll}
             />
           </div>
-          <input
+          <textarea
             ref={inputRef}
-            className="absolute border border-blue-600 bg-white text-black px-2 py-1 outline-none"
+            className="absolute border border-blue-600 bg-white text-black outline-none box-border resize-none"
             style={{
-              display: 'none',
-              fontSize: `${config.fontSize}px`,
+              padding: '5px 10px',
+              fontWeight: currentCell.style.fontWeight || 'normal',
+              fontFamily: 'Arial',
+              fontSize: `${currentCell.style.fontWeight || config.fontSize || 14}px`,
               transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`
             }}
             onChange={handleInputChange}

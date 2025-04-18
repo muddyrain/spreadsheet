@@ -4,13 +4,11 @@ import { Bold, Eraser, Italic, PaintRoller, Redo, Save, Strikethrough, Underline
 import { SpreadsheetContext } from '.';
 export type ClickType = 'save' | 'undo' | 'redo' | 'paint' | 'eraser' | 'bold' | 'italic' | 'strikethrough' | 'underline'
 export const Header: FC = () => {
-  const [updater, setUpdater] = useState(+ new Date());
-  const { currentCell, data } = useContext(SpreadsheetContext);
+  const { currentCell, data, updater, setUpdater } = useContext(SpreadsheetContext);
   const isBlod = useMemo(() => {
     return currentCell?.style.fontWeight === 'bold'
   }, [currentCell, updater])
   const onClick = (type: ClickType) => {
-    console.log('click', currentCell);
     if (!currentCell) return
     switch (type) {
       case 'bold':

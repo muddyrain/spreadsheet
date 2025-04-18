@@ -24,6 +24,7 @@ const Spreadsheet: React.FC<{
         height: 30,    // 默认单元格高度
         ..._config
     }
+    const [updater, setUpdater] = useState(+ new Date());
     const inputRef = useRef<HTMLInputElement>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [beforeBlurValue, setBeforeBlurValue] = useState('');
