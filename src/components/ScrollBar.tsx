@@ -25,17 +25,17 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
                 position: 'absolute',
                 ...(isHorizontal
                     ? {
-                          left: 0,
-                          bottom: 0,
-                          width: '100%',
-                          height: '8px',
-                      }
+                        left: 0,
+                        bottom: 0,
+                        width: '100%',
+                        height: '8px',
+                    }
                     : {
-                          right: 0,
-                          top: 0,
-                          width: '8px',
-                          height: '100%',
-                      }),
+                        right: 0,
+                        top: 0,
+                        width: '8px',
+                        height: '100%',
+                    }),
                 backgroundColor: '#f0f0f0',
             }}
         >
@@ -44,15 +44,15 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
                     position: 'absolute',
                     ...(isHorizontal
                         ? {
-                              height: '100%',
-                              width: `${scrollBarSize}%`,
-                              left: `${scrollBarPosition}%`,
-                          }
+                            height: '100%',
+                            width: `${scrollBarSize}%`,
+                            left: `${scrollBarPosition}%`,
+                        }
                         : {
-                              width: '100%',
-                              height: `${scrollBarSize}%`,
-                              top: `${scrollBarPosition}%`,
-                          }),
+                            width: '100%',
+                            height: `${scrollBarSize}%`,
+                            top: `${scrollBarPosition}%`,
+                        }),
                     backgroundColor: '#c1c1c1',
                     borderRadius: '4px',
                     cursor: 'pointer',

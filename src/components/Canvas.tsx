@@ -56,8 +56,8 @@ export const Canvas: React.FC<CanvasProps> = ({
 
         // 适配高分屏
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = (wrapperWidth + 10) * dpr;
-        canvas.height = (wrapperHeight + 10) * dpr;
+        canvas.width = (wrapperWidth + 0) * dpr;
+        canvas.height = (wrapperHeight + 0) * dpr;
         canvas.style.width = `${wrapperWidth}px`;
         canvas.style.height = `${wrapperHeight}px`;
         const ctx = canvas.getContext('2d');
@@ -85,10 +85,9 @@ export const Canvas: React.FC<CanvasProps> = ({
                 width: '100%',
                 height: '100%',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
             }}
         >
-
             <canvas
                 ref={canvasRef}
                 style={{

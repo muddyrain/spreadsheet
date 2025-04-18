@@ -83,7 +83,7 @@ const Spreadsheet: React.FC<{
   };
   return (
     <SpreadsheetContext.Provider value={{ data, config }}>
-      <div className="relative h-screen overflow-hidden" ref={wrapperRef}>
+      <div className="relative overflow-hidden h-full w-full" ref={wrapperRef}>
         <Canvas
           data={data}
           wrapperRef={wrapperRef}

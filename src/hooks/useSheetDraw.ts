@@ -31,7 +31,6 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
                 const cell = data[rowIndex][colIndex];
                 const x = colIndex * drawConfig.cellWidth - scrollPosition.x;
                 const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
-
                 // 绘制网格
                 ctx.strokeStyle = '#999999';
                 ctx.strokeRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
