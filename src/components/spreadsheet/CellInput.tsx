@@ -1,9 +1,11 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { useStore } from '@/hooks/useStore';
 
 export type CellInputRef = {
   setInputStyle: (rowIndex: number, colIndex: number) => void;
   updateInputSize: () => void;
+  focus: () => void;
+  blur: () => void;
 }
 export const CellInput = forwardRef<CellInputRef, {
   value: string;
@@ -56,12 +58,28 @@ export const CellInput = forwardRef<CellInputRef, {
 
       updateInputSize();
       inputRef.current.focus();
+      setIsFocused(true)
     }
   };
   useImperativeHandle(ref, () => ({
     setInputStyle,
-    updateInputSize
+    updateInputSize,
+    focus() {
+      updateInputSize();
+      inputRef.current?.focus();
+      setIsFocused(true)
+    },
+    blur() {
+      updateInputSize();
+      inputRef.current?.blur()
+      setIsFocused(false)
+    }
   }));
+  useEffect(() => {
+    if (style?.display === 'none') {
+      setIsFocused(false)
+    }
+  }, [style])
   return <>
     <textarea
       ref={inputRef}
@@ -70,12 +88,6 @@ export const CellInput = forwardRef<CellInputRef, {
       onChange={e => {
         onChange(e);
         updateInputSize();
-      }}
-      onFocus={() => {
-        setIsFocused(true)
-      }}
-      onBlur={() => {
-        setIsFocused(false)
       }}
       style={{
         ...style,

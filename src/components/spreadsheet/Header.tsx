@@ -1,14 +1,16 @@
-import { FC, useContext, useMemo } from 'react';
+import { FC, useMemo } from 'react';
 import { Toggle } from "@/components/ui/toggle"
 import { Bold, Eraser, Italic, PaintRoller, Redo, Save, Strikethrough, Underline, Undo } from "lucide-react"
-import { SpreadsheetContext } from '.';
+import { useStore } from '@/hooks/useStore';
 export type ClickType = 'save' | 'undo' | 'redo' | 'paint' | 'eraser' | 'bold' | 'italic' | 'strikethrough' | 'underline'
-export const Header: FC = () => {
-  const { currentCell, updater, setUpdater } = useContext(SpreadsheetContext);
+export const Header: FC<{
+  onClick?: (type: ClickType) => void;
+}> = ({ onClick }) => {
+  const { currentCell, updater, setUpdater } = useStore();
   const cellStyle = useMemo(() => {
     return currentCell?.style || {}
   }, [currentCell, updater])
-  const onClick = (type: ClickType) => {
+  const handleClick = (type: ClickType) => {
     if (!currentCell) return
     switch (type) {
       case 'eraser':
@@ -28,57 +30,58 @@ export const Header: FC = () => {
         break;
     }
     setUpdater(+new Date());
+    onClick?.(type)
   }
   return <div className="flex items-center gap-x-1 justify-center bg-zinc-50 px-4 py-1 h-10 z-[900]">
     <Toggle className='text-lg' onClick={() => {
-      onClick && onClick('save')
+      handleClick('save')
     }}>
       <Save />
     </Toggle>
     <Toggle className='text-lg' onClick={() => {
-      onClick && onClick('undo')
+      handleClick('undo')
     }}
     >
       <Undo />
     </Toggle>
     <Toggle className='text-lg' onClick={() => {
-      onClick && onClick('redo')
+      handleClick('redo')
     }}
     >
       <Redo />
     </Toggle>
     <Toggle className='text-lg' onClick={() => {
-      onClick && onClick('paint')
+      handleClick('paint')
     }}
     >
       <PaintRoller />
     </Toggle>
     <Toggle pressed={false} className='text-lg' onClick={() => {
-      onClick && onClick('eraser')
+      handleClick('eraser')
     }}
     >
       <Eraser />
     </Toggle>
     <Toggle pressed={cellStyle.fontWeight === 'bold'} className='text-lg' onClick={() => {
-      onClick && onClick('bold')
+      handleClick('bold')
     }}
     >
       <Bold />
     </Toggle>
     <Toggle pressed={cellStyle.fontStyle === 'italic'} className='text-lg' onClick={() => {
-      onClick && onClick('italic')
+      handleClick('italic')
     }}
     >
       <Italic />
     </Toggle>
     <Toggle pressed={cellStyle.textDecoration === 'line-through'} className='text-lg' onClick={() => {
-      onClick && onClick('strikethrough')
+      handleClick('strikethrough')
     }}
     >
       <Strikethrough />
     </Toggle>
     <Toggle pressed={cellStyle.textDecoration === 'underline'} className='text-lg' onClick={() => {
-      onClick && onClick('underline')
+      handleClick('underline')
     }}
     >
       <Underline />

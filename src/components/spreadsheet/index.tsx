@@ -98,9 +98,13 @@ const Spreadsheet: React.FC<{
   }, [data, editingCell, selectedCell]);
   useEffect(() => {
     return () => {
-      setEditingCell(null)
+      clearSelection()
     }
   }, [])
+  const clearSelection = () => {
+    setSelectedCell(null);
+    setEditingCell(null);
+  };
   return (
     <SpreadsheetContext.Provider value={{
       data,
@@ -112,7 +116,14 @@ const Spreadsheet: React.FC<{
       setIsFocused
     }}>
       <div className='flex flex-col w-full h-full overflow-hidden'>
-        <Header />
+        <Header onClick={type => {
+          if (!['eraser'].includes(type)) {
+            cellInputRef.current?.focus()
+          } else {
+            clearSelection()
+            cellInputRef.current?.blur()
+          }
+        }} />
         <div className="relative overflow-hidden flex-1 flex flex-col" ref={wrapperRef}>
           <div className="flex-1 overflow-hidden">
             <Canvas
