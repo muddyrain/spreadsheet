@@ -5,7 +5,6 @@ import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
 import { Header } from './Header';
-import { useSheetSelection } from '@/hooks/useSheetSelection';
 import { CellInput, CellInputRef } from './CellInput';
 
 export const SpreadsheetContext = React.createContext<{

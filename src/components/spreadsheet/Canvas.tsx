@@ -1,10 +1,9 @@
-import React, { useMemo, useRef, useEffect, useState, useContext } from 'react';
+import React, { useMemo, useRef, useEffect, useState, } from 'react';
 import { TableData } from '../../types/sheet';
 import { useSheetScroll } from '../../hooks/useSheetScroll';
 import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
 import { useSheetSelection } from '@/hooks/useSheetSelection';
-import { SpreadsheetContext } from '.';
 
 interface CanvasProps {
     data: TableData;
