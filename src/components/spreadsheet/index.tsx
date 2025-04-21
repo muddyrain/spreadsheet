@@ -5,19 +5,18 @@ import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
 import { Header } from './Header';
+import { useSheetSelection } from '@/hooks/useSheetSelection';
 
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
   config: SpreadsheetConfig;
   currentCell: TableData[0][0] | null,
   updater: number,
-  selection: SeletionSheetType,
   setUpdater: (updater: number) => void
 }>({
   data: [],
   config: {},
   currentCell: null,
-  selection: { start: null, end: null },
   updater: 0,
   setUpdater: () => { }
 })
@@ -33,7 +32,6 @@ const Spreadsheet: React.FC<{
     height: 30,    // 默认单元格高度
     ..._config
   }
-  const [selection, setSelection] = useState<SeletionSheetType>({ start: null, end: null });
   const [updater, setUpdater] = useState(+ new Date());
   const mirrorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -43,6 +41,7 @@ const Spreadsheet: React.FC<{
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const cellWidth = config.width;
   const cellHeight = config.height;
+  const { selection, handleCellMouseDown } = useSheetSelection(data, config);
   const updateInputSize = () => {
     if (inputRef.current && mirrorRef.current) {
       // 处理换行，保证最后一行也能被测量
@@ -90,7 +89,6 @@ const Spreadsheet: React.FC<{
       updateInputSize();
     }
   };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (editingCell) {
       const newData = [...data];
@@ -100,45 +98,6 @@ const Spreadsheet: React.FC<{
       updateInputSize();
       debouncedChange(newData);
     }
-  };
-  const handleCellMouseDown = (rowIndex: number, colIndex: number) => {
-    setSelection({ start: { row: rowIndex, col: colIndex }, end: { row: rowIndex, col: colIndex } });
-    setEditingCell(null);
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!wrapperRef.current) return;
-      const rect = wrapperRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left + scrollPosition.x;
-      const y = e.clientY - rect.top + scrollPosition.y;
-      const col = Math.floor(x / cellWidth);
-      const row = Math.floor(y / cellHeight);
-      setSelection(sel => {
-        const newEnd = {
-          row: Math.max(0, Math.min(row, data.length - 1)),
-          col: Math.max(0, Math.min(col, data[0].length - 1))
-        };
-        // 只有选区变化时才更新，避免无意义 setState
-        if (
-          sel.end &&
-          sel.end.row === newEnd.row &&
-          sel.end.col === newEnd.col
-        ) {
-          return sel;
-        }
-        return {
-          start: sel.start,
-          end: newEnd
-        }
-      });
-    };
-
-    const handleMouseUp = () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
   };
   const debouncedChange = useMemo(() => {
     const handleChange = (data: TableData) => {
@@ -167,7 +126,6 @@ const Spreadsheet: React.FC<{
       config,
       currentCell,
       updater,
-      selection,
       setUpdater
     }}>
       <div className='flex flex-col w-full h-full overflow-hidden'>
@@ -180,7 +138,7 @@ const Spreadsheet: React.FC<{
               cellWidth={cellWidth}
               cellHeight={cellHeight}
               onCellClick={handleCellClick}
-              onCellMouseDown={handleCellMouseDown}
+              onCellMouseDown={(row, col) => handleCellMouseDown(row, col, wrapperRef, scrollPosition)}
               onScroll={handleScroll}
               selection={selection}
             />

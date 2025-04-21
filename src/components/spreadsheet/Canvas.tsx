@@ -50,7 +50,8 @@ export const Canvas: React.FC<CanvasProps> = ({
         cellWidth,
         cellHeight,
         wrapperWidth: containerWidth,
-        wrapperHeight: containerHeight
+        wrapperHeight: containerHeight,
+        selection
     });
 
     useEffect(() => {

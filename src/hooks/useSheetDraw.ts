@@ -1,5 +1,5 @@
 import { useCallback, useContext } from 'react';
-import { TableData } from '../types/sheet';
+import { SeletionSheetType, TableData } from '../types/sheet';
 import { SpreadsheetContext } from '../components/spreadsheet';
 
 interface DrawConfig {
@@ -9,8 +9,9 @@ interface DrawConfig {
     wrapperHeight: number;
 }
 
-export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
-    const { config, selection } = useContext(SpreadsheetContext)
+export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selection?: SeletionSheetType }) => {
+    const { config } = useContext(SpreadsheetContext)
+    const selection = drawConfig.selection;
     const isCellSelected = (row: number, col: number) => {
         if (!selection?.start || !selection?.end) return false;
         const r1 = Math.min(selection.start.row, selection.end.row);
