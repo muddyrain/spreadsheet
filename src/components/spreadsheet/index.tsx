@@ -110,7 +110,7 @@ const Spreadsheet: React.FC<{
               currentCell?.value || ''
             } style={
               {
-                transform: `translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
+                transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`,
                 fontSize: `${currentCell?.style.fontSize || 14}px`,
                 fontWeight: `${currentCell?.style.fontWeight || 'normal'}`,
                 fontStyle: `${currentCell?.style.fontStyle || 'normal'}`,
