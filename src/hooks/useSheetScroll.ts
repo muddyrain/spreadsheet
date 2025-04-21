@@ -37,8 +37,10 @@ export const useSheetScroll = (config: {
                     lastScrollPos.x + scrollDelta
                 ));
                 const newPosition = { x: newScrollX, y: lastScrollPos.y };
-                setScrollPosition(newPosition);
-                config.onScroll?.(newPosition);
+                if (newScrollX !== lastScrollPos.x) {
+                    setScrollPosition(newPosition);
+                    config.onScroll?.(newPosition);
+                }
             } else if (dragType === 'vertical') {
                 const deltaY = e.clientY - startPos.y;
                 const scrollRatio = config.viewportHeight / config.totalHeight;
@@ -48,8 +50,10 @@ export const useSheetScroll = (config: {
                     lastScrollPos.y + scrollDelta
                 ));
                 const newPosition = { x: lastScrollPos.x, y: newScrollY };
-                setScrollPosition(newPosition);
-                config.onScroll?.(newPosition);
+                if (newScrollY !== lastScrollPos.y) {
+                    setScrollPosition(newPosition);
+                    config.onScroll?.(newPosition);
+                }
             }
         };
 

@@ -10,7 +10,15 @@ interface DrawConfig {
 }
 
 export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
-    const { config } = useContext(SpreadsheetContext)
+    const { config, selection } = useContext(SpreadsheetContext)
+    const isCellSelected = (row: number, col: number) => {
+        if (!selection?.start || !selection?.end) return false;
+        const r1 = Math.min(selection.start.row, selection.end.row);
+        const r2 = Math.max(selection.start.row, selection.end.row);
+        const c1 = Math.min(selection.start.col, selection.end.col);
+        const c2 = Math.max(selection.start.col, selection.end.col);
+        return row >= r1 && row <= r2 && col >= c1 && col <= c2;
+    };
     const drawTable = useCallback((ctx: CanvasRenderingContext2D, scrollPosition: { x: number; y: number }) => {
         ctx.clearRect(0, 0, drawConfig.wrapperWidth, drawConfig.wrapperHeight);
         ctx.lineWidth = 1;
@@ -31,6 +39,15 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
                 const cell = data[rowIndex][colIndex];
                 const x = colIndex * drawConfig.cellWidth - scrollPosition.x;
                 const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
+
+                // 判断是否选中，绘制高亮背景
+                if (isCellSelected && isCellSelected(rowIndex, colIndex)) {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.3)'; // 浅蓝色高亮
+                    ctx.fillRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
+                    ctx.restore();
+                }
+
                 // 绘制网格
                 ctx.strokeStyle = '#dfdfdf';
                 ctx.strokeRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);

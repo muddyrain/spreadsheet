@@ -9,17 +9,24 @@ interface CanvasProps {
     cellWidth: number;
     cellHeight: number;
     wrapperRef: React.RefObject<HTMLDivElement | null>;
+    selection?: {
+        start: { row: number, col: number } | null,
+        end: { row: number, col: number } | null
+    };
     onCellClick: (row: number, col: number) => void;
-    onScroll: (position: { x: number; y: number }) => void;  // 新增
+    onScroll: (position: { x: number; y: number }) => void;
+    onCellMouseDown: (row: number, col: number) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
     data,
     cellWidth,
     cellHeight,
+    wrapperRef,
+    selection,
     onCellClick,
     onScroll,
-    wrapperRef
+    onCellMouseDown
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -39,7 +46,6 @@ export const Canvas: React.FC<CanvasProps> = ({
         handleWheel,
     } = useSheetScroll(scrollConfig);
 
-    // 移除原来的 useEffect
     const { drawTable } = useSheetDraw(data, {
         cellWidth,
         cellHeight,
@@ -103,6 +109,20 @@ export const Canvas: React.FC<CanvasProps> = ({
                             const colIndex = Math.floor(x / cellWidth);
                             const rowIndex = Math.floor(y / cellHeight);
                             onCellClick(rowIndex, colIndex);
+                        }
+                    }}
+                    onMouseDown={(e) => {
+                        const canvas = canvasRef.current;
+                        if (canvas) {
+                            const rect = canvas.getBoundingClientRect();
+                            const x = e.clientX - rect.left + scrollPosition.x;
+                            const y = e.clientY - rect.top + scrollPosition.y;
+                            const colIndex = Math.floor(x / cellWidth);
+                            const rowIndex = Math.floor(y / cellHeight);
+                            onCellMouseDown(
+                                rowIndex,
+                                colIndex
+                            );
                         }
                     }}
                 />

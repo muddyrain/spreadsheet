@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { TableData, SpreadsheetConfig, EditingCell } from '../../types/sheet';
+import { TableData, SpreadsheetConfig, EditingCell, SeletionSheetType } from '../../types/sheet';
 import { createInitialData } from '../../utils/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
@@ -11,11 +11,13 @@ export const SpreadsheetContext = React.createContext<{
   config: SpreadsheetConfig;
   currentCell: TableData[0][0] | null,
   updater: number,
+  selection: SeletionSheetType,
   setUpdater: (updater: number) => void
 }>({
   data: [],
   config: {},
   currentCell: null,
+  selection: { start: null, end: null },
   updater: 0,
   setUpdater: () => { }
 })
@@ -31,6 +33,7 @@ const Spreadsheet: React.FC<{
     height: 30,    // 默认单元格高度
     ..._config
   }
+  const [selection, setSelection] = useState<SeletionSheetType>({ start: null, end: null });
   const [updater, setUpdater] = useState(+ new Date());
   const mirrorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -98,6 +101,45 @@ const Spreadsheet: React.FC<{
       debouncedChange(newData);
     }
   };
+  const handleCellMouseDown = (rowIndex: number, colIndex: number) => {
+    setSelection({ start: { row: rowIndex, col: colIndex }, end: { row: rowIndex, col: colIndex } });
+    setEditingCell(null);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!wrapperRef.current) return;
+      const rect = wrapperRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left + scrollPosition.x;
+      const y = e.clientY - rect.top + scrollPosition.y;
+      const col = Math.floor(x / cellWidth);
+      const row = Math.floor(y / cellHeight);
+      setSelection(sel => {
+        const newEnd = {
+          row: Math.max(0, Math.min(row, data.length - 1)),
+          col: Math.max(0, Math.min(col, data[0].length - 1))
+        };
+        // 只有选区变化时才更新，避免无意义 setState
+        if (
+          sel.end &&
+          sel.end.row === newEnd.row &&
+          sel.end.col === newEnd.col
+        ) {
+          return sel;
+        }
+        return {
+          start: sel.start,
+          end: newEnd
+        }
+      });
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
   const debouncedChange = useMemo(() => {
     const handleChange = (data: TableData) => {
       onChange?.(filterData(data))
@@ -125,6 +167,7 @@ const Spreadsheet: React.FC<{
       config,
       currentCell,
       updater,
+      selection,
       setUpdater
     }}>
       <div className='flex flex-col w-full h-full overflow-hidden'>
@@ -137,7 +180,9 @@ const Spreadsheet: React.FC<{
               cellWidth={cellWidth}
               cellHeight={cellHeight}
               onCellClick={handleCellClick}
+              onCellMouseDown={handleCellMouseDown}
               onScroll={handleScroll}
+              selection={selection}
             />
           </div>
           <textarea
