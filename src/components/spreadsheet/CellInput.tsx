@@ -3,13 +3,14 @@ import { useStore } from '@/hooks/useStore';
 
 export type CellInputRef = {
   setInputStyle: (rowIndex: number, colIndex: number) => void;
+  updateInputSize: () => void;
 }
 export const CellInput = forwardRef<CellInputRef, {
   value: string;
   style?: React.CSSProperties;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }>(({ style, value, onChange }, ref) => {
-  const { data, config } = useStore()
+  const { data, config, } = useStore()
   const cellWidth = config.width;
   const cellHeight = config.height;
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -22,10 +23,12 @@ export const CellInput = forwardRef<CellInputRef, {
         value += '\u200b'; // 补零宽空格，保证最后一行高度
       }
       mirrorRef.current.textContent = value;
-      const mirrorRect = mirrorRef.current.getBoundingClientRect();
-      // 设置 input 大小和位置
-      inputRef.current.style.width = `${mirrorRect.width}px`;
-      inputRef.current.style.height = `${mirrorRect.height}px`;
+      // 用 requestAnimationFrame 等待 DOM 更新
+      window.requestAnimationFrame(() => {
+        const mirrorRect = mirrorRef.current!.getBoundingClientRect();
+        inputRef.current!.style.width = `${mirrorRect.width}px`;
+        inputRef.current!.style.height = `${mirrorRect.height}px`;
+      });
     }
   };
   const setInputStyle = (rowIndex: number, colIndex: number) => {
@@ -34,13 +37,11 @@ export const CellInput = forwardRef<CellInputRef, {
       inputRef.current.value = currentCell.value;
       inputRef.current.style.left = `${colIndex * (cellWidth || 0)}px`;
       inputRef.current.style.top = `${rowIndex * (cellHeight || 0)}px`;
-      inputRef.current.style.width = `${cellWidth}px`;
-      inputRef.current.style.height = `${cellHeight}px`;
       inputRef.current.style.minWidth = `${cellWidth}px`;
       inputRef.current.style.minHeight = `${cellHeight}px`;
       inputRef.current.style.display = 'block';
-      inputRef.current.style.padding = '0px 10px';
-      mirrorRef.current.style.padding = '0px 10px';
+      inputRef.current.style.padding = '3px 10px';
+      mirrorRef.current.style.padding = '3px 10px';
       // 预先设置字体大小和粗细 防止计算不准确
       inputRef.current.style.fontSize = `${config.fontSize || currentCell.style.fontSize || 14}px`
       inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
@@ -52,15 +53,13 @@ export const CellInput = forwardRef<CellInputRef, {
       mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || 'normal'}`
       mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || 'none'}`
 
-
       updateInputSize();
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 0);
+      inputRef.current.focus();
     }
   };
   useImperativeHandle(ref, () => ({
     setInputStyle,
+    updateInputSize
   }));
   return <>
     <textarea

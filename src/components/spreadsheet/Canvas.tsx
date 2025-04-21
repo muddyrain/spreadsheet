@@ -10,7 +10,8 @@ interface CanvasProps {
     cellWidth: number;
     cellHeight: number;
     wrapperRef: React.RefObject<HTMLDivElement | null>;
-    onCellClick: (row: number, col: number) => void;
+    onCellClick?: (row: number, col: number) => void;
+    onCellDoubleClick?: (row: number, col: number) => void;
     onScroll: (position: { x: number; y: number }) => void;
 }
 
@@ -20,6 +21,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     cellHeight,
     wrapperRef,
     onCellClick,
+    onCellDoubleClick,
     onScroll,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -112,13 +114,19 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <canvas
                     ref={canvasRef}
                     onClick={(e) => {
-                        if (!movedRef.current) { // 只在没有拖动时才触发
+                        if (!movedRef.current && onCellClick) { // 只在没有拖动时才触发
                             handleGetClient(e, onCellClick)
                         }
                         movedRef.current = false; // 重置
                     }}
+                    onDoubleClick={(e) => {
+                        if (!movedRef.current && onCellDoubleClick) { // 只在没有拖动时才触发
+                            handleGetClient(e, onCellDoubleClick)
+                        }
+                        movedRef.current = false; // 重置
+                    }}
                     onMouseDown={(e) => {
-                        handleGetClient(e, onCellClick)
+                        onCellClick && handleGetClient(e, onCellClick)
                         handleGetClient(e, (rowIndex, colIndex) => {
                             handleCellMouseDown(rowIndex, colIndex, wrapperRef, scrollPosition)
                         })

@@ -32,20 +32,26 @@ const Spreadsheet: React.FC<{
   const [updater, setUpdater] = useState(+ new Date());
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
+  const [selectedCell, setSelectedCell] = useState<EditingCell>(null); // 新增
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const cellWidth = config.width;
   const cellHeight = config.height;
-  const handleCellClick = (rowIndex: number, colIndex: number) => {
+  const onCellClick = (rowIndex: number, colIndex: number) => {
     if (rowIndex < 0 || colIndex < 0) {
-      setEditingCell(() => null)
-      return
+      setSelectedCell(null);
+      setEditingCell(null);
+      return;
     }
     const currentCell = data[rowIndex][colIndex];
     if (currentCell.readOnly) {
-      return
+      return;
     }
-    setEditingCell({ row: rowIndex, col: colIndex });
+    setSelectedCell({ row: rowIndex, col: colIndex }); // 只选中
+    setEditingCell(null); // 单击时不进入编辑
+  };
+  const onCellDoubleClick = (rowIndex: number, colIndex: number) => {
+    setEditingCell({ row: rowIndex, col: colIndex }); // 双击才进入编辑
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -67,12 +73,12 @@ const Spreadsheet: React.FC<{
     setScrollPosition(position);
   };
   const currentCell = useMemo(() => {
-    const _currentCell = data[editingCell?.row || 0][editingCell?.col || 0]
-    if (_currentCell.readOnly) {
-      return null
+    const cell = data[editingCell?.row ?? selectedCell?.row ?? 0][editingCell?.col ?? selectedCell?.col ?? 0];
+    if (cell.readOnly) {
+      return null;
     }
-    return _currentCell
-  }, [data, editingCell])
+    return cell;
+  }, [data, editingCell, selectedCell]);
   useEffect(() => {
     return () => {
       setEditingCell(null)
@@ -95,24 +101,24 @@ const Spreadsheet: React.FC<{
               wrapperRef={wrapperRef}
               cellWidth={cellWidth}
               cellHeight={cellHeight}
-              onCellClick={handleCellClick}
+              onCellClick={onCellClick}
+              onCellDoubleClick={onCellDoubleClick}
               onScroll={handleScroll}
             />
           </div>
           <CellInput
             ref={cellInputRef}
             onChange={handleInputChange}
-            value={
-              currentCell?.value || ''
-            } style={
-              {
-                transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`,
-                fontSize: `${config.fontSize || currentCell?.style.fontSize || 14}px`,
-                fontWeight: `${currentCell?.style.fontWeight || 'normal'}`,
-                fontStyle: `${currentCell?.style.fontStyle || 'normal'}`,
-                textDecoration: `${currentCell?.style.textDecoration || 'none'}`,
-              }
-            } />
+            value={currentCell?.value || ''}
+            style={{
+              display: editingCell ? 'block' : 'none', // 只有编辑时才显示
+              transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`,
+              fontSize: `${config.fontSize || currentCell?.style.fontSize || 14}px`,
+              fontWeight: `${currentCell?.style.fontWeight || 'normal'}`,
+              fontStyle: `${currentCell?.style.fontStyle || 'normal'}`,
+              textDecoration: `${currentCell?.style.textDecoration || 'none'}`,
+            }}
+          />
         </div>
       </div>
     </SpreadsheetContext.Provider>

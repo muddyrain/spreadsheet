@@ -140,7 +140,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             }
         }
         // === 绘制选区边框 ===
-        if (selection?.start && selection?.end && selection.start.row !== selection.end.row && selection.start.col !== selection.end.col) {
+        if (selection?.start && selection?.end) {
             const r1 = Math.min(selection.start.row, selection.end.row);
             const r2 = Math.max(selection.start.row, selection.end.row);
             const c1 = Math.min(selection.start.col, selection.end.col);
