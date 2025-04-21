@@ -55,12 +55,13 @@ const Spreadsheet: React.FC<{
     }
   };
   const handleCellClick = (rowIndex: number, colIndex: number) => {
+    const currentCell = data[rowIndex][colIndex];
+    if (currentCell.readOnly) {
+      return
+    }
     setEditingCell({ row: rowIndex, col: colIndex });
     if (inputRef.current && mirrorRef.current) {
       const currentCell = data[rowIndex][colIndex];
-      if (currentCell.readOnly) {
-        return
-      }
       inputRef.current.value = currentCell.value;
       inputRef.current.style.left = `${colIndex * cellWidth}px`;
       inputRef.current.style.top = `${rowIndex * cellHeight}px`;
@@ -106,7 +107,13 @@ const Spreadsheet: React.FC<{
   const handleScroll = (position: { x: number; y: number }) => {
     setScrollPosition(position);
   };
-  const currentCell = data[editingCell?.row || 0][editingCell?.col || 0]
+  const currentCell = useMemo(() => {
+    const _currentCell = data[editingCell?.row || 0][editingCell?.col || 0]
+    if (_currentCell.readOnly) {
+      return null
+    }
+    return _currentCell
+  }, [data, editingCell])
   useEffect(() => {
     return () => {
       setEditingCell(null)
@@ -141,10 +148,10 @@ const Spreadsheet: React.FC<{
             style={
               {
                 transform: `translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
-                fontSize: `${currentCell.style.fontSize || 14}px`,
-                fontWeight: `${currentCell.style.fontWeight || 'normal'}`,
-                fontStyle: `${currentCell.style.fontStyle || 'normal'}`,
-                textDecoration: `${currentCell.style.textDecoration || 'none'}`,
+                fontSize: `${currentCell?.style.fontSize || 14}px`,
+                fontWeight: `${currentCell?.style.fontWeight || 'normal'}`,
+                fontStyle: `${currentCell?.style.fontStyle || 'normal'}`,
+                textDecoration: `${currentCell?.style.textDecoration || 'none'}`,
               }
             }
           />
@@ -155,10 +162,10 @@ const Spreadsheet: React.FC<{
             style={{
               visibility: 'hidden',
               transform: `translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
-              fontSize: `${currentCell.style.fontSize || 14}px`,
-              fontWeight: `${currentCell.style.fontWeight || 'normal'}`,
-              fontStyle: `${currentCell.style.fontStyle || 'normal'}`,
-              textDecoration: `${currentCell.style.textDecoration || 'none'}`,
+              fontSize: `${currentCell?.style.fontSize || 14}px`,
+              fontWeight: `${currentCell?.style.fontWeight || 'normal'}`,
+              fontStyle: `${currentCell?.style.fontStyle || 'normal'}`,
+              textDecoration: `${currentCell?.style.textDecoration || 'none'}`,
             }}
           />
         </div>
