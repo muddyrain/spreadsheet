@@ -1,12 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { SeletionSheetType, TableData } from '../types/sheet';
 
 export function useSheetSelection(data: TableData, config: { width: number; height: number }) {
   const [selection, setSelection] = useState<SeletionSheetType>({ start: null, end: null });
+  const [isSelection, setIsSelection] = useState(false);
+  const movedRef = useRef(false);
+
 
   const handleCellMouseDown = useCallback((rowIndex: number, colIndex: number, wrapperRef: React.RefObject<HTMLDivElement | null>, scrollPosition: { x: number, y: number }) => {
     setSelection({ start: { row: rowIndex, col: colIndex }, end: { row: rowIndex, col: colIndex } });
-
+    setIsSelection(false);
+    movedRef.current = false;
     let lastRow = rowIndex;
     let lastCol = colIndex;
 
@@ -22,6 +26,8 @@ export function useSheetSelection(data: TableData, config: { width: number; heig
           start: sel.start,
           end: { row, col }
         }));
+        setIsSelection(true);
+        movedRef.current = true;
         lastRow = row;
         lastCol = col;
       }
@@ -30,11 +36,12 @@ export function useSheetSelection(data: TableData, config: { width: number; heig
     const handleMouseUp = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      setIsSelection(false);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
   }, [data, config.width, config.height]);
 
-  return { selection, setSelection, handleCellMouseDown };
+  return { selection, isSelection, movedRef, setSelection, handleCellMouseDown };
 }

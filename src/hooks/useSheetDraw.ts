@@ -139,7 +139,31 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 ctx.restore();
             }
         }
-    }, [data, drawConfig]);
+        // === 新增：绘制选区边框 ===
+        if (selection?.start && selection?.end && selection.start.row !== selection.end.row && selection.start.col !== selection.end.col) {
+            const r1 = Math.min(selection.start.row, selection.end.row);
+            const r2 = Math.max(selection.start.row, selection.end.row);
+            const c1 = Math.min(selection.start.col, selection.end.col);
+            const c2 = Math.max(selection.start.col, selection.end.col);
+
+            // 只绘制在当前可视区域内的部分
+            if (
+                r2 >= startRow && r1 < endRow &&
+                c2 >= startCol && c1 < endCol
+            ) {
+                const x = c1 * drawConfig.cellWidth - scrollPosition.x;
+                const y = r1 * drawConfig.cellHeight - scrollPosition.y;
+                const width = (c2 - c1 + 1) * drawConfig.cellWidth;
+                const height = (r2 - r1 + 1) * drawConfig.cellHeight;
+
+                ctx.save();
+                ctx.strokeStyle = '#38bdf8'; // 蓝色
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, width, height);
+                ctx.restore();
+            }
+        }
+    }, [data, drawConfig, selection]);
 
     return { drawTable };
 };

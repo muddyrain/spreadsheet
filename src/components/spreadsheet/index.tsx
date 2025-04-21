@@ -41,6 +41,10 @@ const Spreadsheet: React.FC<{
   const cellWidth = config.width;
   const cellHeight = config.height;
   const handleCellClick = (rowIndex: number, colIndex: number) => {
+    if (rowIndex < 0 || colIndex < 0) {
+      setEditingCell(() => null)
+      return
+    }
     const currentCell = data[rowIndex][colIndex];
     if (currentCell.readOnly) {
       return

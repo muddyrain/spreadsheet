@@ -63,11 +63,12 @@ export const CellInput = forwardRef<CellInputRef, {
     <textarea
       ref={inputRef}
       value={value || ''}
-      className="absolute hidden border border-blue-500 bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
+      className="absolute hidden border border-blue-500 bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden pointer-events-none"
       onChange={e => {
         onChange(e);
         updateInputSize();
       }}
+
       style={
         style
       }

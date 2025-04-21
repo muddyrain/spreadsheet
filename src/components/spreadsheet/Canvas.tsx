@@ -33,7 +33,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         viewportHeight: containerHeight,
         onScroll
     }), [data, cellWidth, cellHeight, containerWidth, containerHeight, onScroll]);
-    const { selection, handleCellMouseDown } = useSheetSelection(data, {
+    const { selection, movedRef, handleCellMouseDown } = useSheetSelection(data, {
         width: cellWidth,
         height: cellHeight,
     });
@@ -113,9 +113,13 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <canvas
                     ref={canvasRef}
                     onClick={(e) => {
-                        handleGetClient(e, onCellClick)
+                        if (!movedRef.current) { // 只在没有拖动时才触发
+                            handleGetClient(e, onCellClick)
+                        }
+                        movedRef.current = false; // 重置
                     }}
                     onMouseDown={(e) => {
+                        handleGetClient(e, onCellClick)
                         handleGetClient(e, (rowIndex, colIndex) => {
                             handleCellMouseDown(rowIndex, colIndex, wrapperRef, scrollPosition)
                         })
