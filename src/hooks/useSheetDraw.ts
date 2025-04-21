@@ -10,7 +10,7 @@ interface DrawConfig {
 }
 
 export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selection?: SeletionSheetType }) => {
-    const { config } = useStore()
+    const { config, isFocused } = useStore()
     const selection = drawConfig.selection;
     const isCellSelected = (row: number, col: number) => {
         if (!selection?.start || !selection?.end) return false;
@@ -34,6 +34,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             startCol + Math.ceil(drawConfig.wrapperWidth / drawConfig.cellWidth),
             data[0].length
         );
+        const isOneSelection = selection?.start?.row === selection?.end?.row && selection?.start?.col === selection?.end?.col;
         ctx.translate(0.5, 0.5)
         for (let rowIndex = startRow;rowIndex < endRow;rowIndex++) {
             for (let colIndex = startCol;colIndex < endCol;colIndex++) {
@@ -141,6 +142,9 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         }
         // === 绘制选区边框 ===
         if (selection?.start && selection?.end) {
+            if (isOneSelection && isFocused) {
+                return;
+            }
             const r1 = Math.min(selection.start.row, selection.end.row);
             const r2 = Math.max(selection.start.row, selection.end.row);
             const c1 = Math.min(selection.start.col, selection.end.col);
@@ -158,7 +162,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
 
                 ctx.save();
                 ctx.strokeStyle = config.selectionBorderColor;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 1;
                 ctx.strokeRect(x, y, width, height);
                 ctx.restore();
             }

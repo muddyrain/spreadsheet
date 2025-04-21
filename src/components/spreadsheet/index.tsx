@@ -10,9 +10,11 @@ import { CellInput, CellInputRef } from './CellInput';
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
   config: Required<SpreadsheetConfig>;
-  currentCell: TableData[0][0] | null,
-  updater: number,
-  setUpdater: (updater: number) => void
+  currentCell: TableData[0][0] | null;
+  updater: number;
+  setUpdater: (updater: number) => void;
+  isFocused: boolean,
+  setIsFocused: (isFocused: boolean) => void;
 } | undefined>(undefined)
 const Spreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -29,6 +31,7 @@ const Spreadsheet: React.FC<{
     ..._config
   }
   const cellInputRef = useRef<CellInputRef>(null);
+  const [isFocused, setIsFocused] = useState(false);
   const [updater, setUpdater] = useState(+ new Date());
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
@@ -104,7 +107,9 @@ const Spreadsheet: React.FC<{
       config,
       currentCell,
       updater,
-      setUpdater
+      setUpdater,
+      isFocused,
+      setIsFocused
     }}>
       <div className='flex flex-col w-full h-full overflow-hidden'>
         <Header />

@@ -10,7 +10,8 @@ export const CellInput = forwardRef<CellInputRef, {
   style?: React.CSSProperties;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }>(({ style, value, onChange }, ref) => {
-  const { data, config, } = useStore()
+  const { data, config,
+    setIsFocused } = useStore()
   const cellWidth = config.width;
   const cellHeight = config.height;
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -69,6 +70,12 @@ export const CellInput = forwardRef<CellInputRef, {
       onChange={e => {
         onChange(e);
         updateInputSize();
+      }}
+      onFocus={() => {
+        setIsFocused(true)
+      }}
+      onBlur={() => {
+        setIsFocused(false)
       }}
       style={{
         ...style,
