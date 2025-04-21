@@ -1,10 +1,10 @@
-import { FC, useContext, useMemo, useState } from 'react';
+import { FC, useContext, useMemo } from 'react';
 import { Toggle } from "@/components/ui/toggle"
 import { Bold, Eraser, Italic, PaintRoller, Redo, Save, Strikethrough, Underline, Undo } from "lucide-react"
 import { SpreadsheetContext } from '.';
 export type ClickType = 'save' | 'undo' | 'redo' | 'paint' | 'eraser' | 'bold' | 'italic' | 'strikethrough' | 'underline'
 export const Header: FC = () => {
-  const { currentCell, data, updater, setUpdater } = useContext(SpreadsheetContext);
+  const { currentCell, updater, setUpdater } = useContext(SpreadsheetContext);
   const isBlod = useMemo(() => {
     return currentCell?.style.fontWeight === 'bold'
   }, [currentCell, updater])

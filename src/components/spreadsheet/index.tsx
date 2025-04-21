@@ -3,7 +3,7 @@ import { TableData, SpreadsheetConfig, EditingCell } from '../../types/sheet';
 import { createInitialData } from '../../utils/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
-import _, { set } from 'lodash';
+import _ from 'lodash';
 import { Header } from './Header';
 
 export const SpreadsheetContext = React.createContext<{
@@ -107,7 +107,6 @@ const Spreadsheet: React.FC<{
       setEditingCell(null)
     }
   }, [])
-  console.log(currentCell);
   return (
     <SpreadsheetContext.Provider value={{
       data,
