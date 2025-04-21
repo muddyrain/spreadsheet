@@ -43,7 +43,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
 
                 // 设置字体样式
                 const fontWeight = cell.style.fontWeight || 'normal';
-                const fontSize = cell.style.fontSize || config.fontSize || 16;
+                const fontSize = cell.style.fontSize || config.fontSize || 14;
                 ctx.font = `${fontWeight} ${fontSize}px Arial`;
                 ctx.fillStyle = cell.style.color || '#000';
 
@@ -57,10 +57,10 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig) => {
                 ctx.textAlign = cell.style.textAlign as CanvasTextAlign || 'left';
                 ctx.textBaseline = 'middle';
                 // 计算文本位置
-                let textX = x + 10;
+                let textX = x + 10; // 确保与输入框的填充一致
                 if (ctx.textAlign === 'center') textX = x + drawConfig.cellWidth / 2;
                 if (ctx.textAlign === 'right') textX = x + drawConfig.cellWidth - 10;
-                const textY = y + drawConfig.cellHeight / 2 + 2;
+                const textY = y + drawConfig.cellHeight / 2; // 调整文本基线位置
                 ctx.fillText(cell.value, textX, textY);
                 // 恢复剪裁
                 ctx.restore();

@@ -1,9 +1,9 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TableData, SpreadsheetConfig, EditingCell } from '../../types/sheet';
 import { createInitialData } from '../../utils/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
-import _ from 'lodash';
+import _, { set } from 'lodash';
 import { Header } from './Header';
 
 export const SpreadsheetContext = React.createContext<{
@@ -32,6 +32,7 @@ const Spreadsheet: React.FC<{
     ..._config
   }
   const [updater, setUpdater] = useState(+ new Date());
+  const mirrorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
@@ -39,9 +40,23 @@ const Spreadsheet: React.FC<{
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const cellWidth = config.width;
   const cellHeight = config.height;
+  const updateInputSize = () => {
+    if (inputRef.current && mirrorRef.current) {
+      // 处理换行，保证最后一行也能被测量
+      let value = inputRef.current.value || '';
+      if (value.endsWith('\n')) {
+        value += '\u200b'; // 补零宽空格，保证最后一行高度
+      }
+      mirrorRef.current.textContent = value;
+      const mirrorRect = mirrorRef.current.getBoundingClientRect();
+      // 设置 input 大小和位置
+      inputRef.current.style.width = `${mirrorRect.width}px`;
+      inputRef.current.style.height = `${mirrorRect.height}px`;
+    }
+  };
   const handleCellClick = (rowIndex: number, colIndex: number) => {
     setEditingCell({ row: rowIndex, col: colIndex });
-    if (inputRef.current) {
+    if (inputRef.current && mirrorRef.current) {
       const currentCell = data[rowIndex][colIndex];
       if (currentCell.readOnly) {
         return
@@ -51,8 +66,19 @@ const Spreadsheet: React.FC<{
       inputRef.current.style.top = `${rowIndex * cellHeight}px`;
       inputRef.current.style.width = `${cellWidth}px`;
       inputRef.current.style.height = `${cellHeight}px`;
+      inputRef.current.style.minWidth = `${cellWidth}px`;
+      inputRef.current.style.minHeight = `${cellHeight}px`;
       inputRef.current.style.display = 'block';
+      inputRef.current.style.padding = '3px 10px';
+      // 预先设置字体大小和粗细 防止计算不准确
+      inputRef.current.style.fontSize = `${currentCell.style.fontSize || 14}px`
+      inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
+      mirrorRef.current.style.fontSize = `${currentCell.style.fontSize || 14}px`
+      mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
+      mirrorRef.current.style.padding = '3px 10px';
+
       inputRef.current.focus();
+      updateInputSize();
     }
   };
 
@@ -62,6 +88,7 @@ const Spreadsheet: React.FC<{
       const targetCell = newData[editingCell.row][editingCell.col];
       targetCell.value = e.target.value;
       setData(newData);
+      updateInputSize();
       debouncedChange(newData);
     }
   };
@@ -75,9 +102,17 @@ const Spreadsheet: React.FC<{
     setScrollPosition(position);
   };
   const currentCell = data[editingCell?.row || 0][editingCell?.col || 0]
+  useEffect(() => {
+    return () => {
+      setEditingCell(null)
+    }
+  }, [])
+  console.log(currentCell);
   return (
     <SpreadsheetContext.Provider value={{
-      data, config, currentCell,
+      data,
+      config,
+      currentCell,
       updater,
       setUpdater
     }}>
@@ -96,15 +131,26 @@ const Spreadsheet: React.FC<{
           </div>
           <textarea
             ref={inputRef}
-            className="absolute border border-blue-600 bg-white text-black outline-none box-border resize-none"
-            style={{
-              padding: '5px 10px',
-              fontWeight: currentCell.style.fontWeight || 'normal',
-              fontFamily: 'Arial',
-              fontSize: `${currentCell.style.fontWeight || config.fontSize || 14}px`,
-              transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`
-            }}
+            className="absolute hidden border border-blue-500 bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
             onChange={handleInputChange}
+            style={
+              {
+                fontSize: `${currentCell.style.fontSize || 14}px`,
+                fontWeight: `${currentCell.style.fontWeight || 'normal'}`,
+                transform: `translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
+              }
+            }
+          />
+          {/* 隐藏的 mirror div 用于测量内容尺寸 */}
+          <div
+            ref={mirrorRef}
+            className='absolute border bg-red-200 whitespace-pre-wrap break-all'
+            style={{
+              visibility: 'hidden',
+              fontSize: `${currentCell.style.fontSize || 14}px`,
+              fontWeight: `${currentCell.style.fontWeight || 'normal'}`,
+              transform: `translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
+            }}
           />
         </div>
       </div>
