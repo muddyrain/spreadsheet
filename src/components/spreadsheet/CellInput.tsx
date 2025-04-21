@@ -1,5 +1,6 @@
 import { forwardRef, useContext, useImperativeHandle, useRef } from 'react';
 import { SpreadsheetContext } from '.';
+import { useStore } from '@/hooks/useStore';
 
 export type CellInputRef = {
   setInputStyle: (rowIndex: number, colIndex: number) => void;
@@ -9,7 +10,7 @@ export const CellInput = forwardRef<CellInputRef, {
   style?: React.CSSProperties;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }>(({ style, value, onChange }, ref) => {
-  const { data, config } = useContext(SpreadsheetContext)
+  const { data, config } = useStore()
   const cellWidth = config.width;
   const cellHeight = config.height;
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -39,21 +40,24 @@ export const CellInput = forwardRef<CellInputRef, {
       inputRef.current.style.minWidth = `${cellWidth}px`;
       inputRef.current.style.minHeight = `${cellHeight}px`;
       inputRef.current.style.display = 'block';
-      inputRef.current.style.padding = '3px 10px';
-      mirrorRef.current.style.padding = '3px 10px';
+      inputRef.current.style.padding = '0px 10px';
+      mirrorRef.current.style.padding = '0px 10px';
       // 预先设置字体大小和粗细 防止计算不准确
-      inputRef.current.style.fontSize = `${currentCell.style.fontSize || 14}px`
+      inputRef.current.style.fontSize = `${config.fontSize || currentCell.style.fontSize || 14}px`
       inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
       inputRef.current.style.fontStyle = `${currentCell.style.fontStyle || 'normal'}`
       inputRef.current.style.textDecoration = `${currentCell.style.textDecoration || 'none'}`
 
-      mirrorRef.current.style.fontSize = `${currentCell.style.fontSize || 14}px`
+      mirrorRef.current.style.fontSize = `${config.fontSize || currentCell.style.fontSize || 14}px`
       mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
       mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || 'normal'}`
       mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || 'none'}`
 
-      inputRef.current.focus();
+
       updateInputSize();
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     }
   };
   useImperativeHandle(ref, () => ({
@@ -63,15 +67,15 @@ export const CellInput = forwardRef<CellInputRef, {
     <textarea
       ref={inputRef}
       value={value || ''}
-      className="absolute hidden border border-blue-500 bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden pointer-events-none"
+      className="absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
       onChange={e => {
         onChange(e);
         updateInputSize();
       }}
-
-      style={
-        style
-      }
+      style={{
+        ...style,
+        border: `1px solid ${config.selectionBorderColor}`,
+      }}
     />
     {/* 隐藏的 mirror div 用于测量内容尺寸 */}
     <div

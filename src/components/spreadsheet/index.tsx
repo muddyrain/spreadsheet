@@ -9,17 +9,11 @@ import { CellInput, CellInputRef } from './CellInput';
 
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
-  config: SpreadsheetConfig;
+  config: Required<SpreadsheetConfig>;
   currentCell: TableData[0][0] | null,
   updater: number,
   setUpdater: (updater: number) => void
-}>({
-  data: [],
-  config: {},
-  currentCell: null,
-  updater: 0,
-  setUpdater: () => { }
-})
+} | undefined>(undefined)
 const Spreadsheet: React.FC<{
   config?: SpreadsheetConfig;
   onChange?: (data: TableData) => void;
@@ -30,6 +24,8 @@ const Spreadsheet: React.FC<{
     fontSize: 14,
     width: 100,    // 默认单元格宽度
     height: 30,    // 默认单元格高度
+    selectionBorderColor: '#3C70FF',
+    selectionBackgroundColor: '#EBF0FF',
     ..._config
   }
   const cellInputRef = useRef<CellInputRef>(null);
@@ -111,7 +107,7 @@ const Spreadsheet: React.FC<{
             } style={
               {
                 transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`,
-                fontSize: `${currentCell?.style.fontSize || 14}px`,
+                fontSize: `${config.fontSize || currentCell?.style.fontSize || 14}px`,
                 fontWeight: `${currentCell?.style.fontWeight || 'normal'}`,
                 fontStyle: `${currentCell?.style.fontStyle || 'normal'}`,
                 textDecoration: `${currentCell?.style.textDecoration || 'none'}`,

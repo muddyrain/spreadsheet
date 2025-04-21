@@ -1,6 +1,6 @@
-import { useCallback, useContext } from 'react';
+import { useCallback, } from 'react';
 import { SeletionSheetType, TableData } from '../types/sheet';
-import { SpreadsheetContext } from '../components/spreadsheet';
+import { useStore } from './useStore';
 
 interface DrawConfig {
     cellWidth: number;
@@ -10,7 +10,7 @@ interface DrawConfig {
 }
 
 export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selection?: SeletionSheetType }) => {
-    const { config } = useContext(SpreadsheetContext)
+    const { config } = useStore()
     const selection = drawConfig.selection;
     const isCellSelected = (row: number, col: number) => {
         if (!selection?.start || !selection?.end) return false;
@@ -37,14 +37,14 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         ctx.translate(0.5, 0.5)
         for (let rowIndex = startRow;rowIndex < endRow;rowIndex++) {
             for (let colIndex = startCol;colIndex < endCol;colIndex++) {
-                const cell = data[rowIndex][colIndex];
+                const cell = data[rowIndex]?.[colIndex];
                 const x = colIndex * drawConfig.cellWidth - scrollPosition.x;
                 const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
 
                 // 判断是否选中，绘制高亮背景
                 if (isCellSelected && isCellSelected(rowIndex, colIndex)) {
                     ctx.save();
-                    ctx.fillStyle = 'rgba(56, 189, 248, 0.3)'; // 浅蓝色高亮
+                    ctx.fillStyle = config.selectionBackgroundColor;
                     ctx.fillRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
                     ctx.restore();
                 }
@@ -139,7 +139,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 ctx.restore();
             }
         }
-        // === 新增：绘制选区边框 ===
+        // === 绘制选区边框 ===
         if (selection?.start && selection?.end && selection.start.row !== selection.end.row && selection.start.col !== selection.end.col) {
             const r1 = Math.min(selection.start.row, selection.end.row);
             const r2 = Math.max(selection.start.row, selection.end.row);
@@ -157,7 +157,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 const height = (r2 - r1 + 1) * drawConfig.cellHeight;
 
                 ctx.save();
-                ctx.strokeStyle = '#38bdf8'; // 蓝色
+                ctx.strokeStyle = config.selectionBorderColor;
                 ctx.lineWidth = 2;
                 ctx.strokeRect(x, y, width, height);
                 ctx.restore();

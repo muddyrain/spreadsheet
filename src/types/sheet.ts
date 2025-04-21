@@ -75,6 +75,16 @@ export type SpreadsheetConfig = {
    * @default 30
    */
   height?: number;
+  /**
+   * @description 选择框背景颜色
+   * @default #EBF0FF
+   */
+  selectionBackgroundColor?: string;
+  /**
+   * @description 选择框颜色
+   * @default #3C70FF
+   */
+  selectionBorderColor?: string;
 };
 
 export type EditingCell = {
