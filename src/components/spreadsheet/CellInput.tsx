@@ -1,5 +1,4 @@
-import { forwardRef, useContext, useImperativeHandle, useRef } from 'react';
-import { SpreadsheetContext } from '.';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { useStore } from '@/hooks/useStore';
 
 export type CellInputRef = {

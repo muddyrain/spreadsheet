@@ -83,6 +83,7 @@ export const useSheetScroll = (config: {
     }, [scrollPosition]);
 
     const handleWheel = useCallback((e: WheelEvent) => {
+        if (config.totalHeight <= config.viewportHeight) return;
         const maxScrollX = config.totalWidth - config.viewportWidth;
         const maxScrollY = config.totalHeight - config.viewportHeight;
 

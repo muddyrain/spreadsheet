@@ -5,7 +5,7 @@ function App() {
     <>
       <Spreadsheet config={{
         fontSize: 18,
-        rows: 10
+        rows: 200
       }} />
     </>
   );

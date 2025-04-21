@@ -37,7 +37,6 @@ export const Canvas: React.FC<CanvasProps> = ({
         width: cellWidth,
         height: cellHeight,
     });
-
     const {
         scrollPosition,
         handleScrollbarDragStart,
@@ -126,21 +125,27 @@ export const Canvas: React.FC<CanvasProps> = ({
                     }}
                 />
             </div>
-            <ScrollBar
-                type="vertical"
-                viewportSize={containerHeight}
-                contentSize={data.length * cellHeight}
-                scrollPosition={scrollPosition.y}
-                onDragStart={handleScrollbarDragStart}
-            />
+            {
+                scrollConfig?.totalWidth > containerWidth &&
+                <ScrollBar
+                    type="horizontal"
+                    viewportSize={containerWidth}
+                    contentSize={data[0].length * cellWidth}
+                    scrollPosition={scrollPosition.x}
+                    onDragStart={handleScrollbarDragStart}
+                />
+            }
+            {
+                scrollConfig?.totalHeight > containerHeight &&
+                <ScrollBar
+                    type="vertical"
+                    viewportSize={containerHeight}
+                    contentSize={data.length * cellHeight}
+                    scrollPosition={scrollPosition.y}
+                    onDragStart={handleScrollbarDragStart}
+                />
+            }
 
-            <ScrollBar
-                type="horizontal"
-                viewportSize={containerWidth}
-                contentSize={data[0].length * cellWidth}
-                scrollPosition={scrollPosition.x}
-                onDragStart={handleScrollbarDragStart}
-            />
         </>
     );
 };
