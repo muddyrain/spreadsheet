@@ -54,6 +54,20 @@ const Spreadsheet: React.FC<{
     setEditingCell({ row: rowIndex, col: colIndex }); // 双击才进入编辑
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (currentCell && selectedCell) {
+      const key = e.key;
+      if (
+        (key.length === 1 && (
+          /[a-zA-Z0-9]/.test(key) || // 字母数字
+          /[~!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`]/.test(key) // 常见符号
+        ))
+      ) {
+        setEditingCell({ row: selectedCell.row, col: selectedCell.col }); // 双击才进入编辑
+        cellInputRef.current?.setInputStyle(selectedCell.row, selectedCell.col);
+      }
+    }
+  };
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (editingCell) {
       const newData = [...data];
@@ -103,6 +117,7 @@ const Spreadsheet: React.FC<{
               cellHeight={cellHeight}
               onCellClick={onCellClick}
               onCellDoubleClick={onCellDoubleClick}
+              onKeyDown={onKeyDown}
               onScroll={handleScroll}
             />
           </div>

@@ -12,6 +12,7 @@ interface CanvasProps {
     wrapperRef: React.RefObject<HTMLDivElement | null>;
     onCellClick?: (row: number, col: number) => void;
     onCellDoubleClick?: (row: number, col: number) => void;
+    onKeyDown?: (e: React.KeyboardEvent) => void;
     onScroll: (position: { x: number; y: number }) => void;
 }
 
@@ -23,6 +24,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     onCellClick,
     onCellDoubleClick,
     onScroll,
+    onKeyDown
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -88,8 +90,8 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
     }, [wrapperRef, handleWheel])
 
-    const handleGetClient = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, callback: (
-        rowIndex: number, colIndex: number) => void) => {
+    function handleGetClient<T extends React.MouseEvent<HTMLCanvasElement, MouseEvent>>(e: T, callback: (
+        rowIndex: number, colIndex: number) => void) {
         const canvas = canvasRef.current;
         if (canvas) {
             const rect = canvas.getBoundingClientRect();
@@ -112,7 +114,11 @@ export const Canvas: React.FC<CanvasProps> = ({
                 }}
             >
                 <canvas
+                    tabIndex={0}
                     ref={canvasRef}
+                    onKeyDown={e => {
+                        onKeyDown?.(e)
+                    }}
                     onClick={(e) => {
                         if (!movedRef.current && onCellClick) { // 只在没有拖动时才触发
                             handleGetClient(e, onCellClick)
