@@ -70,12 +70,17 @@ const Spreadsheet: React.FC<{
       inputRef.current.style.minHeight = `${cellHeight}px`;
       inputRef.current.style.display = 'block';
       inputRef.current.style.padding = '3px 10px';
+      mirrorRef.current.style.padding = '3px 10px';
       // 预先设置字体大小和粗细 防止计算不准确
       inputRef.current.style.fontSize = `${currentCell.style.fontSize || 14}px`
       inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
+      inputRef.current.style.fontStyle = `${currentCell.style.fontStyle || 'normal'}`
+      inputRef.current.style.textDecoration = `${currentCell.style.textDecoration || 'none'}`
+
       mirrorRef.current.style.fontSize = `${currentCell.style.fontSize || 14}px`
       mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
-      mirrorRef.current.style.padding = '3px 10px';
+      mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || 'normal'}`
+      mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || 'none'}`
 
       inputRef.current.focus();
       updateInputSize();
@@ -130,13 +135,16 @@ const Spreadsheet: React.FC<{
           </div>
           <textarea
             ref={inputRef}
+            value={currentCell?.value || ''}
             className="absolute hidden border border-blue-500 bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
             onChange={handleInputChange}
             style={
               {
+                transform: `translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
                 fontSize: `${currentCell.style.fontSize || 14}px`,
                 fontWeight: `${currentCell.style.fontWeight || 'normal'}`,
-                transform: `translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
+                fontStyle: `${currentCell.style.fontStyle || 'normal'}`,
+                textDecoration: `${currentCell.style.textDecoration || 'none'}`,
               }
             }
           />
@@ -146,9 +154,11 @@ const Spreadsheet: React.FC<{
             className='absolute border bg-red-200 whitespace-pre-wrap break-all'
             style={{
               visibility: 'hidden',
+              transform: `translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
               fontSize: `${currentCell.style.fontSize || 14}px`,
               fontWeight: `${currentCell.style.fontWeight || 'normal'}`,
-              transform: `translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
+              fontStyle: `${currentCell.style.fontStyle || 'normal'}`,
+              textDecoration: `${currentCell.style.textDecoration || 'none'}`,
             }}
           />
         </div>

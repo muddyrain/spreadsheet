@@ -19,6 +19,14 @@ export type CellStyle = {
   * @description 单元格字体大小
   */
   fontSize?: number;
+  /**
+  * @description 单元格 字体样式
+  */
+  fontStyle?: string;
+  /**
+   * @description 单元格 文字装饰
+   */
+  textDecoration?: string;
 };
 
 export type CellData = {
