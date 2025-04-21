@@ -1,21 +1,18 @@
-import React, { useMemo, useRef, useEffect, useState } from 'react';
+import React, { useMemo, useRef, useEffect, useState, useContext } from 'react';
 import { TableData } from '../../types/sheet';
 import { useSheetScroll } from '../../hooks/useSheetScroll';
 import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
+import { useSheetSelection } from '@/hooks/useSheetSelection';
+import { SpreadsheetContext } from '.';
 
 interface CanvasProps {
     data: TableData;
     cellWidth: number;
     cellHeight: number;
     wrapperRef: React.RefObject<HTMLDivElement | null>;
-    selection?: {
-        start: { row: number, col: number } | null,
-        end: { row: number, col: number } | null
-    };
     onCellClick: (row: number, col: number) => void;
     onScroll: (position: { x: number; y: number }) => void;
-    onCellMouseDown: (row: number, col: number) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -23,10 +20,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     cellWidth,
     cellHeight,
     wrapperRef,
-    selection,
     onCellClick,
     onScroll,
-    onCellMouseDown
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -39,6 +34,10 @@ export const Canvas: React.FC<CanvasProps> = ({
         viewportHeight: containerHeight,
         onScroll
     }), [data, cellWidth, cellHeight, containerWidth, containerHeight, onScroll]);
+    const { selection, handleCellMouseDown } = useSheetSelection(data, {
+        width: cellWidth,
+        height: cellHeight,
+    });
 
     const {
         scrollPosition,
@@ -88,6 +87,19 @@ export const Canvas: React.FC<CanvasProps> = ({
             }
         }
     }, [wrapperRef, handleWheel])
+
+    const handleGetClient = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, callback: (
+        rowIndex: number, colIndex: number) => void) => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left + scrollPosition.x;
+            const y = e.clientY - rect.top + scrollPosition.y;
+            const colIndex = Math.floor(x / cellWidth);
+            const rowIndex = Math.floor(y / cellHeight);
+            callback(rowIndex, colIndex)
+        }
+    }
     return (
         <>
             <div
@@ -102,29 +114,12 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <canvas
                     ref={canvasRef}
                     onClick={(e) => {
-                        const canvas = canvasRef.current;
-                        if (canvas) {
-                            const rect = canvas.getBoundingClientRect();
-                            const x = e.clientX - rect.left + scrollPosition.x;
-                            const y = e.clientY - rect.top + scrollPosition.y;
-                            const colIndex = Math.floor(x / cellWidth);
-                            const rowIndex = Math.floor(y / cellHeight);
-                            onCellClick(rowIndex, colIndex);
-                        }
+                        handleGetClient(e, onCellClick)
                     }}
                     onMouseDown={(e) => {
-                        const canvas = canvasRef.current;
-                        if (canvas) {
-                            const rect = canvas.getBoundingClientRect();
-                            const x = e.clientX - rect.left + scrollPosition.x;
-                            const y = e.clientY - rect.top + scrollPosition.y;
-                            const colIndex = Math.floor(x / cellWidth);
-                            const rowIndex = Math.floor(y / cellHeight);
-                            onCellMouseDown(
-                                rowIndex,
-                                colIndex
-                            );
-                        }
+                        handleGetClient(e, (rowIndex, colIndex) => {
+                            handleCellMouseDown(rowIndex, colIndex, wrapperRef, scrollPosition)
+                        })
                     }}
                 />
             </div>

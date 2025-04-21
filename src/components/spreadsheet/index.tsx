@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { TableData, SpreadsheetConfig, EditingCell, SeletionSheetType } from '../../types/sheet';
+import { TableData, SpreadsheetConfig, EditingCell, } from '../../types/sheet';
 import { createInitialData } from '../../utils/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
@@ -41,7 +41,6 @@ const Spreadsheet: React.FC<{
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const cellWidth = config.width;
   const cellHeight = config.height;
-  const { selection, handleCellMouseDown } = useSheetSelection(data, config);
   const handleCellClick = (rowIndex: number, colIndex: number) => {
     const currentCell = data[rowIndex][colIndex];
     if (currentCell.readOnly) {
@@ -98,9 +97,7 @@ const Spreadsheet: React.FC<{
               cellWidth={cellWidth}
               cellHeight={cellHeight}
               onCellClick={handleCellClick}
-              onCellMouseDown={(row, col) => handleCellMouseDown(row, col, wrapperRef, scrollPosition)}
               onScroll={handleScroll}
-              selection={selection}
             />
           </div>
           <CellInput
