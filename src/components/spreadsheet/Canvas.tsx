@@ -1,10 +1,13 @@
 import React, { useMemo, useRef, useEffect, useState, } from 'react';
-import { TableData } from '../../types/sheet';
+import { SeletionSheetType, TableData } from '../../types/sheet';
 import { useSheetScroll } from '../../hooks/useSheetScroll';
 import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
 import { useSheetSelection } from '@/hooks/useSheetSelection';
 
+export type CanvasOnKeyDown = (e: React.KeyboardEvent, options: {
+    selection: SeletionSheetType
+}) => void
 interface CanvasProps {
     data: TableData;
     cellWidth: number;
@@ -12,7 +15,7 @@ interface CanvasProps {
     wrapperRef: React.RefObject<HTMLDivElement | null>;
     onCellClick?: (row: number, col: number) => void;
     onCellDoubleClick?: (row: number, col: number) => void;
-    onKeyDown?: (e: React.KeyboardEvent) => void;
+    onKeyDown?: CanvasOnKeyDown;
     onScroll: (position: { x: number; y: number }) => void;
 }
 
@@ -117,7 +120,9 @@ export const Canvas: React.FC<CanvasProps> = ({
                     tabIndex={0}
                     ref={canvasRef}
                     onKeyDown={e => {
-                        onKeyDown?.(e)
+                        onKeyDown?.(e, {
+                            selection,
+                        })
                     }}
                     onClick={(e) => {
                         if (!movedRef.current && onCellClick) { // 只在没有拖动时才触发

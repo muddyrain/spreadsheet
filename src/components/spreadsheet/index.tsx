@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TableData, SpreadsheetConfig, EditingCell, } from '../../types/sheet';
 import { createInitialData } from '../../utils/sheet';
-import { Canvas } from './Canvas';
+import { Canvas, CanvasOnKeyDown } from './Canvas';
 import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
 import { Header } from './Header';
@@ -57,7 +57,7 @@ const Spreadsheet: React.FC<{
     setEditingCell({ row: rowIndex, col: colIndex }); // 双击才进入编辑
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
-  const onKeyDown = (e: React.KeyboardEvent) => {
+  const onKeyDown: CanvasOnKeyDown = (e, { selection }) => {
     if (currentCell && selectedCell) {
       const key = e.key;
       if (
@@ -66,8 +66,20 @@ const Spreadsheet: React.FC<{
           /[~!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`]/.test(key) // 常见符号
         ))
       ) {
-        setEditingCell({ row: selectedCell.row, col: selectedCell.col }); // 双击才进入编辑
+        setEditingCell({ row: selectedCell.row, col: selectedCell.col });
         cellInputRef.current?.setInputStyle(selectedCell.row, selectedCell.col);
+      }
+      if (key === 'Delete') {
+        setData(data => {
+          if (selection.start && selection.end) {
+            for (let i = selection.start.row;i <= selection.end.row;i++) {
+              for (let j = selection.start.col;j <= selection.end.col;j++) {
+                data[i][j].value = '';
+              }
+            }
+          }
+          return [...data];
+        })
       }
     }
   };
