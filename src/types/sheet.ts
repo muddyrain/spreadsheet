@@ -1,30 +1,42 @@
 export type CellStyle = {
   /**
    * @description 单元格颜色
+   * @default '#000000'
    */
   color?: string;
   /**
    * @description 单元格字体粗细
+   * @default 'normal'
    */
   fontWeight?: string | number;
   /**
   * @description 单元格背景颜色
+  * @default '#FFFFFF'
   */
-  background?: string;
+  backgroundColor?: string;
+  /**
+  * @description 单元格边框颜色
+  * @default '#DFDFDF'
+  */
+  borderColor?: string;
   /**
   * @description 单元格文字对齐方式
+  * @default 'left'
   */
   textAlign?: string;
   /**
   * @description 单元格字体大小
+  * @default 14
   */
   fontSize?: number;
   /**
   * @description 单元格 字体样式
+  * @default 'normal'
   */
   fontStyle?: string;
   /**
    * @description 单元格 文字装饰
+   * @default 'none'
    */
   textDecoration?: string;
 };
@@ -61,11 +73,6 @@ export type SpreadsheetConfig = {
    */
   cols?: number;
   /**
-   * @description 表格字体大小
-   * @default 14
-   */
-  fontSize?: number;
-  /**
  * @description 单元格宽度，用于计算单元格的宽度
  * @default 100
  */
@@ -77,14 +84,49 @@ export type SpreadsheetConfig = {
   height?: number;
   /**
    * @description 选择框背景颜色
-   * @default #EBF0FF
+   * @default '#EBF0FF'
    */
   selectionBackgroundColor?: string;
   /**
    * @description 选择框颜色
-   * @default #3C70FF
+   * @default '#3C70FF'
    */
   selectionBorderColor?: string;
+  /**
+   * @description 只读单元格背景颜色
+   * @default '#F2F2F2'
+   */
+  readOnlyBackgroundColor?: string;
+  /**
+   * @description 只读单元格边框颜色
+   * @default '#CCCCCC'
+   */
+  readOnlyBorderColor?: string;
+  /**
+   * @description 单元格边框颜色
+   * @default '#DFDFDF'
+   */
+  borderColor?: string;
+  /**
+   * @description 单元格背景颜色
+   * @default '#FFFFFF'
+   */
+  backgroundColor?: string;
+  /**
+   * @description 表格字体大小
+   * @default 14
+   */
+  fontSize?: number;
+  /**
+   * @description 单元格颜色
+   * @default '#000000'
+   */
+  color?: string;
+  /**
+   * @description 只读单元格颜色
+   * @default '#000000'
+   */
+  readOnlyColor?: string;
 };
 
 export type EditingCell = {

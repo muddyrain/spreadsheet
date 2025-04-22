@@ -47,12 +47,13 @@ export const CellInput = forwardRef<CellInputRef, {
       inputRef.current.style.padding = '3px 10px';
       mirrorRef.current.style.padding = '3px 10px';
       // 预先设置字体大小和粗细 防止计算不准确
-      inputRef.current.style.fontSize = `${config.fontSize || currentCell.style.fontSize || 14}px`
+      inputRef.current.style.fontSize = `${currentCell.style.fontSize || config.fontSize || 14}px`
       inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
       inputRef.current.style.fontStyle = `${currentCell.style.fontStyle || 'normal'}`
       inputRef.current.style.textDecoration = `${currentCell.style.textDecoration || 'none'}`
+      inputRef.current.style.color = `${currentCell.style.color || config.color || '#000000'}`
 
-      mirrorRef.current.style.fontSize = `${config.fontSize || currentCell.style.fontSize || 14}px`
+      mirrorRef.current.style.fontSize = `${currentCell.style.fontSize || config.fontSize || 14}px`
       mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
       mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || 'normal'}`
       mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || 'none'}`
@@ -93,8 +94,8 @@ export const CellInput = forwardRef<CellInputRef, {
       if (left < config.width) {
         left = config.width
       }
-      inputRef.current.style.left = `${left}px`;
-      inputRef.current.style.top = `${top}px`;
+      inputRef.current.style.left = `${left + 1}px`;
+      inputRef.current.style.top = `${top + 1}px`;
       inputRef.current.style.width = `${cellWidth}px`;
       inputRef.current.style.height = `${cellHeight}px`;
       updateInputSize();

@@ -1,8 +1,8 @@
-import { TableData, CellData } from '../types/sheet';
-export const createInitialData = (rows: number, cols: number): TableData => {
+import { TableData, CellData, SpreadsheetConfig } from '../types/sheet';
+export const createInitialData = (config: SpreadsheetConfig, rows: number, cols: number): TableData => {
   const initialData: TableData = [];
   const readOnlyStyle: CellData['style'] = {
-    background: '#F1F3F3', textAlign: 'center'
+    backgroundColor: config?.readOnlyBackgroundColor, textAlign: 'center', borderColor: config.readOnlyBorderColor,
   }
   const colNames: CellData[] = [{ value: '', readOnly: true, style: readOnlyStyle, row: 0, col: 0, }];
   for (let i = 0;i < cols;i++) {

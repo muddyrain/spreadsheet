@@ -6,7 +6,7 @@ export type ClickType = 'save' | 'undo' | 'redo' | 'paint' | 'eraser' | 'bold' |
 export const Header: FC<{
   onClick?: (type: ClickType) => void;
 }> = ({ onClick }) => {
-  const { currentCell, updater, setUpdater, config } = useStore();
+  const { currentCell, updater, setUpdater } = useStore();
   const cellStyle = useMemo(() => {
     return currentCell?.style || {}
   }, [currentCell, updater])

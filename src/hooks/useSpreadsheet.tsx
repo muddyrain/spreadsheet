@@ -1,4 +1,4 @@
-import { CellData, EditingCell, SpreadsheetConfig, SpreadsheetType, TableData } from "@/types/sheet";
+import { EditingCell, SpreadsheetConfig, SpreadsheetType, TableData } from "@/types/sheet";
 import { createInitialData } from "@/utils/sheet";
 import { useMemo, useState } from "react";
 
@@ -13,9 +13,15 @@ export const useSpreadsheet = (
     height: 30,    // 默认单元格高度
     selectionBorderColor: '#3C70FF',
     selectionBackgroundColor: '#EBF0FF',
+    readOnlyBackgroundColor: '#F2F2F2',
+    readOnlyBorderColor: '#CCCCCC',
+    readOnlyColor: '#000000',
+    borderColor: '#DFDFDF',
+    backgroundColor: '#FFFFFF',
+    color: '#000000',
     ..._config
   }
-  const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
+  const [data, setData] = useState<TableData>(() => createInitialData(config, config.rows, config.cols));
   const [selectedCell, setSelectedCell] = useState<EditingCell>(null);
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
   const [updater, setUpdater] = useState(+ new Date());

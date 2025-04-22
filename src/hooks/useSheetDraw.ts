@@ -72,7 +72,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.lineWidth = 1;
                     // 防止边框被其他元素遮挡
-                    ctx.strokeRect(x + 0.5, y + 0.5, width - 0.5, height - 0.5);
+                    ctx.strokeRect(x + 1, y + 1, width - 1, height - 1);
                     ctx.restore();
                 }
             }
@@ -120,6 +120,12 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         cell: CellData;
     }) => {
         const { rowIndex, colIndex, x, y, cell } = options;
+        // 绘制网格
+        ctx.strokeStyle = cell.style.borderColor || config.borderColor;
+        ctx.strokeRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
+        // 设置背景颜色
+        ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
+        ctx.fillRect(x + 1, y + 1, drawConfig.cellWidth - 1, drawConfig.cellHeight - 1);
         // 判断是否选中，绘制高亮背景
         if (isCellSelected && isCellSelected(rowIndex, colIndex)) {
             ctx.save();
@@ -127,23 +133,14 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             ctx.fillRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
             ctx.restore();
         }
-
-        // 绘制网格
-        ctx.strokeStyle = '#dfdfdf';
-        ctx.strokeRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
-
-        // 设置背景颜色
-        if (cell.style.background) {
-            ctx.fillStyle = cell.style.background;
-            ctx.fillRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
-        }
-
         // 设置字体样式
         const fontWeight = cell.style.fontWeight || 'normal';
         const fontStyle = cell.style.fontStyle || 'normal';
         const fontSize = cell.style.fontSize || config.fontSize || 14;
+        let color = cell.style.color || config.color || '#000000'
+        if (cell.readOnly) color = config.readOnlyColor || cell.style.color || config.color || '#000000'
         ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Arial`;
-        ctx.fillStyle = cell.style.color || '#000';
+        ctx.fillStyle = color
 
         // 设置剪裁区域
         ctx.save();
@@ -158,7 +155,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         let textX = x + 10;
         if (ctx.textAlign === 'center') textX = x + drawConfig.cellWidth / 2;
         if (ctx.textAlign === 'right') textX = x + drawConfig.cellWidth - 10;
-        const textY = y + drawConfig.cellHeight / 2;
+        const textY = y + drawConfig.cellHeight / 2 + 2;
         ctx.fillText(cell.value, textX, textY);
 
         const textDecoration = cell.style.textDecoration || 'none';
