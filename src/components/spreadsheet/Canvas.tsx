@@ -42,10 +42,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         viewportHeight: containerHeight,
         onScroll
     }), [data, cellWidth, cellHeight, containerWidth, containerHeight, onScroll]);
-    const { selection, movedRef, handleCellMouseDown } = useSheetSelection(data, {
-        width: cellWidth,
-        height: cellHeight,
-    });
+    const { selection, movedRef, handleCellMouseDown } = useSheetSelection(data);
     const {
         scrollPosition,
         handleScrollbarDragStart,

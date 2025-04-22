@@ -1,7 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { SelectionSheetType, TableData } from '../types/sheet';
+import { useStore } from './useStore';
 
-export function useSheetSelection(data: TableData, config: { width: number; height: number }) {
+export function useSheetSelection(data: TableData) {
+  const { config } = useStore()
   const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
   const [isSelection, setIsSelection] = useState(false);
   const movedRef = useRef(false);
@@ -19,7 +21,14 @@ export function useSheetSelection(data: TableData, config: { width: number; heig
       const rect = wrapperRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left + scrollPosition.x;
       const y = e.clientY - rect.top + scrollPosition.y;
-      const col = Math.max(0, Math.min(Math.floor(x / config.width), data[0].length - 1));
+      // 处理第一列宽度
+      let col: number;
+      if (x < config.fixedColWidth) {
+        col = 0;
+      } else {
+        col = 1 + Math.floor((x - config.fixedColWidth) / config.width);
+      }
+      col = Math.max(0, Math.min(col, data[0].length - 1));
       const row = Math.max(0, Math.min(Math.floor(y / config.height), data.length - 1));
       if (row !== lastRow || col !== lastCol) {
         setSelection(sel => ({
