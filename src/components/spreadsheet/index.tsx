@@ -72,8 +72,12 @@ const Spreadsheet: React.FC<{
       if (key === 'Delete') {
         setData(data => {
           if (selection.start && selection.end) {
-            for (let i = selection.start.row;i <= selection.end.row;i++) {
-              for (let j = selection.start.col;j <= selection.end.col;j++) {
+            const startRow = Math.min(selection.start.row, selection.end.row);
+            const endRow = Math.max(selection.start.row, selection.end.row);
+            const startCol = Math.min(selection.start.col, selection.end.col);
+            const endCol = Math.max(selection.start.col, selection.end.col);
+            for (let i = startRow;i <= endRow;i++) {
+              for (let j = startCol;j <= endCol;j++) {
                 data[i][j].value = '';
               }
             }
