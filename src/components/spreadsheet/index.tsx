@@ -1,5 +1,5 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { TableData, SpreadsheetConfig, SpreadsheetType, } from '../../types/sheet';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { TableData, SpreadsheetConfig, SpreadsheetType, CellData, } from '../../types/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
@@ -11,7 +11,7 @@ import { useSpreadsheet } from '@/hooks/useSpreadsheet';
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
   config: Required<SpreadsheetConfig>;
-  currentCell: TableData[0][0] | null;
+  currentCell: CellData | null;
   updater: number;
   setUpdater: (updater: number) => void;
   isFocused: boolean,
@@ -87,6 +87,23 @@ const Spreadsheet: React.FC<{
     setSelectedCell(null);
     setEditingCell(null);
   };
+  const isShowInput = useMemo(() => {
+    if (editingCell) {
+      return 'block'
+    } else {
+      return 'none'
+    }
+  }, [editingCell])
+  // 监听热更新，重置状态
+  useEffect(() => {
+    if ((import.meta)?.hot) {
+      import.meta.hot.dispose(() => {
+        clearSelection();
+        cellInputRef.current?.blur();
+        setIsFocused(false)
+      });
+    }
+  }, []);
   return (
     <SpreadsheetContext.Provider value={{
       data,
@@ -120,12 +137,13 @@ const Spreadsheet: React.FC<{
             />
           </div>
           <CellInput
+            scrollPosition={scrollPosition}
             ref={cellInputRef}
             onChange={handleInputChange}
             value={currentCell?.value || ''}
             style={{
-              display: editingCell ? 'block' : 'none', // 只有编辑时才显示
-              transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`,
+              display: isShowInput, // 只有编辑时才显示
+              // transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`,
               fontSize: `${config.fontSize || currentCell?.style.fontSize || 14}px`,
               fontWeight: `${currentCell?.style.fontWeight || 'normal'}`,
               fontStyle: `${currentCell?.style.fontStyle || 'normal'}`,

@@ -10,10 +10,13 @@ export type CellInputRef = {
 export const CellInput = forwardRef<CellInputRef, {
   value: string;
   style?: React.CSSProperties;
+  scrollPosition: {
+    x: number;
+    y: number;
+  };
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-}>(({ style, value, onChange }, ref) => {
-  const { data, config,
-    setIsFocused } = useStore()
+}>(({ style, value, scrollPosition, onChange }, ref) => {
+  const { data, config, currentCell, setIsFocused } = useStore()
   const cellWidth = config.width;
   const cellHeight = config.height;
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -38,8 +41,6 @@ export const CellInput = forwardRef<CellInputRef, {
     if (inputRef.current && mirrorRef.current) {
       const currentCell = data[rowIndex][colIndex];
       inputRef.current.value = currentCell.value;
-      inputRef.current.style.left = `${colIndex * (cellWidth || 0)}px`;
-      inputRef.current.style.top = `${rowIndex * (cellHeight || 0)}px`;
       inputRef.current.style.minWidth = `${cellWidth}px`;
       inputRef.current.style.minHeight = `${cellHeight}px`;
       inputRef.current.style.display = 'block';
@@ -80,28 +81,49 @@ export const CellInput = forwardRef<CellInputRef, {
       setIsFocused(false)
     }
   }, [style])
-  return <>
-    <textarea
-      ref={inputRef}
-      value={value || ''}
-      className="absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
-      onChange={e => {
-        onChange(e);
-        updateInputSize();
-      }}
-      style={{
-        ...style,
-        border: `1px solid ${config.selectionBorderColor}`,
-      }}
-    />
-    {/* 隐藏的 mirror div 用于测量内容尺寸 */}
-    <div
-      ref={mirrorRef}
-      className='absolute border bg-red-200 whitespace-pre-wrap break-all'
-      style={{
-        ...style,
-        visibility: 'hidden',
-      }}
-    />
-  </>;
+  useEffect(() => {
+    if (inputRef.current) {
+      const rowIndex = currentCell?.row || 0;
+      const colIndex = currentCell?.col || 0;
+      let top = rowIndex * (cellHeight || 0) - scrollPosition.y
+      let left = colIndex * (cellWidth || 0) - scrollPosition.x
+      if (top < config.height) {
+        top = config.height
+      }
+      if (left < config.width) {
+        left = config.width
+      }
+      inputRef.current.style.left = `${left}px`;
+      inputRef.current.style.top = `${top}px`;
+      inputRef.current.style.width = `${cellWidth}px`;
+      inputRef.current.style.height = `${cellHeight}px`;
+      updateInputSize();
+    }
+  }, [scrollPosition, currentCell]);
+  return (
+    <>
+      <textarea
+        ref={inputRef}
+        value={value || ''}
+        className="absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
+        onChange={e => {
+          onChange(e);
+          updateInputSize();
+        }}
+        style={{
+          ...style,
+          border: `1px solid ${config.selectionBorderColor}`,
+        }}
+      />
+      {/* 隐藏的 mirror div 用于测量内容尺寸 */}
+      <div
+        ref={mirrorRef}
+        className='absolute border bg-red-200 whitespace-pre-wrap break-all'
+        style={{
+          ...style,
+          visibility: 'hidden',
+        }}
+      />
+    </>
+  );
 })

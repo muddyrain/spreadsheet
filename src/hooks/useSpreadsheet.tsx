@@ -1,4 +1,4 @@
-import { EditingCell, SpreadsheetConfig, SpreadsheetType, TableData } from "@/types/sheet";
+import { CellData, EditingCell, SpreadsheetConfig, SpreadsheetType, TableData } from "@/types/sheet";
 import { createInitialData } from "@/utils/sheet";
 import { useMemo, useState } from "react";
 
@@ -32,7 +32,7 @@ export const useSpreadsheet = (
       editingCell?.col ?? selectedCell?.col ?? 0
       ];
     if (cell?.readOnly) return null;
-    return cell;
+    return cell
   }, [data, editingCell, selectedCell]);
   return {
     data,

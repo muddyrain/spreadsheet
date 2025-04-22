@@ -1,21 +1,20 @@
 import { TableData, CellData } from '../types/sheet';
-
 export const createInitialData = (rows: number, cols: number): TableData => {
   const initialData: TableData = [];
   const readOnlyStyle: CellData['style'] = {
     background: '#F1F3F3', textAlign: 'center'
   }
-  const colNames: CellData[] = [{ value: '', readOnly: true, style: readOnlyStyle }];
+  const colNames: CellData[] = [{ value: '', readOnly: true, style: readOnlyStyle, row: 0, col: 0, }];
   for (let i = 0;i < cols;i++) {
-    colNames.push({ value: generateColName(i), readOnly: true, style: readOnlyStyle });
+    colNames.push({ value: generateColName(i), readOnly: true, style: readOnlyStyle, row: 0, col: i + 1, });
   }
   initialData.push(colNames);
 
   for (let i = 1;i <= rows;i++) {
     // 每一行：第一列是行号，其余列都是空白 取名为 行头
-    const rowData: CellData[] = [{ value: `${i}`, readOnly: true, style: readOnlyStyle }];
+    const rowData: CellData[] = [{ value: `${i}`, readOnly: true, style: readOnlyStyle, row: i, col: 0, }];
     for (let j = 0;j < cols;j++) {
-      rowData.push({ value: ``, style: {} });
+      rowData.push({ value: ``, style: {}, row: i, col: j + 1, });
     }
     initialData.push(rowData);
   }

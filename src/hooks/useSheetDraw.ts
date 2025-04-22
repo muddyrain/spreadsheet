@@ -24,7 +24,6 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         const c2 = Math.max(selection.start.col, selection.end.col);
         return row >= r1 && row <= r2 && col >= c1 && col <= c2;
     };
-
     const drawTable = useCallback((ctx: CanvasRenderingContext2D, scrollPosition: { x: number; y: number }) => {
         ctx.clearRect(0, 0, drawConfig.wrapperWidth, drawConfig.wrapperHeight);
         ctx.lineWidth = 1;
@@ -73,7 +72,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.lineWidth = 1;
                     // 防止边框被其他元素遮挡
-                    ctx.strokeRect(x + 1, y + 1, width - 1, height - 1);
+                    ctx.strokeRect(x + 0.5, y + 0.5, width - 0.5, height - 0.5);
                     ctx.restore();
                 }
             }

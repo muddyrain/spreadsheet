@@ -45,7 +45,7 @@ export type CellData = {
    * @default false
    */
   readOnly?: boolean;
-};
+} & EditingCell;
 
 export type TableData = CellData[][];
 
