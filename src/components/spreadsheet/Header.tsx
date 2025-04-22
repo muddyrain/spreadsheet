@@ -29,7 +29,7 @@ export const Header: FC<{
         currentCell.style.textDecoration = currentCell.style.textDecoration === 'underline' ? 'none' : 'underline';
         break;
     }
-    setUpdater(+new Date());
+    setUpdater();
     onClick?.(type)
   }
   return <div className="flex items-center gap-x-1 justify-center bg-zinc-50 px-4 py-1 h-10 z-[900]">

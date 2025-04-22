@@ -84,15 +84,17 @@ export const CellInput = forwardRef<CellInputRef, {
   }, [style])
   useEffect(() => {
     if (inputRef.current) {
+      const fixedColWidth = config.fixedColWidth
       const rowIndex = currentCell?.row || 0;
       const colIndex = currentCell?.col || 0;
       let top = rowIndex * (cellHeight || 0) - scrollPosition.y
-      let left = colIndex * (cellWidth || 0) - scrollPosition.x
+      // 固定列宽度 + 其余列宽度 + 滚动条 x 位置
+      let left = fixedColWidth + (colIndex - 1) * (cellWidth || 0) - scrollPosition.x
       if (top < config.height) {
         top = config.height
       }
       if (left < config.width) {
-        left = config.width
+        left = fixedColWidth
       }
       inputRef.current.style.left = `${left + 1}px`;
       inputRef.current.style.top = `${top + 1}px`;

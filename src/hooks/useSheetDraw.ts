@@ -16,6 +16,7 @@ const FROZEN_COL_COUNT = 1;
 export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selection?: SelectionSheetType }) => {
     const { config, isFocused } = useStore();
     const selection = drawConfig.selection;
+    const fixedColWidth = config.fixedColWidth
     const isCellSelected = (row: number, col: number) => {
         if (!selection?.start || !selection?.end) return false;
         const r1 = Math.min(selection.start.row, selection.end.row);
@@ -45,9 +46,10 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             for (let colIndex = startCol;colIndex < endCol;colIndex++) {
                 const cell = data[rowIndex]?.[colIndex];
                 if (!cell) continue;
-                const x = colIndex * drawConfig.cellWidth - scrollPosition.x;
+                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth - scrollPosition.x;
                 const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell });
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
             }
         }
         // 绘制选区边框（只绘制在当前可视区域内的部分）
@@ -63,7 +65,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                     r2 >= startRow && r1 < endRow &&
                     c2 >= startCol && c1 < endCol
                 ) {
-                    const x = c1 * drawConfig.cellWidth - (c1 < FROZEN_COL_COUNT ? 0 : scrollPosition.x);
+                    const x = (c1 - 1) * drawConfig.cellWidth - (c1 < FROZEN_COL_COUNT ? 0 : scrollPosition.x) + fixedColWidth;
                     const y = r1 * drawConfig.cellHeight - (r1 < FROZEN_ROW_COUNT ? 0 : scrollPosition.y);
                     const width = (c2 - c1 + 1) * drawConfig.cellWidth;
                     const height = (r2 - r1 + 1) * drawConfig.cellHeight;
@@ -82,9 +84,10 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
                 const cell = data[rowIndex]?.[colIndex];
                 if (!cell) continue;
-                const x = colIndex * drawConfig.cellWidth;
+                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
                 const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell });
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
             }
         }
 
@@ -93,9 +96,10 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             for (let colIndex = startCol;colIndex < endCol;colIndex++) {
                 const cell = data[rowIndex]?.[colIndex];
                 if (!cell) continue;
-                const x = colIndex * drawConfig.cellWidth - scrollPosition.x;
+                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth - scrollPosition.x;
                 const y = rowIndex * drawConfig.cellHeight;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell });
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
             }
         }
 
@@ -104,9 +108,10 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
                 const cell = data[rowIndex]?.[colIndex];
                 if (!cell) continue;
-                const x = colIndex * drawConfig.cellWidth;
+                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
                 const y = rowIndex * drawConfig.cellHeight;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell });
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
             }
         }
     }, [data, drawConfig, selection]);
@@ -118,19 +123,20 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         x: number;
         y: number;
         cell: CellData;
+        colWidth: number;
     }) => {
-        const { rowIndex, colIndex, x, y, cell } = options;
+        const { rowIndex, colIndex, x, y, cell, colWidth } = options;
         // 绘制网格
         ctx.strokeStyle = cell.style.borderColor || config.borderColor;
-        ctx.strokeRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
+        ctx.strokeRect(x, y, colWidth, drawConfig.cellHeight);
         // 设置背景颜色
         ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
-        ctx.fillRect(x + 1, y + 1, drawConfig.cellWidth - 1, drawConfig.cellHeight - 1);
+        ctx.fillRect(x + 1, y + 1, colWidth - 1, drawConfig.cellHeight - 1);
         // 判断是否选中，绘制高亮背景
         if (isCellSelected && isCellSelected(rowIndex, colIndex)) {
             ctx.save();
             ctx.fillStyle = config.selectionBackgroundColor;
-            ctx.fillRect(x, y, drawConfig.cellWidth, drawConfig.cellHeight);
+            ctx.fillRect(x, y, colWidth, drawConfig.cellHeight);
             ctx.restore();
         }
         // 设置字体样式
@@ -153,8 +159,8 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         ctx.textBaseline = 'middle';
         // 计算文本位置
         let textX = x + 10;
-        if (ctx.textAlign === 'center') textX = x + drawConfig.cellWidth / 2;
-        if (ctx.textAlign === 'right') textX = x + drawConfig.cellWidth - 10;
+        if (ctx.textAlign === 'center') textX = x + colWidth / 2;
+        if (ctx.textAlign === 'right') textX = x + colWidth - 10;
         const textY = y + drawConfig.cellHeight / 2 + 2;
         ctx.fillText(cell.value, textX, textY);
 

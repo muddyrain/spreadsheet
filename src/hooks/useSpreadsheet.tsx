@@ -9,8 +9,9 @@ export const useSpreadsheet = (
     rows: 200,
     cols: 26,
     fontSize: 14,
-    width: 100,    // 默认单元格宽度
-    height: 30,    // 默认单元格高度
+    fixedColWidth: 50,
+    width: 100,
+    height: 30,
     selectionBorderColor: '#3C70FF',
     selectionBackgroundColor: '#EBF0FF',
     readOnlyBackgroundColor: '#F2F2F2',

@@ -4,6 +4,7 @@ import { useSheetScroll } from '../../hooks/useSheetScroll';
 import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
 import { useSheetSelection } from '@/hooks/useSheetSelection';
+import { useStore } from '@/hooks/useStore';
 
 export type CanvasOnKeyDown = (e: React.KeyboardEvent, options: {
     selection: SelectionSheetType
@@ -29,6 +30,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     onScroll,
     onKeyDown
 }) => {
+    const { config } = useStore()
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -96,11 +98,17 @@ export const Canvas: React.FC<CanvasProps> = ({
     function handleGetClient<T extends React.MouseEvent<HTMLCanvasElement, MouseEvent>>(e: T, callback: (
         rowIndex: number, colIndex: number) => void) {
         const canvas = canvasRef.current;
+        const fixedColWidth = config.fixedColWidth
         if (canvas) {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left + scrollPosition.x;
             const y = e.clientY - rect.top + scrollPosition.y;
-            const colIndex = Math.floor(x / cellWidth);
+            let colIndex: number;
+            if (x < fixedColWidth) {
+                colIndex = 0;
+            } else {
+                colIndex = 1 + Math.floor((x - fixedColWidth) / cellWidth);
+            }
             const rowIndex = Math.floor(y / cellHeight);
             callback(rowIndex, colIndex)
         }

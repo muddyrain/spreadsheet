@@ -7,13 +7,14 @@ import { Header } from './Header';
 import { CellInput, CellInputRef } from './CellInput';
 import { useKeyDown } from '@/hooks/useKeyDown';
 import { useSpreadsheet } from '@/hooks/useSpreadsheet';
+import { Current } from './Current';
 
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
   config: Required<SpreadsheetConfig>;
   currentCell: CellData | null;
   updater: number;
-  setUpdater: (updater: number) => void;
+  setUpdater: () => void;
   isFocused: boolean,
   setIsFocused: (isFocused: boolean) => void;
 } | undefined>(undefined)
@@ -123,6 +124,7 @@ const Spreadsheet: React.FC<{
             cellInputRef.current?.blur()
           }
         }} />
+        <Current />
         <div className="relative overflow-hidden flex-1 flex flex-col" ref={wrapperRef}>
           <div className="flex-1 overflow-hidden">
             <Canvas

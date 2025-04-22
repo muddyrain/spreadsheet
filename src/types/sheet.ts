@@ -78,6 +78,11 @@ export type SpreadsheetConfig = {
  */
   width?: number;
   /**
+* @description 固定列宽度 - 第一列宽度
+* @default 50
+*/
+  fixedColWidth?: number;
+  /**
    * @description 单元格高度，用于计算单元格的高度
    * @default 30
    */
