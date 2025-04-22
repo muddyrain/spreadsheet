@@ -6,6 +6,7 @@ import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
 import { Header } from './Header';
 import { CellInput, CellInputRef } from './CellInput';
+import { useKeyDown } from '@/hooks/useKeyDown';
 
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
@@ -57,36 +58,18 @@ const Spreadsheet: React.FC<{
     setEditingCell({ row: rowIndex, col: colIndex }); // 双击才进入编辑
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
-  const onKeyDown: CanvasOnKeyDown = (e, { selection }) => {
-    if (currentCell && selectedCell) {
-      const key = e.key;
-      if (
-        (key.length === 1 && (
-          /[a-zA-Z0-9]/.test(key) || // 字母数字
-          /[~!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`]/.test(key) // 常见符号
-        ))
-      ) {
+  const { onKeyDown } = useKeyDown({
+    selectedCell,
+    data,
+    setData
+  }, {
+    onCellInputKey() {
+      if (selectedCell) {
         setEditingCell({ row: selectedCell.row, col: selectedCell.col });
         cellInputRef.current?.setInputStyle(selectedCell.row, selectedCell.col);
       }
-      if (key === 'Delete') {
-        setData(data => {
-          if (selection.start && selection.end) {
-            const startRow = Math.min(selection.start.row, selection.end.row);
-            const endRow = Math.max(selection.start.row, selection.end.row);
-            const startCol = Math.min(selection.start.col, selection.end.col);
-            const endCol = Math.max(selection.start.col, selection.end.col);
-            for (let i = startRow;i <= endRow;i++) {
-              for (let j = startCol;j <= endCol;j++) {
-                data[i][j].value = '';
-              }
-            }
-          }
-          return [...data];
-        })
-      }
     }
-  };
+  })
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (editingCell) {
       const newData = [...data];
