@@ -13,14 +13,34 @@ export const useKeyDown = (config: {
 }, callback: useKeyDownCallback = {}) => {
   const { data, selectedCell, setData } = config;
   const onKeyDown: CanvasOnKeyDown = (e, { selection }) => {
-    if (selectedCell) {
+
+    if (selectedCell && selection.start && selection.end) {
+      const startRow = Math.min(selection.start.row, selection.end.row);
+      const endRow = Math.max(selection.start.row, selection.end.row);
+      const startCol = Math.min(selection.start.col, selection.end.col);
+      const endCol = Math.max(selection.start.col, selection.end.col);
       const key = e.key;
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+      // 处理粘贴
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        navigator.clipboard.readText().then(text => {
+          const rows = text.split('\n');
+          const cols = rows[0].split('\t');
+          const startRow = selection.start?.row ?? selectedCell.row;
+          const startCol = selection.start?.col ?? selectedCell.col;
+          const endRow = Math.min(startRow + rows.length - 1, data.length - 1);
+          const endCol = Math.min(startCol + cols.length - 1, data[0].length - 1);
+          setData(data => {
+            for (let i = startRow;i <= endRow;i++) {
+              for (let j = startCol;j <= endCol;j++) {
+                data[i][j].value = rows[i - startRow]?.split('\t')[j - startCol] ?? '';
+              }
+            }
+            return [...data];
+          });
+        })
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        // 处理复制
         if (selection.start && selection.end) {
-          const startRow = Math.min(selection.start.row, selection.end.row);
-          const endRow = Math.max(selection.start.row, selection.end.row);
-          const startCol = Math.min(selection.start.col, selection.end.col);
-          const endCol = Math.max(selection.start.col, selection.end.col);
           let text = '';
           for (let i = startRow;i <= endRow;i++) {
             let row = [];
@@ -32,17 +52,10 @@ export const useKeyDown = (config: {
           navigator.clipboard.writeText(text);
           callback?.onCellCopyKey?.();
         }
-        e.preventDefault();
-        return;
-      }
-
-      if (key === 'Delete') {
+      } else if (key === 'Delete') {
+        // 处理删除
         setData(data => {
           if (selection.start && selection.end) {
-            const startRow = Math.min(selection.start.row, selection.end.row);
-            const endRow = Math.max(selection.start.row, selection.end.row);
-            const startCol = Math.min(selection.start.col, selection.end.col);
-            const endCol = Math.max(selection.start.col, selection.end.col);
             for (let i = startRow;i <= endRow;i++) {
               for (let j = startCol;j <= endCol;j++) {
                 data[i][j].value = '';
@@ -52,9 +65,7 @@ export const useKeyDown = (config: {
           return [...data];
         })
         callback?.onCellDeleteKey?.();
-        return
-      }
-      if (
+      } else if (
         (key.length === 1 && (
           /[a-zA-Z0-9]/.test(key) || // 字母数字
           /[~!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`]/.test(key) // 常见符号

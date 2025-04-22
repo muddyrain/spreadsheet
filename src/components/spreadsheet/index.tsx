@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TableData, SpreadsheetConfig, EditingCell, } from '../../types/sheet';
 import { createInitialData } from '../../utils/sheet';
-import { Canvas, CanvasOnKeyDown } from './Canvas';
+import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
 import { Header } from './Header';
