@@ -10,9 +10,8 @@ export const createInitialData = (rows: number, cols: number): TableData => {
     value: '', style: readOnlyStyle, readOnly: true
   }];
   for (let i = 0;i < cols;i++) {
-    headerRow.push({
-      value: String.fromCharCode(65 + i), readOnly: true, style: readOnlyStyle
-    });
+    const colName = generateColName(i);
+    headerRow.push({ value: colName, style: readOnlyStyle, readOnly: true });
   }
   initialData.push(headerRow);
 
@@ -51,3 +50,15 @@ export const drawTableGrid = (
     });
   });
 };
+
+
+// 生成 A-Z 然后继续 AA AB AC AD ... 然后继续 BA BB BC BD...
+const generateColName = (index: number) => {
+  let colName = '';
+  let temp = index;
+  while (temp >= 0) {
+    colName = String.fromCharCode(65 + (temp % 26)) + colName;
+    temp = Math.floor(temp / 26) - 1;
+  }
+  return colName;
+}
