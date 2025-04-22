@@ -137,7 +137,6 @@ export const Canvas: React.FC<CanvasProps> = ({
                         movedRef.current = false; // 重置
                     }}
                     onMouseDown={(e) => {
-                        onCellClick && handleGetClient(e, onCellClick)
                         handleGetClient(e, (rowIndex, colIndex) => {
                             const currentCell = data[rowIndex][colIndex];
                             if (currentCell?.readOnly) return;

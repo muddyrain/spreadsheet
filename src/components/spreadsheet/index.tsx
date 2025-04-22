@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { TableData, SpreadsheetConfig, SpreadsheetType, } from '../../types/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
@@ -83,12 +83,6 @@ const Spreadsheet: React.FC<{
   const handleScroll = (position: { x: number; y: number }) => {
     setScrollPosition(position);
   };
-
-  useEffect(() => {
-    return () => {
-      clearSelection()
-    }
-  }, [])
   const clearSelection = () => {
     setSelectedCell(null);
     setEditingCell(null);
