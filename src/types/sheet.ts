@@ -102,3 +102,17 @@ export type SeletionSheetType = {
   start: { row: number, col: number } | null,
   end: { row: number, col: number } | null
 }
+
+export type SpreadsheetType = {
+  data: TableData;
+  setData: React.Dispatch<React.SetStateAction<TableData>>;
+  config: Required<SpreadsheetConfig>;
+  currentCell: CellData | null;
+  selectedCell: EditingCell | null;
+  setSelectedCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
+  editingCell: EditingCell | null;
+  setEditingCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
+  updater: number;
+  forceUpdate: () => void;
+  clearSelection: () => void;
+}

@@ -4,6 +4,7 @@ import { EditingCell, TableData } from "@/types/sheet";
 interface useKeyDownCallback {
   onCellInputKey?: () => void;
   onCellCopyKey?: () => void;
+  onCellPasteKey?: () => void;
   onCellDeleteKey?: () => void;
 }
 export const useKeyDown = (config: {
@@ -37,6 +38,7 @@ export const useKeyDown = (config: {
             }
             return [...data];
           });
+          callback?.onCellPasteKey?.();
         })
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
         // 处理复制

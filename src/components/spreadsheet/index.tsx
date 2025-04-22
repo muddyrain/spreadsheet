@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { TableData, SpreadsheetConfig, EditingCell, } from '../../types/sheet';
-import { createInitialData } from '../../utils/sheet';
+import { TableData, SpreadsheetConfig, SpreadsheetType, } from '../../types/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
 import { Header } from './Header';
 import { CellInput, CellInputRef } from './CellInput';
 import { useKeyDown } from '@/hooks/useKeyDown';
+import { useSpreadsheet } from '@/hooks/useSpreadsheet';
 
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
@@ -19,25 +19,16 @@ export const SpreadsheetContext = React.createContext<{
 } | undefined>(undefined)
 const Spreadsheet: React.FC<{
   config?: SpreadsheetConfig;
+  spreadsheet?: SpreadsheetType
   onChange?: (data: TableData) => void;
-}> = ({ config: _config, onChange }) => {
-  const config: Required<SpreadsheetConfig> = {
-    rows: 200,
-    cols: 26,
-    fontSize: 14,
-    width: 100,    // 默认单元格宽度
-    height: 30,    // 默认单元格高度
-    selectionBorderColor: '#3C70FF',
-    selectionBackgroundColor: '#EBF0FF',
-    ..._config
-  }
+}> = (props) => {
+  const { config: _config, onChange } = props;
+  const { config, selectedCell, setSelectedCell, setEditingCell, data, setData, editingCell, currentCell,
+    updater,
+    forceUpdate } = props.spreadsheet ?? useSpreadsheet(_config);
   const cellInputRef = useRef<CellInputRef>(null);
   const [isFocused, setIsFocused] = useState(false);
-  const [updater, setUpdater] = useState(+ new Date());
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [data, setData] = useState<TableData>(() => createInitialData(config.rows, config.cols));
-  const [selectedCell, setSelectedCell] = useState<EditingCell>(null); // 新增
-  const [editingCell, setEditingCell] = useState<EditingCell>(null);
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const cellWidth = config.width;
   const cellHeight = config.height;
@@ -88,13 +79,7 @@ const Spreadsheet: React.FC<{
   const handleScroll = (position: { x: number; y: number }) => {
     setScrollPosition(position);
   };
-  const currentCell = useMemo(() => {
-    const cell = data[editingCell?.row ?? selectedCell?.row ?? 0][editingCell?.col ?? selectedCell?.col ?? 0];
-    if (cell.readOnly) {
-      return null;
-    }
-    return cell;
-  }, [data, editingCell, selectedCell]);
+
   useEffect(() => {
     return () => {
       clearSelection()
@@ -110,7 +95,7 @@ const Spreadsheet: React.FC<{
       config,
       currentCell,
       updater,
-      setUpdater,
+      setUpdater: forceUpdate,
       isFocused,
       setIsFocused
     }}>
