@@ -98,7 +98,7 @@ export type EditingCell = {
   col: number;
 } | null;
 
-export type SeletionSheetType = {
+export type SelectionSheetType = {
   start: { row: number, col: number } | null,
   end: { row: number, col: number } | null
 }

@@ -34,7 +34,6 @@ export const useSpreadsheet = (
     if (cell?.readOnly) return null;
     return cell;
   }, [data, editingCell, selectedCell]);
-
   return {
     data,
     setData,

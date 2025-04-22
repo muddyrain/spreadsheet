@@ -46,6 +46,10 @@ const Spreadsheet: React.FC<{
     setEditingCell(null); // 单击时不进入编辑
   };
   const onCellDoubleClick = (rowIndex: number, colIndex: number) => {
+    const currentCell = data[rowIndex][colIndex];
+    if (currentCell.readOnly) {
+      return;
+    }
     setEditingCell({ row: rowIndex, col: colIndex }); // 双击才进入编辑
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };

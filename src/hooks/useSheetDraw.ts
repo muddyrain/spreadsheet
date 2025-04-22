@@ -1,5 +1,5 @@
 import { useCallback, } from 'react';
-import { SeletionSheetType, TableData } from '../types/sheet';
+import { SelectionSheetType, TableData } from '../types/sheet';
 import { useStore } from './useStore';
 
 interface DrawConfig {
@@ -9,7 +9,8 @@ interface DrawConfig {
     wrapperHeight: number;
 }
 
-export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selection?: SeletionSheetType }) => {
+
+export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selection?: SelectionSheetType }) => {
     const { config, isFocused } = useStore()
     const selection = drawConfig.selection;
     const isCellSelected = (row: number, col: number) => {

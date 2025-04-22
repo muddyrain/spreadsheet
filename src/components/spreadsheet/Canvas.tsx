@@ -1,12 +1,12 @@
 import React, { useMemo, useRef, useEffect, useState, } from 'react';
-import { SeletionSheetType, TableData } from '../../types/sheet';
+import { SelectionSheetType, TableData } from '../../types/sheet';
 import { useSheetScroll } from '../../hooks/useSheetScroll';
 import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
 import { useSheetSelection } from '@/hooks/useSheetSelection';
 
 export type CanvasOnKeyDown = (e: React.KeyboardEvent, options: {
-    selection: SeletionSheetType
+    selection: SelectionSheetType
 }) => void
 interface CanvasProps {
     data: TableData;
@@ -139,6 +139,8 @@ export const Canvas: React.FC<CanvasProps> = ({
                     onMouseDown={(e) => {
                         onCellClick && handleGetClient(e, onCellClick)
                         handleGetClient(e, (rowIndex, colIndex) => {
+                            const currentCell = data[rowIndex][colIndex];
+                            if (currentCell?.readOnly) return;
                             handleCellMouseDown(rowIndex, colIndex, wrapperRef, scrollPosition)
                         })
                     }}

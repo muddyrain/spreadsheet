@@ -5,15 +5,11 @@ export const createInitialData = (rows: number, cols: number): TableData => {
   const readOnlyStyle: CellData['style'] = {
     background: '#F1F3F3', textAlign: 'center'
   }
-  // 第一行：左上角空白，然后A-Z  取名为 列头
-  const headerRow: CellData[] = [{
-    value: '', style: readOnlyStyle, readOnly: true
-  }];
+  const colNames: CellData[] = [{ value: '', readOnly: true, style: readOnlyStyle }];
   for (let i = 0;i < cols;i++) {
-    const colName = generateColName(i);
-    headerRow.push({ value: colName, style: readOnlyStyle, readOnly: true });
+    colNames.push({ value: generateColName(i), readOnly: true, style: readOnlyStyle });
   }
-  initialData.push(headerRow);
+  initialData.push(colNames);
 
   for (let i = 1;i <= rows;i++) {
     // 每一行：第一列是行号，其余列都是空白 取名为 行头
@@ -23,7 +19,6 @@ export const createInitialData = (rows: number, cols: number): TableData => {
     }
     initialData.push(rowData);
   }
-
   return initialData;
 };
 
