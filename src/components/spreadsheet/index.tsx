@@ -37,19 +37,40 @@ const Spreadsheet: React.FC<{
   const cellWidth = config.width;
   const cellHeight = config.height;
   const onCellClick = (rowIndex: number, colIndex: number) => {
-    console.log('rowIndex, colIndex', rowIndex, colIndex);
+    if (rowIndex === 0 && colIndex === 0) {
+      setSelection({
+        start: { row: 1, col: 1 },
+        end: { row: data.length - 1, col: data[0].length - 1 }
+      })
+      setSelectedCell({
+        row: 1,
+        col: 1
+      })
+      return;
+    }
     // 点击固定列时
     if (rowIndex === 0) {
       setSelection({
         start: { row: 1, col: colIndex },
         end: { row: data.length - 1, col: colIndex }
       })
+      setSelectedCell({
+        row: 1,
+        col: colIndex
+      })
       return
     }
-    if (rowIndex < 0 || colIndex < 0) {
-      setSelectedCell(null);
-      setEditingCell(null);
-      return;
+    // 点击固定行时
+    if (colIndex === 0) {
+      setSelection({
+        start: { row: rowIndex, col: 1 },
+        end: { row: rowIndex, col: data.length - 1 }
+      })
+      setSelectedCell({
+        row: rowIndex,
+        col: 1
+      })
+      return
     }
     const currentCell = data[rowIndex][colIndex];
     if (currentCell.readOnly) {

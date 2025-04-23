@@ -33,6 +33,7 @@ export const useKeyDown = (config: {
           setData(data => {
             for (let i = startRow;i <= endRow;i++) {
               for (let j = startCol;j <= endCol;j++) {
+                if (!data[i][j]) continue
                 data[i][j].value = rows[i - startRow]?.split('\t')[j - startCol] ?? '';
               }
             }
@@ -47,6 +48,7 @@ export const useKeyDown = (config: {
           for (let i = startRow;i <= endRow;i++) {
             let row = [];
             for (let j = startCol;j <= endCol;j++) {
+              if (!data[i][j]) continue
               row.push(data[i][j].value ?? '');
             }
             text += row.join('\t') + (i < endRow ? '\n' : '');

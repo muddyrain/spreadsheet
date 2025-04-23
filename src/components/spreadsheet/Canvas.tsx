@@ -105,16 +105,41 @@ export const Canvas: React.FC<CanvasProps> = ({
         const fixedColWidth = config.fixedColWidth
         if (canvas) {
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left + scrollPosition.x;
-            const y = e.clientY - rect.top + scrollPosition.y;
-            let colIndex: number;
-            if (x < fixedColWidth) {
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            let colIndex: number | null = null;
+            let rowIndex: number | null = null;
+
+            // 判断是否在固定列和/或固定行
+            const inFixedCol = x < fixedColWidth;
+            const inFixedRow = y < config.height;
+            if (inFixedCol && inFixedRow) {
+                // 左上角交叉区
                 colIndex = 0;
+                rowIndex = 0;
+            } else if (inFixedCol) {
+                // 固定列
+                colIndex = 0;
+                rowIndex = Math.floor((y + scrollPosition.y - config.height) / cellHeight) + 1;
+            } else if (inFixedRow) {
+                // 固定行
+                colIndex = Math.floor((x + scrollPosition.x - fixedColWidth) / cellWidth) + 1;
+                rowIndex = 0;
             } else {
-                colIndex = 1 + Math.floor((x - fixedColWidth) / cellWidth);
+                // 普通区域
+                colIndex = Math.floor((x + scrollPosition.x - fixedColWidth) / cellWidth) + 1;
+                rowIndex = Math.floor((y + scrollPosition.y - config.height) / cellHeight) + 1;
             }
-            const rowIndex = Math.floor(y / cellHeight);
-            callback(rowIndex, colIndex)
+
+            // 判断是否越界
+            if (
+                rowIndex != null && colIndex != null &&
+                rowIndex >= 0 && rowIndex < data.length &&
+                colIndex >= 0 && colIndex < data[0].length
+            ) {
+                callback(rowIndex, colIndex);
+            }
         }
     }
     return (

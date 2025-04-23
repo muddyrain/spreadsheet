@@ -41,8 +41,8 @@ export const CellInput = forwardRef<CellInputRef, {
     if (inputRef.current && mirrorRef.current) {
       const currentCell = data[rowIndex][colIndex];
       inputRef.current.value = currentCell.value;
-      inputRef.current.style.minWidth = `${cellWidth}px`;
-      inputRef.current.style.minHeight = `${cellHeight}px`;
+      inputRef.current.style.minWidth = `${cellWidth + 1}px`;
+      inputRef.current.style.minHeight = `${cellHeight + 1}px`;
       inputRef.current.style.display = 'block';
       inputRef.current.style.padding = '3px 10px';
       mirrorRef.current.style.padding = '3px 10px';
@@ -98,8 +98,6 @@ export const CellInput = forwardRef<CellInputRef, {
       }
       inputRef.current.style.left = `${left}px`;
       inputRef.current.style.top = `${top}px`;
-      inputRef.current.style.width = `${cellWidth}px`;
-      inputRef.current.style.height = `${cellHeight}px`;
       updateInputSize();
     }
   }, [scrollPosition, currentCell]);

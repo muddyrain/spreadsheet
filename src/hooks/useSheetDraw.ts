@@ -102,18 +102,6 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth, selection, isHeader: true });
             }
         }
-
-        // 绘制左上角交叉单元格（冻结区的左上角）
-        for (let rowIndex = 0;rowIndex < FROZEN_ROW_COUNT;rowIndex++) {
-            for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
-                const cell = data[rowIndex]?.[colIndex];
-                if (!cell) continue;
-                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
-                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
-                const y = rowIndex * drawConfig.cellHeight;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
-            }
-        }
         // 绘制 当前选中区域列头行头高亮
         if (selection?.start && selection?.end) {
             const { r1, r2, c1, c2 } = getSelection(selection)
@@ -154,6 +142,17 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                     ctx.stroke();
                     ctx.restore();
                 }
+            }
+        }
+        // 绘制左上角交叉单元格（冻结区的左上角）
+        for (let rowIndex = 0;rowIndex < FROZEN_ROW_COUNT;rowIndex++) {
+            for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
+                const cell = data[rowIndex]?.[colIndex];
+                if (!cell) continue;
+                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
+                const y = rowIndex * drawConfig.cellHeight;
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
             }
         }
     }, [data, drawConfig, selection]);
