@@ -31,13 +31,14 @@ export const Canvas: React.FC<CanvasProps> = ({
     onKeyDown
 }) => {
     const { config } = useStore()
+    const [currentHoverCell, setCurrentHoverCell] = useState<[number, number] | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
     const scrollConfig = useMemo(() => ({
-        totalWidth: (data[0].length - 1) * cellWidth + config.fixedColWidth + 2,
-        totalHeight: data.length * cellHeight + 2,
+        totalWidth: (data[0].length - 1) * cellWidth + config.fixedColWidth + 5,
+        totalHeight: data.length * cellHeight + 5,
         viewportWidth: containerWidth,
         viewportHeight: containerHeight,
         onScroll
@@ -142,6 +143,21 @@ export const Canvas: React.FC<CanvasProps> = ({
             }
         }
     }
+    const cursor = useMemo(() => {
+        if (currentHoverCell) {
+            const [rowIndex, colIndex] = currentHoverCell;
+            const currentCell = data[rowIndex][colIndex];
+            if (currentCell?.readOnly) {
+                if (rowIndex === 0) {
+                    return 's-resize'
+                }
+                if (colIndex === 0) {
+                    return 'e-resize'
+                }
+            }
+        }
+        return 'cell';
+    }, [currentHoverCell, data])
     return (
         <>
             <div
@@ -154,8 +170,17 @@ export const Canvas: React.FC<CanvasProps> = ({
                 }}
             >
                 <canvas
+                    className='outline-0'
+                    style={{
+                        cursor: cursor,
+                    }}
                     tabIndex={0}
                     ref={canvasRef}
+                    onMouseMove={e => {
+                        handleGetClient(e, (rowIndex, colIndex) => {
+                            setCurrentHoverCell([rowIndex, colIndex])
+                        })
+                    }}
                     onKeyDown={e => {
                         onKeyDown?.(e, {
                             selection,
@@ -182,7 +207,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <ScrollBar
                     type="horizontal"
                     viewportSize={containerWidth}
-                    contentSize={(data[0].length - 1) * cellWidth + config.fixedColWidth + 2}
+                    contentSize={(data[0].length - 1) * cellWidth + config.fixedColWidth + 5}
                     scrollPosition={scrollPosition.x}
                     onDragStart={handleScrollbarDragStart}
                 />
@@ -192,7 +217,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <ScrollBar
                     type="vertical"
                     viewportSize={containerHeight}
-                    contentSize={data.length * cellHeight + 2}
+                    contentSize={data.length * cellHeight + 5}
                     scrollPosition={scrollPosition.y}
                     onDragStart={handleScrollbarDragStart}
                 />
