@@ -14,11 +14,11 @@ export const Current: FC = () => {
         {data[row]?.[0]?.value}
       </span>
     </div>
-    <div className="flex-1 overflow-hidden px-2 py-1">
-      <input value={currentCell?.value || ''} type="text" className='w-full h-full outline-0' onChange={e => {
+    <div className="flex-1 overflow-hidden px-2">
+      <input value={currentCell?.value || ''} type="text" className='w-full h-full outline-0 text-sm' onChange={e => {
         data[row][col].value = e.target.value
         setUpdater()
-      }} />
+      }} readOnly={!currentCell} />
     </div>
   </div>;
 };
