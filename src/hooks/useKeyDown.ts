@@ -6,6 +6,7 @@ interface useKeyDownCallback {
   onCellCopyKey?: () => void;
   onCellPasteKey?: () => void;
   onCellDeleteKey?: () => void;
+  onSelectAll?: () => void;
 }
 export const useKeyDown = (config: {
   selectedCell: EditingCell;
@@ -14,13 +15,19 @@ export const useKeyDown = (config: {
 }, callback: useKeyDownCallback = {}) => {
   const { data, selectedCell, setData } = config;
   const onKeyDown: CanvasOnKeyDown = (e, { selection }) => {
-
+    const key = e.key;
+    // 处理 ctrl/cmd + a
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      callback.onSelectAll?.();
+      return;
+    }
+    // 已经有选中单元格才会处理键盘事件
     if (selectedCell && selection.start && selection.end) {
       const startRow = Math.min(selection.start.row, selection.end.row);
       const endRow = Math.max(selection.start.row, selection.end.row);
       const startCol = Math.min(selection.start.col, selection.end.col);
       const endCol = Math.max(selection.start.col, selection.end.col);
-      const key = e.key;
       // 处理粘贴
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
         navigator.clipboard.readText().then(text => {

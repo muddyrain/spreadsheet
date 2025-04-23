@@ -7,7 +7,8 @@ import { useSheetSelection } from '@/hooks/useSheetSelection';
 import { useStore } from '@/hooks/useStore';
 
 export type CanvasOnKeyDown = (e: React.KeyboardEvent, options: {
-    selection: SelectionSheetType
+    selection: SelectionSheetType;
+    setSelection: (selection: SelectionSheetType) => void;
 }) => void
 interface CanvasProps {
     data: TableData;
@@ -43,7 +44,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         viewportHeight: containerHeight,
         onScroll
     }), [data, cellWidth, cellHeight, containerWidth, containerHeight, onScroll, config]);
-    const { selection, movedRef, handleCellMouseDown } = useSheetSelection(data);
+    const { selection, movedRef, handleCellMouseDown, setSelection } = useSheetSelection(data);
     const {
         scrollPosition,
         handleScrollbarDragStart,
@@ -184,6 +185,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                     onKeyDown={e => {
                         onKeyDown?.(e, {
                             selection,
+                            setSelection
                         })
                     }}
                     onDoubleClick={(e) => {

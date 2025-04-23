@@ -36,17 +36,20 @@ const Spreadsheet: React.FC<{
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const cellWidth = config.width;
   const cellHeight = config.height;
+  const handleSelectAll = () => {
+    setSelection({
+      start: { row: 1, col: 1 },
+      end: { row: data.length - 1, col: data[0].length - 1 }
+    })
+    setSelectedCell({
+      row: 1,
+      col: 1
+    })
+    setEditingCell(null)
+  }
   const onCellClick = (rowIndex: number, colIndex: number) => {
     if (rowIndex === 0 && colIndex === 0) {
-      setSelection({
-        start: { row: 1, col: 1 },
-        end: { row: data.length - 1, col: data[0].length - 1 }
-      })
-      setSelectedCell({
-        row: 1,
-        col: 1
-      })
-      setEditingCell(null)
+      handleSelectAll()
       return;
     }
     // 点击固定列时
@@ -93,13 +96,16 @@ const Spreadsheet: React.FC<{
   const { onKeyDown } = useKeyDown({
     selectedCell,
     data,
-    setData
+    setData,
   }, {
     onCellInputKey() {
       if (selectedCell) {
         setEditingCell({ row: selectedCell.row, col: selectedCell.col });
         cellInputRef.current?.setInputStyle(selectedCell.row, selectedCell.col);
       }
+    },
+    onSelectAll() {
+      handleSelectAll()
     }
   })
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
