@@ -35,13 +35,14 @@ export const Canvas: React.FC<CanvasProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
+    console.log((data[0].length - 1) * cellWidth + config.fixedColWidth + 5);
     const scrollConfig = useMemo(() => ({
-        totalWidth: data[0].length * cellWidth,
+        totalWidth: (data[0].length - 1) * cellWidth + config.fixedColWidth + 5,
         totalHeight: data.length * cellHeight,
         viewportWidth: containerWidth,
         viewportHeight: containerHeight,
         onScroll
-    }), [data, cellWidth, cellHeight, containerWidth, containerHeight, onScroll]);
+    }), [data, cellWidth, cellHeight, containerWidth, containerHeight, onScroll, config]);
     const { selection, movedRef, handleCellMouseDown } = useSheetSelection(data);
     const {
         scrollPosition,
@@ -56,7 +57,6 @@ export const Canvas: React.FC<CanvasProps> = ({
         wrapperHeight: containerHeight,
         selection
     });
-
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -164,7 +164,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <ScrollBar
                     type="horizontal"
                     viewportSize={containerWidth}
-                    contentSize={data[0].length * cellWidth}
+                    contentSize={(data[0].length - 1) * cellWidth + config.fixedColWidth + 5}
                     scrollPosition={scrollPosition.x}
                     onDragStart={handleScrollbarDragStart}
                 />

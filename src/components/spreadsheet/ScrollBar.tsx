@@ -16,9 +16,11 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
     onDragStart
 }) => {
     const isHorizontal = type === 'horizontal';
+    if (isHorizontal) {
+        console.log(scrollPosition, contentSize);
+    }
     const scrollBarSize = (viewportSize / contentSize) * 100;
     const scrollBarPosition = (scrollPosition / contentSize) * 100;
-
     return (
         <div
             style={{
@@ -27,7 +29,7 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
                     ? {
                         left: 0,
                         bottom: 0,
-                        width: '100%',
+                        width: 'calc(100% - 10px)',
                         height: '8px',
                     }
                     : {

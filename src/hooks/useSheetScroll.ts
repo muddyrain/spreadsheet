@@ -86,7 +86,6 @@ export const useSheetScroll = (config: {
         if (config.totalHeight <= config.viewportHeight) return;
         const maxScrollX = config.totalWidth - config.viewportWidth;
         const maxScrollY = config.totalHeight - config.viewportHeight;
-
         const newScrollX = Math.min(Math.max(0, scrollPosition.x + e.deltaX), maxScrollX);
         const newScrollY = Math.min(Math.max(0, scrollPosition.y + e.deltaY), maxScrollY);
 

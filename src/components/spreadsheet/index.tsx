@@ -144,8 +144,7 @@ const Spreadsheet: React.FC<{
             onChange={handleInputChange}
             value={currentCell?.value || ''}
             style={{
-              display: isShowInput, // 只有编辑时才显示
-              // transform: `translate(${-scrollPosition.x}px, ${-scrollPosition.y}px)`,
+              display: isShowInput,
               fontSize: `${config.fontSize || currentCell?.style.fontSize || 14}px`,
               fontWeight: `${currentCell?.style.fontWeight || 'normal'}`,
               fontStyle: `${currentCell?.style.fontStyle || 'normal'}`,

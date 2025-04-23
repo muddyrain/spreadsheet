@@ -53,6 +53,40 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
             }
         }
+        // 绘制冻结首列（除左上角交叉单元格）
+        for (let rowIndex = startRow;rowIndex < endRow;rowIndex++) {
+            for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
+                const cell = data[rowIndex]?.[colIndex];
+                if (!cell) continue;
+                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
+                const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth, isRow: true });
+            }
+        }
+        // 绘制冻结首行（除左上角交叉单元格）
+        for (let rowIndex = 0;rowIndex < FROZEN_ROW_COUNT;rowIndex++) {
+            for (let colIndex = startCol;colIndex < endCol;colIndex++) {
+                const cell = data[rowIndex]?.[colIndex];
+                if (!cell) continue;
+                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth - scrollPosition.x;
+                const y = rowIndex * drawConfig.cellHeight;
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth, selection, isHeader: true });
+            }
+        }
+
+        // 绘制左上角交叉单元格（冻结区的左上角）
+        for (let rowIndex = 0;rowIndex < FROZEN_ROW_COUNT;rowIndex++) {
+            for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
+                const cell = data[rowIndex]?.[colIndex];
+                if (!cell) continue;
+                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
+                const y = rowIndex * drawConfig.cellHeight;
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
+            }
+        }
         // 绘制选区边框（只绘制在当前可视区域内的部分）
         if (selection?.start && selection?.end) {
             if (!(isOneSelection && isFocused)) {
@@ -75,53 +109,14 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.lineWidth = 1;
                     // 防止边框被其他元素遮挡
-                    ctx.strokeRect(x + 1, y + 1, width - 1, height - 1);
+                    ctx.strokeRect(x, y, width, height);
                     ctx.restore();
                 }
             }
         }
-        // 绘制冻结首列（除左上角交叉单元格）
-        for (let rowIndex = startRow;rowIndex < endRow;rowIndex++) {
-            for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
-                const cell = data[rowIndex]?.[colIndex];
-                if (!cell) continue;
-                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
-                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
-                const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
-            }
-        }
-
-        // 绘制冻结首行（除左上角交叉单元格）
-        for (let rowIndex = 0;rowIndex < FROZEN_ROW_COUNT;rowIndex++) {
-            for (let colIndex = startCol;colIndex < endCol;colIndex++) {
-                const cell = data[rowIndex]?.[colIndex];
-                if (!cell) continue;
-                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
-                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth - scrollPosition.x;
-                const y = rowIndex * drawConfig.cellHeight;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
-            }
-        }
-
-        // 绘制左上角交叉单元格（冻结区的左上角）
-        for (let rowIndex = 0;rowIndex < FROZEN_ROW_COUNT;rowIndex++) {
-            for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
-                const cell = data[rowIndex]?.[colIndex];
-                if (!cell) continue;
-                const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
-                const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
-                const y = rowIndex * drawConfig.cellHeight;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
-            }
-        }
-
         // 绘制 当前选中区域列头行头高亮
         if (selection?.start && selection?.end) {
-            const r1 = Math.min(selection.start.row, selection.end.row);
-            const r2 = Math.max(selection.start.row, selection.end.row);
-            const c1 = Math.min(selection.start.col, selection.end.col);
-            const c2 = Math.max(selection.start.col, selection.end.col);
+            const { r1, r2, c1, c2 } = getSelection(selection)
             // 只绘制在当前可视区域内的部分
             if (
                 r2 >= startRow && r1 < endRow &&
@@ -129,42 +124,34 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             ) {
                 // 列头高亮
                 for (let colIndex = c1;colIndex <= c2;colIndex++) {
+                    if (r1 === 1) continue
                     const cell = data[r1]?.[colIndex];
                     if (!cell) continue;
                     const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
                     const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth - scrollPosition.x;
                     const y = 0;
                     ctx.save();
-                    ctx.globalAlpha = 0.5;
-                    ctx.fillStyle = config.selectionBackgroundColor;
-                    ctx.fillRect(x, y, colWidth, drawConfig.cellHeight);
-                    ctx.globalAlpha = 1;
-                    // 绘制选中列的高亮线（加0.5防止模糊）
                     ctx.beginPath();
-                    ctx.lineWidth = 2;
-                    ctx.moveTo(x, y + drawConfig.cellHeight - 1 + 0.5);
-                    ctx.lineTo(x + colWidth, y + drawConfig.cellHeight - 1 + 0.5);
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(x, y + drawConfig.cellHeight);
+                    ctx.lineTo(x + colWidth, y + drawConfig.cellHeight);
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.stroke();
                     ctx.restore();
                 }
                 // 行头高亮
                 for (let rowIndex = r1;rowIndex <= r2;rowIndex++) {
+                    if (c1 === 1) continue
                     const cell = data[rowIndex]?.[c1];
                     if (!cell) continue;
                     const colWidth = fixedColWidth;
                     const x = 0;
                     const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
                     ctx.save();
-                    ctx.globalAlpha = 0.5;
-                    ctx.fillStyle = config.selectionBackgroundColor;
-                    ctx.fillRect(x, y, colWidth, drawConfig.cellHeight);
-                    ctx.globalAlpha = 1;
-                    // 绘制选中行的高亮线（加0.5防止模糊）
                     ctx.beginPath();
-                    ctx.lineWidth = 2;
-                    ctx.moveTo(x + colWidth - 1 + 0.5, y);
-                    ctx.lineTo(x + colWidth - 1 + 0.5, y + drawConfig.cellHeight);
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(x + colWidth, y);
+                    ctx.lineTo(x + colWidth, y + drawConfig.cellHeight);
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.stroke();
                     ctx.restore();
@@ -181,14 +168,32 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         y: number;
         cell: CellData;
         colWidth: number;
+        isHeader?: boolean;
+        isRow?: boolean;
+        selection?: SelectionSheetType;
     }) => {
-        const { rowIndex, colIndex, x, y, cell, colWidth } = options;
+        const { rowIndex, colIndex, x, y, cell, colWidth, isHeader, isRow } = options;
+
         // 绘制网格
         ctx.strokeStyle = cell.style.borderColor || config.borderColor;
         ctx.strokeRect(x, y, colWidth, drawConfig.cellHeight);
         // 设置背景颜色
         ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
         ctx.fillRect(x + 1, y + 1, colWidth - 1, drawConfig.cellHeight - 1);
+
+        // 如果是表头，并且当前列在选中范围内
+        if ((isHeader || isRow) && selection && selection.start && selection.end) {
+            const { c1, c2, r1, r2 } = getSelection(selection)
+            if (c1 <= colIndex && colIndex <= c2 || r1 <= rowIndex && rowIndex <= r2) {
+                // 设置选中高亮颜色
+                ctx.globalAlpha = 0.85;
+                ctx.fillStyle = config.selectionBackgroundColor;
+                ctx.fillRect(x + 1, y + 1, colWidth - 1, drawConfig.cellHeight - 1);
+                ctx.globalAlpha = 1;
+            }
+        }
+
+
         // 判断是否选中，绘制高亮背景
         if (isCellSelected && isCellSelected(rowIndex, colIndex)) {
             ctx.save();
@@ -276,5 +281,18 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         ctx.restore();
     };
 
+    // 获取选区 r1 最小行 r2 最大行 c1 最小列 c2 最大列
+    const getSelection = (selection?: SelectionSheetType) => {
+        const r1 = Math.min(selection?.start?.row || 0, selection?.end?.row || 0);
+        const r2 = Math.max(selection?.start?.row || 0, selection?.end?.row || 0);
+        const c1 = Math.min(selection?.start?.col || 0, selection?.end?.col || 0);
+        const c2 = Math.max(selection?.start?.col || 0, selection?.end?.col || 0);
+        return {
+            r1,
+            r2,
+            c1,
+            c2
+        }
+    }
     return { drawTable };
 };
