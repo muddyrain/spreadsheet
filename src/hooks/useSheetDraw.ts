@@ -199,6 +199,20 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 }
             }
         }
+        // 绘制当前选中单元格 且 没有输入框焦点
+        if (selectedCell && !isFocused) {
+            const { row, col } = selectedCell
+            const cell = data[row]?.[col];
+            if (!cell) return;
+            const x = col === 0 ? 0 : fixedColWidth + (col - 1) * drawConfig.cellWidth - scrollPosition.x;
+            const y = row * drawConfig.cellHeight - scrollPosition.y;
+            ctx.save();
+            ctx.strokeStyle = config.selectionBorderColor;
+            ctx.lineWidth = 1.5;
+            // 防止边框被其他元素遮挡
+            ctx.strokeRect(x - 0.5, y - 0.5, drawConfig.cellWidth, drawConfig.cellHeight);
+            ctx.restore();
+        }
         // 绘制冻结首列（除左上角交叉单元格）
         for (let rowIndex = startRow;rowIndex < endRow;rowIndex++) {
             for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
@@ -238,9 +252,9 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                     const y = 0;
                     ctx.save();
                     ctx.beginPath();
-                    ctx.lineWidth = 1;
-                    ctx.moveTo(x, y + drawConfig.cellHeight);
-                    ctx.lineTo(x + colWidth, y + drawConfig.cellHeight);
+                    ctx.lineWidth = 1.5;
+                    ctx.moveTo(x, y + drawConfig.cellHeight - 0.5);
+                    ctx.lineTo(x + colWidth, y + drawConfig.cellHeight - 0.5);
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.stroke();
                     ctx.restore();
@@ -254,28 +268,14 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                     const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
                     ctx.save();
                     ctx.beginPath();
-                    ctx.lineWidth = 1;
-                    ctx.moveTo(x + colWidth, y);
-                    ctx.lineTo(x + colWidth, y + drawConfig.cellHeight);
+                    ctx.lineWidth = 1.5;
+                    ctx.moveTo(x + colWidth - 0.5, y);
+                    ctx.lineTo(x + colWidth - 0.5, y + drawConfig.cellHeight);
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.stroke();
                     ctx.restore();
                 }
             }
-        }
-        // 绘制当前选中单元格 且 没有输入框焦点
-        if (selectedCell && !isFocused) {
-            const { row, col } = selectedCell
-            const cell = data[row]?.[col];
-            if (!cell) return;
-            const x = col === 0 ? 0 : fixedColWidth + (col - 1) * drawConfig.cellWidth - scrollPosition.x;
-            const y = row * drawConfig.cellHeight - scrollPosition.y;
-            ctx.save();
-            ctx.strokeStyle = config.selectionBorderColor;
-            ctx.lineWidth = 1.5;
-            // 防止边框被其他元素遮挡
-            ctx.strokeRect(x - 0.5, y - 0.5, drawConfig.cellWidth, drawConfig.cellHeight);
-            ctx.restore();
         }
         // 绘制左上角交叉单元格（冻结区的左上角）
         for (let rowIndex = 0;rowIndex < FROZEN_ROW_COUNT;rowIndex++) {
