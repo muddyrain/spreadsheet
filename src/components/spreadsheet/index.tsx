@@ -2,12 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TableData, SpreadsheetConfig, SpreadsheetType, CellData, SelectionSheetType, } from '../../types/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
-import _ from 'lodash';
+import _, { set } from 'lodash';
 import { Header } from './Header';
 import { CellInput, CellInputRef } from './CellInput';
 import { useKeyDown } from '@/hooks/useKeyDown';
 import { useSpreadsheet } from '@/hooks/useSpreadsheet';
 import { Current } from './Current';
+import { getAbsoluteSelection } from '@/utils/sheet';
 
 export const SpreadsheetContext = React.createContext<{
   data: TableData;
@@ -26,7 +27,7 @@ const Spreadsheet: React.FC<{
   onChange?: (data: TableData) => void;
 }> = (props) => {
   const { config: _config, onChange } = props;
-  const { config, setEditingCell, data, setData, editingCell, currentCell,
+  const { config, setEditingCell, selectedCell, setSelectedCell, data, setData, editingCell, currentCell,
     updater,
     forceUpdate } = props.spreadsheet ?? useSpreadsheet(_config);
   const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
@@ -41,6 +42,7 @@ const Spreadsheet: React.FC<{
       start: { row: 1, col: 1 },
       end: { row: data.length - 1, col: data[0].length - 1 }
     })
+    setSelectedCell({ row: 1, col: 1 })
     setEditingCell(null)
   }
   const onCellClick = (rowIndex: number, colIndex: number) => {
@@ -54,6 +56,7 @@ const Spreadsheet: React.FC<{
         start: { row: 1, col: colIndex },
         end: { row: data.length - 1, col: colIndex }
       })
+      setSelectedCell({ row: 1, col: colIndex })
       setEditingCell(null)
       return
     }
@@ -63,6 +66,7 @@ const Spreadsheet: React.FC<{
         start: { row: rowIndex, col: 1 },
         end: { row: rowIndex, col: data.length - 1 }
       })
+      setSelectedCell({ row: rowIndex, col: 1 })
       setEditingCell(null)
       return
     }
@@ -74,6 +78,7 @@ const Spreadsheet: React.FC<{
       start: { row: rowIndex, col: colIndex },
       end: { row: rowIndex, col: colIndex }
     })
+    setSelectedCell({ row: rowIndex, col: colIndex })
     setEditingCell(null); // 单击时不进入编辑
   };
   const onCellDoubleClick = (rowIndex: number, colIndex: number) => {
@@ -88,7 +93,7 @@ const Spreadsheet: React.FC<{
     data,
     setData,
   }, {
-    onCellInputKey(selectedCell) {
+    onCellInputKey() {
       if (selectedCell) {
         setEditingCell({ row: selectedCell.row, col: selectedCell.col });
         cellInputRef.current?.setInputStyle(selectedCell.row, selectedCell.col);
@@ -96,6 +101,37 @@ const Spreadsheet: React.FC<{
     },
     onSelectAll() {
       handleSelectAll()
+    },
+    onTab() {
+      if (!selectedCell) return
+      // 单选格
+      if (selection.start?.row === selection.end?.row && selection.start?.col === selection.end?.col) {
+        if (selectedCell.col + 1 <= data[0].length - 1) {
+          setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 })
+          setSelection({
+            start: { row: selectedCell.row, col: selectedCell.col + 1 },
+            end: { row: selectedCell.row, col: selectedCell.col + 1 }
+          })
+        } else {
+          setSelectedCell({ row: selectedCell.row + 1, col: 1 })
+          setSelection({
+            start: { row: selectedCell.row + 1, col: 1 },
+            end: { row: selectedCell.row + 1, col: 1 }
+          })
+        }
+      } else {
+        // 多选格
+        const { r1, r2, c1, c2 } = getAbsoluteSelection(selection)
+        if (selectedCell.col + 1 <= c2) {
+          setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 })
+        } else {
+          if (selectedCell.row + 1 <= r2) {
+            setSelectedCell({ row: selectedCell.row + 1, col: c1 })
+          } else {
+            setSelectedCell({ row: r1, col: c1 })
+          }
+        }
+      }
     }
   })
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -162,6 +198,7 @@ const Spreadsheet: React.FC<{
           <div className="flex-1 overflow-hidden">
             <Canvas
               data={data}
+              selectedCell={selectedCell}
               wrapperRef={wrapperRef}
               cellWidth={cellWidth}
               cellHeight={cellHeight}

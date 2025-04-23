@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect, useState, } from 'react';
-import { SelectionSheetType, TableData } from '../../types/sheet';
+import { EditingCell, SelectionSheetType, TableData } from '../../types/sheet';
 import { useSheetScroll } from '../../hooks/useSheetScroll';
 import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
@@ -15,6 +15,7 @@ interface CanvasProps {
     cellWidth: number;
     cellHeight: number;
     wrapperRef: React.RefObject<HTMLDivElement | null>;
+    selectedCell: EditingCell;
     onCellClick?: (row: number, col: number) => void;
     onCellDoubleClick?: (row: number, col: number) => void;
     onKeyDown?: CanvasOnKeyDown;
@@ -26,6 +27,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     cellWidth,
     cellHeight,
     wrapperRef,
+    selectedCell,
     onCellClick,
     onCellDoubleClick,
     onScroll,
@@ -56,7 +58,8 @@ export const Canvas: React.FC<CanvasProps> = ({
         cellHeight,
         wrapperWidth: containerWidth,
         wrapperHeight: containerHeight,
-        selection
+        selection,
+        selectedCell
     });
     useEffect(() => {
         const canvas = canvasRef.current;

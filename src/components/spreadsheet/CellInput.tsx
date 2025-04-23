@@ -41,8 +41,8 @@ export const CellInput = forwardRef<CellInputRef, {
     if (inputRef.current && mirrorRef.current) {
       const currentCell = data[rowIndex][colIndex];
       inputRef.current.value = currentCell.value;
-      inputRef.current.style.minWidth = `${cellWidth + 1}px`;
-      inputRef.current.style.minHeight = `${cellHeight + 1}px`;
+      inputRef.current.style.minWidth = `${cellWidth + 2}px`;
+      inputRef.current.style.minHeight = `${cellHeight + 2}px`;
       inputRef.current.style.display = 'block';
       inputRef.current.style.padding = '3px 10px';
       mirrorRef.current.style.padding = '3px 10px';
@@ -96,8 +96,8 @@ export const CellInput = forwardRef<CellInputRef, {
       if (left < config.width) {
         left = fixedColWidth
       }
-      inputRef.current.style.left = `${left}px`;
-      inputRef.current.style.top = `${top}px`;
+      inputRef.current.style.left = `${left - 1}px`;
+      inputRef.current.style.top = `${top - 1}px`;
       updateInputSize();
     }
   }, [scrollPosition, currentCell]);
@@ -113,7 +113,7 @@ export const CellInput = forwardRef<CellInputRef, {
         }}
         style={{
           ...style,
-          border: `1px solid ${config.selectionBorderColor}`,
+          border: `2px solid ${config.selectionBorderColor}`,
         }}
       />
       {/* 隐藏的 mirror div 用于测量内容尺寸 */}

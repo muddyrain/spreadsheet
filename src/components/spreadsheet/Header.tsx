@@ -3,7 +3,7 @@ import { Toggle } from "@/components/ui/toggle"
 import { Bold, Eraser, Italic, PaintRoller, Redo, Save, Strikethrough, Underline, Undo } from "lucide-react"
 import { useStore } from '@/hooks/useStore';
 import { Tooltip } from '../ui/tooltip';
-import { getSelection } from '@/utils/sheet';
+import { getAbsoluteSelection } from '@/utils/sheet';
 import { CellData } from '@/types/sheet';
 export type ClickType = 'save' | 'undo' | 'redo' | 'paint' | 'eraser' | 'bold' | 'italic' | 'strikethrough' | 'underline'
 export const Header: FC<{
@@ -11,7 +11,7 @@ export const Header: FC<{
 }> = ({ onClick }) => {
   const { selection, data, setUpdater, updater } = useStore();
   const selectionCells = useMemo(() => {
-    const { r1, r2, c1, c2 } = getSelection(selection);
+    const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
     if (r1 === r2 && c1 === c2) {
       return [data[r1][c1]]
     }

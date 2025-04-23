@@ -2,11 +2,12 @@ import { CanvasOnKeyDown } from "@/components/spreadsheet/Canvas";
 import { EditingCell, TableData } from "@/types/sheet";
 
 interface useKeyDownCallback {
-  onCellInputKey?: (selectedCell: EditingCell) => void;
+  onCellInputKey?: () => void;
   onCellCopyKey?: () => void;
   onCellPasteKey?: () => void;
   onCellDeleteKey?: () => void;
   onSelectAll?: () => void;
+  onTab?: () => void;
 }
 export const useKeyDown = (config: {
   data: TableData;
@@ -33,34 +34,7 @@ export const useKeyDown = (config: {
       const endCol = Math.max(selection.start.col, selection.end.col);
       // 处理 tab 键
       if (key === 'Tab') {
-        // 单选单元格
-        if (selection.start?.col === selection.end?.col && selection.start?.row === selection.end?.row) {
-          const nextCol = selectedCell.col + 1;
-          // 选择下一个单元格
-          if (nextCol <= data[0].length - 1) {
-            setSelection({
-              start: {
-                row: selectedCell.row,
-                col: nextCol
-              },
-              end: {
-                row: selectedCell.row,
-                col: nextCol
-              }
-            })
-          } else {
-            setSelection({
-              start: {
-                row: selectedCell.row + 1,
-                col: 1
-              },
-              end: {
-                row: selectedCell.row + 1,
-                col: 1
-              }
-            })
-          }
-        }
+        callback?.onTab?.();
       }
       // 处理粘贴
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
@@ -117,7 +91,7 @@ export const useKeyDown = (config: {
         ))
       ) {
         // 处理输入的字母数字和常见符号
-        callback?.onCellInputKey?.(selectedCell);
+        callback?.onCellInputKey?.();
       }
     }
   };

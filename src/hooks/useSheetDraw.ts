@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { CellData, SelectionSheetType, TableData } from '../types/sheet';
+import { CellData, EditingCell, SelectionSheetType, TableData } from '../types/sheet';
 import { useStore } from './useStore';
-import { getSelection } from '../utils/sheet';
+import { getAbsoluteSelection } from '../utils/sheet';
 
 interface DrawConfig {
     cellWidth: number;
@@ -14,9 +14,10 @@ interface DrawConfig {
 const FROZEN_ROW_COUNT = 1;
 const FROZEN_COL_COUNT = 1;
 
-export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selection?: SelectionSheetType }) => {
+export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selection?: SelectionSheetType; selectedCell: EditingCell }) => {
     const { config, isFocused } = useStore();
     const selection = drawConfig.selection;
+    const selectedCell = drawConfig.selectedCell;
     const fixedColWidth = config.fixedColWidth
     const isCellSelected = (row: number, col: number) => {
         if (!selection?.start || !selection?.end) return false;
@@ -57,7 +58,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         // 绘制选区边框（只绘制在当前可视区域内的部分）
         if (selection?.start && selection?.end) {
             if (!(isOneSelection && isFocused)) {
-                const { r1, r2, c1, c2 } = getSelection(selection)
+                const { r1, r2, c1, c2 } = getAbsoluteSelection(selection)
 
                 // 只绘制在当前可视区域内的部分
                 if (
@@ -102,7 +103,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         }
         // 绘制 当前选中区域列头行头高亮
         if (selection?.start && selection?.end) {
-            const { r1, r2, c1, c2 } = getSelection(selection)
+            const { r1, r2, c1, c2 } = getAbsoluteSelection(selection)
             // 只绘制在当前可视区域内的部分
             if (
                 r2 >= startRow && r1 < endRow &&
@@ -142,6 +143,20 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 }
             }
         }
+        // 绘制当前选中单元格 且 没有输入框焦点
+        if (selectedCell && !isFocused) {
+            const { row, col } = selectedCell
+            const cell = data[row]?.[col];
+            if (!cell) return;
+            const x = col === 0 ? 0 : fixedColWidth + (col - 1) * drawConfig.cellWidth - scrollPosition.x;
+            const y = row * drawConfig.cellHeight - scrollPosition.y;
+            ctx.save();
+            ctx.strokeStyle = config.selectionBorderColor;
+            ctx.lineWidth = 1.5;
+            // 防止边框被其他元素遮挡
+            ctx.strokeRect(x - 0.5, y - 0.5, drawConfig.cellWidth, drawConfig.cellHeight);
+            ctx.restore();
+        }
         // 绘制左上角交叉单元格（冻结区的左上角）
         for (let rowIndex = 0;rowIndex < FROZEN_ROW_COUNT;rowIndex++) {
             for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
@@ -178,7 +193,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
 
         // 如果是表头，并且当前列在选中范围内
         if ((isHeader || isRow) && selection && selection.start && selection.end) {
-            const { c1, c2, r1, r2 } = getSelection(selection)
+            const { c1, c2, r1, r2 } = getAbsoluteSelection(selection)
             if (c1 <= colIndex && colIndex <= c2 || r1 <= rowIndex && rowIndex <= r2) {
                 // 设置选中高亮颜色
                 ctx.globalAlpha = 0.85;
