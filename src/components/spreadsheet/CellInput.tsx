@@ -96,8 +96,8 @@ export const CellInput = forwardRef<CellInputRef, {
       if (left < config.width) {
         left = fixedColWidth
       }
-      inputRef.current.style.left = `${left + 1}px`;
-      inputRef.current.style.top = `${top + 1}px`;
+      inputRef.current.style.left = `${left}px`;
+      inputRef.current.style.top = `${top}px`;
       inputRef.current.style.width = `${cellWidth}px`;
       inputRef.current.style.height = `${cellHeight}px`;
       updateInputSize();
