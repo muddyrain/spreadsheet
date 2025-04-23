@@ -68,8 +68,16 @@ export const Canvas: React.FC<CanvasProps> = ({
         canvas.style.width = `${containerWidth}px`;
         canvas.style.height = `${containerHeight}px`;
         const ctx = canvas.getContext('2d');
+        let rafId: number | null = null;
         if (ctx) {
-            drawTable(ctx, scrollPosition);
+            rafId = requestAnimationFrame(() => {
+                drawTable(ctx, scrollPosition);
+            });
+        }
+        return () => {
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+            }
         }
     }, [drawTable, scrollPosition, containerWidth, containerHeight]);
     useEffect(() => {
