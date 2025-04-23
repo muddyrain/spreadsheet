@@ -129,10 +129,13 @@ const Spreadsheet: React.FC<{
     data,
     setData,
   }, {
-    onCellInputKey() {
+    onCellInputKey(content) {
       if (selectedCell) {
         setEditingCell({ row: selectedCell.row, col: selectedCell.col });
-        cellInputRef.current?.setInputStyle(selectedCell.row, selectedCell.col);
+        cellInputRef.current?.setInputStyle(selectedCell.row, selectedCell.col,);
+        if (currentCell) {
+          currentCell.value += content
+        }
       }
     },
     onSelectAll() {

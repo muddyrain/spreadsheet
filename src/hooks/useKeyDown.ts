@@ -2,7 +2,7 @@ import { CanvasOnKeyDown } from "@/components/spreadsheet/Canvas";
 import { EditingCell, TableData } from "@/types/sheet";
 
 interface useKeyDownCallback {
-  onCellInputKey?: () => void;
+  onCellInputKey?: (value: string) => void;
   onCellCopyKey?: () => void;
   onCellPasteKey?: () => void;
   onCellDeleteKey?: () => void;
@@ -91,7 +91,7 @@ export const useKeyDown = (config: {
         ))
       ) {
         // 处理输入的字母数字和常见符号
-        callback?.onCellInputKey?.();
+        callback?.onCellInputKey?.(key);
       }
     }
   };
