@@ -61,7 +61,7 @@ export const useKeyDown = (config: {
         if (selection.start && selection.end) {
           let text = '';
           for (let i = startRow;i <= endRow;i++) {
-            let row = [];
+            const row = [];
             for (let j = startCol;j <= endCol;j++) {
               if (!data[i][j]) continue
               row.push(data[i][j].value ?? '');
@@ -87,7 +87,7 @@ export const useKeyDown = (config: {
       } else if (
         (key.length === 1 && (
           /[a-zA-Z0-9]/.test(key) || // 字母数字
-          /[~!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`]/.test(key) // 常见符号
+          /[~!@#$%^&*()_+\-=[\]{};':"|,.<>\\/?`]/.test(key) // 常见符号
         ))
       ) {
         // 处理输入的字母数字和常见符号

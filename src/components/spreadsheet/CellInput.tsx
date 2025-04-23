@@ -82,7 +82,7 @@ export const CellInput = forwardRef<CellInputRef, {
     if (style?.display === 'none') {
       setIsFocused(false)
     }
-  }, [style])
+  }, [style, setIsFocused])
   useEffect(() => {
     if (inputRef.current) {
       const fixedColWidth = config.fixedColWidth
@@ -101,7 +101,7 @@ export const CellInput = forwardRef<CellInputRef, {
       inputRef.current.style.top = `${top - 1}px`;
       updateInputSize();
     }
-  }, [scrollPosition, currentCell]);
+  }, [scrollPosition, currentCell, cellHeight, cellWidth, config]);
   return (
     <>
       <textarea

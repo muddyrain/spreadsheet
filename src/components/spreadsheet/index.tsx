@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { TableData, SpreadsheetConfig, SpreadsheetType, CellData, SelectionSheetType, } from '../../types/sheet';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TableData, SpreadsheetConfig, SpreadsheetType, SelectionSheetType, } from '../../types/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
@@ -9,18 +9,8 @@ import { useKeyDown } from '@/hooks/useKeyDown';
 import { useSpreadsheet } from '@/hooks/useSpreadsheet';
 import { Current } from './Current';
 import { getAbsoluteSelection } from '@/utils/sheet';
+import { SpreadsheetContext } from './context';
 
-export const SpreadsheetContext = React.createContext<{
-  data: TableData;
-  config: Required<SpreadsheetConfig>;
-  currentCell: CellData | null;
-  updater: number;
-  setUpdater: () => void;
-  isFocused: boolean,
-  setIsFocused: (isFocused: boolean) => void;
-  selection: SelectionSheetType;
-  setSelection: React.Dispatch<React.SetStateAction<SelectionSheetType>>;
-} | undefined>(undefined)
 const Spreadsheet: React.FC<{
   config?: SpreadsheetConfig;
   spreadsheet?: SpreadsheetType
@@ -29,6 +19,7 @@ const Spreadsheet: React.FC<{
   const { config: _config, onChange } = props;
   const { config, setEditingCell, selectedCell, setSelectedCell, data, setData, editingCell, currentCell,
     updater,
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     forceUpdate } = props.spreadsheet ?? useSpreadsheet(_config);
   const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
   const cellInputRef = useRef<CellInputRef>(null);
@@ -161,9 +152,9 @@ const Spreadsheet: React.FC<{
   const handleScroll = (position: { x: number; y: number }) => {
     setScrollPosition(position);
   };
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setEditingCell(null);
-  };
+  }, [setEditingCell])
   const isShowInput = useMemo(() => {
     if (editingCell) {
       return 'block'
@@ -180,7 +171,7 @@ const Spreadsheet: React.FC<{
         setIsFocused(false)
       });
     }
-  }, []);
+  }, [clearSelection, setIsFocused]);
   return (
     <SpreadsheetContext.Provider value={{
       data,
@@ -238,3 +229,4 @@ const Spreadsheet: React.FC<{
 };
 
 export default Spreadsheet;
+

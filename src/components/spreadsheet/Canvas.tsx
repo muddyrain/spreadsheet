@@ -94,12 +94,13 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
     }, [])
     useEffect(() => {
-        if (wrapperRef.current) {
-            wrapperRef.current.addEventListener("wheel", handleWheel)
+        const currentWrapper = wrapperRef.current;
+        if (currentWrapper) {
+            currentWrapper.addEventListener("wheel", handleWheel)
         }
         return () => {
-            if (wrapperRef.current) {
-                wrapperRef.current.removeEventListener("wheel", handleWheel)
+            if (currentWrapper) {
+                currentWrapper.removeEventListener("wheel", handleWheel)
             }
         }
     }, [wrapperRef, handleWheel])
@@ -199,7 +200,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                     }}
                     onMouseDown={(e) => {
                         handleGetClient(e, (rowIndex, colIndex) => {
-                            onCellClick && onCellClick(rowIndex, colIndex)
+                            onCellClick?.(rowIndex, colIndex)
                             const currentCell = data[rowIndex][colIndex];
                             if (currentCell?.readOnly) return;
                             handleCellMouseDown(rowIndex, colIndex, wrapperRef, scrollPosition)

@@ -1,4 +1,4 @@
-import { SpreadsheetContext } from "@/components/spreadsheet"
+import { SpreadsheetContext } from "@/components/spreadsheet/context"
 import { useContext } from "react"
 
 export const useStore = () => {

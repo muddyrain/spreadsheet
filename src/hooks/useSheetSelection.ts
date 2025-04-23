@@ -49,7 +49,7 @@ export function useSheetSelection(data: TableData) {
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-  }, [data, config.width, config.height]);
+  }, [data, config, setSelection]);
 
   return { selection, isSelection, movedRef, setSelection, handleCellMouseDown };
 }

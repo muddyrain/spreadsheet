@@ -19,15 +19,135 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
     const selection = drawConfig.selection;
     const selectedCell = drawConfig.selectedCell;
     const fixedColWidth = config.fixedColWidth
-    const isCellSelected = (row: number, col: number) => {
-        if (!selection?.start || !selection?.end) return false;
-        const r1 = Math.min(selection.start.row, selection.end.row);
-        const r2 = Math.max(selection.start.row, selection.end.row);
-        const c1 = Math.min(selection.start.col, selection.end.col);
-        const c2 = Math.max(selection.start.col, selection.end.col);
-        return row >= r1 && row <= r2 && col >= c1 && col <= c2;
-    };
     const drawTable = useCallback((ctx: CanvasRenderingContext2D, scrollPosition: { x: number; y: number }) => {
+        const isCellSelected = (row: number, col: number) => {
+            if (!selection?.start || !selection?.end) return false;
+            const r1 = Math.min(selection.start.row, selection.end.row);
+            const r2 = Math.max(selection.start.row, selection.end.row);
+            const c1 = Math.min(selection.start.col, selection.end.col);
+            const c2 = Math.max(selection.start.col, selection.end.col);
+            return row >= r1 && row <= r2 && col >= c1 && col <= c2;
+        };
+        // 单元格绘制函数
+        const renderCell = (ctx: CanvasRenderingContext2D, options: {
+            rowIndex: number;
+            colIndex: number;
+            x: number;
+            y: number;
+            cell: CellData;
+            colWidth: number;
+            isHeader?: boolean;
+            isRow?: boolean;
+            selection?: SelectionSheetType;
+        }) => {
+            const { rowIndex, colIndex, x, y, cell, colWidth, isHeader, isRow } = options;
+
+            // 绘制网格
+            ctx.strokeStyle = cell.style.borderColor || config.borderColor;
+            ctx.strokeRect(x, y, colWidth, drawConfig.cellHeight);
+            // 设置背景颜色
+            ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
+            ctx.fillRect(x + 1, y + 1, colWidth - 1, drawConfig.cellHeight - 1);
+
+            // 如果是表头，并且当前列在选中范围内
+            if ((isHeader || isRow) && selection && selection.start && selection.end) {
+                const { c1, c2, r1, r2 } = getAbsoluteSelection(selection)
+                if (c1 <= colIndex && colIndex <= c2 || r1 <= rowIndex && rowIndex <= r2) {
+                    // 设置选中高亮颜色
+                    ctx.globalAlpha = 0.85;
+                    ctx.fillStyle = config.selectionBackgroundColor;
+                    ctx.fillRect(x + 1, y + 1, colWidth - 1, drawConfig.cellHeight - 1);
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+
+            // 判断是否选中，绘制高亮背景
+            if (isCellSelected && isCellSelected(rowIndex, colIndex)) {
+                ctx.save();
+                ctx.fillStyle = config.selectionBackgroundColor;
+                ctx.fillRect(x, y, colWidth, drawConfig.cellHeight);
+                ctx.restore();
+            }
+            // 设置字体样式
+            const fontWeight = cell.style.fontWeight || 'normal';
+            const fontStyle = cell.style.fontStyle || 'normal';
+            const fontSize = cell.style.fontSize || config.fontSize || 14;
+            let color = cell.style.color || config.color || '#000000'
+            if (cell.readOnly) color = config.readOnlyColor || cell.style.color || config.color || '#000000'
+            ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Arial`;
+            ctx.fillStyle = color
+
+            // 设置剪裁区域
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x - 12, y, drawConfig.cellWidth, drawConfig.cellHeight);
+            ctx.clip();
+
+            // 设置文本对齐
+            ctx.textAlign = cell.style.textAlign as CanvasTextAlign || 'left';
+            ctx.textBaseline = 'middle';
+            // 计算文本位置
+            let textX = x + 10;
+            if (ctx.textAlign === 'center') textX = x + colWidth / 2;
+            if (ctx.textAlign === 'right') textX = x + colWidth - 10;
+            const textY = y + drawConfig.cellHeight / 2 + 2;
+            ctx.fillText(cell.value, textX, textY);
+
+            const textDecoration = cell.style.textDecoration || 'none';
+            // 绘制删除线
+            if (textDecoration === 'line-through') {
+                const textMetrics = ctx.measureText(cell.value);
+                const lineY = textY;
+                let lineStartX = textX;
+                let lineEndX = textX;
+
+                if (ctx.textAlign === 'left' || !ctx.textAlign) {
+                    lineStartX = textX;
+                    lineEndX = textX + textMetrics.width;
+                } else if (ctx.textAlign === 'center') {
+                    lineStartX = textX - textMetrics.width / 2;
+                    lineEndX = textX + textMetrics.width / 2;
+                } else if (ctx.textAlign === 'right') {
+                    lineStartX = textX - textMetrics.width;
+                    lineEndX = textX;
+                }
+                ctx.save();
+                ctx.strokeStyle = cell.style.color || '#000';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(lineStartX, lineY);
+                ctx.lineTo(lineEndX, lineY);
+                ctx.stroke();
+                ctx.restore();
+            }
+            // 绘制下划线
+            if (textDecoration === 'underline') {
+                const textMetrics = ctx.measureText(cell.value);
+                const lineY = textY + fontSize / 2;
+                let lineStartX = textX;
+                let lineEndX = textX;
+                if (ctx.textAlign === 'left' || !ctx.textAlign) {
+                    lineStartX = textX;
+                    lineEndX = textX + textMetrics.width;
+                } else if (ctx.textAlign === 'center') {
+                    lineStartX = textX - textMetrics.width / 2;
+                    lineEndX = textX + textMetrics.width / 2;
+                } else if (ctx.textAlign === 'right') {
+                    lineStartX = textX - textMetrics.width;
+                    lineEndX = textX;
+                }
+                ctx.save();
+                ctx.strokeStyle = cell.style.color || '#000';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(lineStartX, lineY);
+                ctx.lineTo(lineEndX, lineY);
+                ctx.stroke();
+                ctx.restore();
+            }
+            ctx.restore();
+        };
         ctx.clearRect(0, 0, drawConfig.wrapperWidth, drawConfig.wrapperHeight);
         ctx.lineWidth = 1;
         const startRow = Math.floor(scrollPosition.y / drawConfig.cellHeight) + FROZEN_ROW_COUNT;
@@ -168,128 +288,6 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
             }
         }
-    }, [data, drawConfig, selection]);
-
-    // 单元格绘制函数
-    const renderCell = (ctx: CanvasRenderingContext2D, options: {
-        rowIndex: number;
-        colIndex: number;
-        x: number;
-        y: number;
-        cell: CellData;
-        colWidth: number;
-        isHeader?: boolean;
-        isRow?: boolean;
-        selection?: SelectionSheetType;
-    }) => {
-        const { rowIndex, colIndex, x, y, cell, colWidth, isHeader, isRow } = options;
-
-        // 绘制网格
-        ctx.strokeStyle = cell.style.borderColor || config.borderColor;
-        ctx.strokeRect(x, y, colWidth, drawConfig.cellHeight);
-        // 设置背景颜色
-        ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
-        ctx.fillRect(x + 1, y + 1, colWidth - 1, drawConfig.cellHeight - 1);
-
-        // 如果是表头，并且当前列在选中范围内
-        if ((isHeader || isRow) && selection && selection.start && selection.end) {
-            const { c1, c2, r1, r2 } = getAbsoluteSelection(selection)
-            if (c1 <= colIndex && colIndex <= c2 || r1 <= rowIndex && rowIndex <= r2) {
-                // 设置选中高亮颜色
-                ctx.globalAlpha = 0.85;
-                ctx.fillStyle = config.selectionBackgroundColor;
-                ctx.fillRect(x + 1, y + 1, colWidth - 1, drawConfig.cellHeight - 1);
-                ctx.globalAlpha = 1;
-            }
-        }
-
-
-        // 判断是否选中，绘制高亮背景
-        if (isCellSelected && isCellSelected(rowIndex, colIndex)) {
-            ctx.save();
-            ctx.fillStyle = config.selectionBackgroundColor;
-            ctx.fillRect(x, y, colWidth, drawConfig.cellHeight);
-            ctx.restore();
-        }
-        // 设置字体样式
-        const fontWeight = cell.style.fontWeight || 'normal';
-        const fontStyle = cell.style.fontStyle || 'normal';
-        const fontSize = cell.style.fontSize || config.fontSize || 14;
-        let color = cell.style.color || config.color || '#000000'
-        if (cell.readOnly) color = config.readOnlyColor || cell.style.color || config.color || '#000000'
-        ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Arial`;
-        ctx.fillStyle = color
-
-        // 设置剪裁区域
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(x - 12, y, drawConfig.cellWidth, drawConfig.cellHeight);
-        ctx.clip();
-
-        // 设置文本对齐
-        ctx.textAlign = cell.style.textAlign as CanvasTextAlign || 'left';
-        ctx.textBaseline = 'middle';
-        // 计算文本位置
-        let textX = x + 10;
-        if (ctx.textAlign === 'center') textX = x + colWidth / 2;
-        if (ctx.textAlign === 'right') textX = x + colWidth - 10;
-        const textY = y + drawConfig.cellHeight / 2 + 2;
-        ctx.fillText(cell.value, textX, textY);
-
-        const textDecoration = cell.style.textDecoration || 'none';
-        // 绘制删除线
-        if (textDecoration === 'line-through') {
-            const textMetrics = ctx.measureText(cell.value);
-            let lineY = textY;
-            let lineStartX = textX;
-            let lineEndX = textX;
-
-            if (ctx.textAlign === 'left' || !ctx.textAlign) {
-                lineStartX = textX;
-                lineEndX = textX + textMetrics.width;
-            } else if (ctx.textAlign === 'center') {
-                lineStartX = textX - textMetrics.width / 2;
-                lineEndX = textX + textMetrics.width / 2;
-            } else if (ctx.textAlign === 'right') {
-                lineStartX = textX - textMetrics.width;
-                lineEndX = textX;
-            }
-            ctx.save();
-            ctx.strokeStyle = cell.style.color || '#000';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(lineStartX, lineY);
-            ctx.lineTo(lineEndX, lineY);
-            ctx.stroke();
-            ctx.restore();
-        }
-        // 绘制下划线
-        if (textDecoration === 'underline') {
-            const textMetrics = ctx.measureText(cell.value);
-            let lineY = textY + fontSize / 2;
-            let lineStartX = textX;
-            let lineEndX = textX;
-            if (ctx.textAlign === 'left' || !ctx.textAlign) {
-                lineStartX = textX;
-                lineEndX = textX + textMetrics.width;
-            } else if (ctx.textAlign === 'center') {
-                lineStartX = textX - textMetrics.width / 2;
-                lineEndX = textX + textMetrics.width / 2;
-            } else if (ctx.textAlign === 'right') {
-                lineStartX = textX - textMetrics.width;
-                lineEndX = textX;
-            }
-            ctx.save();
-            ctx.strokeStyle = cell.style.color || '#000';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(lineStartX, lineY);
-            ctx.lineTo(lineEndX, lineY);
-            ctx.stroke();
-            ctx.restore();
-        }
-        ctx.restore();
-    };
-
+    }, [data, drawConfig, selection, selectedCell, config, fixedColWidth, isFocused]);
     return { drawTable };
 };

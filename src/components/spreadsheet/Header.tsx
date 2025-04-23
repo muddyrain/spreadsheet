@@ -9,7 +9,7 @@ export type ClickType = 'save' | 'undo' | 'redo' | 'paint' | 'eraser' | 'bold' |
 export const Header: FC<{
   onClick?: (type: ClickType) => void;
 }> = ({ onClick }) => {
-  const { selection, data, setUpdater, updater } = useStore();
+  const { selection, data, setUpdater } = useStore();
   const selectionCells = useMemo(() => {
     const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
     if (r1 === r2 && c1 === c2) {
@@ -22,7 +22,7 @@ export const Header: FC<{
       }
     }
     return cells;
-  }, [selection, data, updater]);
+  }, [selection, data]);
   const isStyle = useMemo(() => {
     return {
       isBold: selectionCells.every(cell => cell.style.fontWeight === 'bold'),
@@ -30,7 +30,7 @@ export const Header: FC<{
       isLineThrough: selectionCells.every(cell => cell.style.textDecoration === 'line-through'),
       isUnderline: selectionCells.every(cell => cell.style.textDecoration === 'underline'),
     }
-  }, [selectionCells, updater])
+  }, [selectionCells])
   const handleClick = (type: ClickType) => {
     if (!selectionCells?.length) return
     switch (type) {
