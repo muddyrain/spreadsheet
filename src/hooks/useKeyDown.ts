@@ -2,32 +2,66 @@ import { CanvasOnKeyDown } from "@/components/spreadsheet/Canvas";
 import { EditingCell, TableData } from "@/types/sheet";
 
 interface useKeyDownCallback {
-  onCellInputKey?: () => void;
+  onCellInputKey?: (selectedCell: EditingCell) => void;
   onCellCopyKey?: () => void;
   onCellPasteKey?: () => void;
   onCellDeleteKey?: () => void;
   onSelectAll?: () => void;
 }
 export const useKeyDown = (config: {
-  selectedCell: EditingCell;
   data: TableData;
   setData: React.Dispatch<React.SetStateAction<TableData>>;
 }, callback: useKeyDownCallback = {}) => {
-  const { data, selectedCell, setData } = config;
-  const onKeyDown: CanvasOnKeyDown = (e, { selection }) => {
+  const { data, setData } = config;
+  const onKeyDown: CanvasOnKeyDown = (e, { selection, setSelection }) => {
+    e.preventDefault();
     const key = e.key;
     // 处理 ctrl/cmd + a
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
-      e.preventDefault();
       callback.onSelectAll?.();
       return;
     }
     // 已经有选中单元格才会处理键盘事件
-    if (selectedCell && selection.start && selection.end) {
+    if (selection.start && selection.end) {
+      const selectedCell: EditingCell = {
+        row: selection.start.row,
+        col: selection.start.col
+      };
       const startRow = Math.min(selection.start.row, selection.end.row);
       const endRow = Math.max(selection.start.row, selection.end.row);
       const startCol = Math.min(selection.start.col, selection.end.col);
       const endCol = Math.max(selection.start.col, selection.end.col);
+      // 处理 tab 键
+      if (key === 'Tab') {
+        // 单选单元格
+        if (selection.start?.col === selection.end?.col && selection.start?.row === selection.end?.row) {
+          const nextCol = selectedCell.col + 1;
+          // 选择下一个单元格
+          if (nextCol <= data[0].length - 1) {
+            setSelection({
+              start: {
+                row: selectedCell.row,
+                col: nextCol
+              },
+              end: {
+                row: selectedCell.row,
+                col: nextCol
+              }
+            })
+          } else {
+            setSelection({
+              start: {
+                row: selectedCell.row + 1,
+                col: 1
+              },
+              end: {
+                row: selectedCell.row + 1,
+                col: 1
+              }
+            })
+          }
+        }
+      }
       // 处理粘贴
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
         navigator.clipboard.readText().then(text => {
@@ -83,7 +117,7 @@ export const useKeyDown = (config: {
         ))
       ) {
         // 处理输入的字母数字和常见符号
-        callback?.onCellInputKey?.();
+        callback?.onCellInputKey?.(selectedCell);
       }
     }
   };

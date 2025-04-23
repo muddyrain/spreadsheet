@@ -26,7 +26,7 @@ const Spreadsheet: React.FC<{
   onChange?: (data: TableData) => void;
 }> = (props) => {
   const { config: _config, onChange } = props;
-  const { config, selectedCell, setSelectedCell, setEditingCell, data, setData, editingCell, currentCell,
+  const { config, setEditingCell, data, setData, editingCell, currentCell,
     updater,
     forceUpdate } = props.spreadsheet ?? useSpreadsheet(_config);
   const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
@@ -41,10 +41,6 @@ const Spreadsheet: React.FC<{
       start: { row: 1, col: 1 },
       end: { row: data.length - 1, col: data[0].length - 1 }
     })
-    setSelectedCell({
-      row: 1,
-      col: 1
-    })
     setEditingCell(null)
   }
   const onCellClick = (rowIndex: number, colIndex: number) => {
@@ -58,10 +54,6 @@ const Spreadsheet: React.FC<{
         start: { row: 1, col: colIndex },
         end: { row: data.length - 1, col: colIndex }
       })
-      setSelectedCell({
-        row: 1,
-        col: colIndex
-      })
       setEditingCell(null)
       return
     }
@@ -71,10 +63,6 @@ const Spreadsheet: React.FC<{
         start: { row: rowIndex, col: 1 },
         end: { row: rowIndex, col: data.length - 1 }
       })
-      setSelectedCell({
-        row: rowIndex,
-        col: 1
-      })
       setEditingCell(null)
       return
     }
@@ -82,7 +70,10 @@ const Spreadsheet: React.FC<{
     if (currentCell.readOnly) {
       return;
     }
-    setSelectedCell({ row: rowIndex, col: colIndex }); // 只选中
+    setSelection({
+      start: { row: rowIndex, col: colIndex },
+      end: { row: rowIndex, col: colIndex }
+    })
     setEditingCell(null); // 单击时不进入编辑
   };
   const onCellDoubleClick = (rowIndex: number, colIndex: number) => {
@@ -94,11 +85,10 @@ const Spreadsheet: React.FC<{
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
   const { onKeyDown } = useKeyDown({
-    selectedCell,
     data,
     setData,
   }, {
-    onCellInputKey() {
+    onCellInputKey(selectedCell) {
       if (selectedCell) {
         setEditingCell({ row: selectedCell.row, col: selectedCell.col });
         cellInputRef.current?.setInputStyle(selectedCell.row, selectedCell.col);
@@ -127,7 +117,6 @@ const Spreadsheet: React.FC<{
     setScrollPosition(position);
   };
   const clearSelection = () => {
-    setSelectedCell(null);
     setEditingCell(null);
   };
   const isShowInput = useMemo(() => {

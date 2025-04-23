@@ -23,30 +23,26 @@ export const useSpreadsheet = (
     ..._config
   }
   const [data, setData] = useState<TableData>(() => createInitialData(config, config.rows, config.cols));
-  const [selectedCell, setSelectedCell] = useState<EditingCell>(null);
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
   const [updater, setUpdater] = useState(+ new Date());
 
   const clearSelection = () => {
-    setSelectedCell(null);
     setEditingCell(null);
   };
 
   const currentCell = useMemo(() => {
     if (!data) return null;
     const cell =
-      data[editingCell?.row ?? selectedCell?.row ?? 0][
-      editingCell?.col ?? selectedCell?.col ?? 0
+      data[editingCell?.row ?? 0][
+      editingCell?.col ?? 0
       ];
     if (cell?.readOnly) return null;
     return cell
-  }, [data, editingCell, selectedCell]);
+  }, [data, editingCell]);
   return {
     data,
     setData,
     config,
-    selectedCell,
-    setSelectedCell,
     editingCell,
     setEditingCell,
     updater,

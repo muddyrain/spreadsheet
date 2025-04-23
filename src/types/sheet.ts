@@ -155,8 +155,6 @@ export type SpreadsheetType = {
   setData: React.Dispatch<React.SetStateAction<TableData>>;
   config: Required<SpreadsheetConfig>;
   currentCell: CellData | null;
-  selectedCell: EditingCell | null;
-  setSelectedCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
   editingCell: EditingCell | null;
   setEditingCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
   updater: number;
