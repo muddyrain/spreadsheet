@@ -38,6 +38,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             startCol + Math.ceil(drawConfig.wrapperWidth / drawConfig.cellWidth),
             data[0].length
         );
+        // 当前是否为单个单元格的选区
         const isOneSelection = selection?.start?.row === selection?.end?.row && selection?.start?.col === selection?.end?.col;
         ctx.translate(0.5, 0.5);
 
@@ -112,6 +113,62 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
                 const y = rowIndex * drawConfig.cellHeight;
                 renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
+            }
+        }
+
+        // 绘制 当前选中区域列头行头高亮
+        if (selection?.start && selection?.end) {
+            const r1 = Math.min(selection.start.row, selection.end.row);
+            const r2 = Math.max(selection.start.row, selection.end.row);
+            const c1 = Math.min(selection.start.col, selection.end.col);
+            const c2 = Math.max(selection.start.col, selection.end.col);
+            // 只绘制在当前可视区域内的部分
+            if (
+                r2 >= startRow && r1 < endRow &&
+                c2 >= startCol && c1 < endCol
+            ) {
+                // 列头高亮
+                for (let colIndex = c1;colIndex <= c2;colIndex++) {
+                    const cell = data[r1]?.[colIndex];
+                    if (!cell) continue;
+                    const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                    const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth - scrollPosition.x;
+                    const y = 0;
+                    ctx.save();
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = config.selectionBackgroundColor;
+                    ctx.fillRect(x, y, colWidth, drawConfig.cellHeight);
+                    ctx.globalAlpha = 1;
+                    // 绘制选中列的高亮线（加0.5防止模糊）
+                    ctx.beginPath();
+                    ctx.lineWidth = 2;
+                    ctx.moveTo(x, y + drawConfig.cellHeight - 1 + 0.5);
+                    ctx.lineTo(x + colWidth, y + drawConfig.cellHeight - 1 + 0.5);
+                    ctx.strokeStyle = config.selectionBorderColor;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                // 行头高亮
+                for (let rowIndex = r1;rowIndex <= r2;rowIndex++) {
+                    const cell = data[rowIndex]?.[c1];
+                    if (!cell) continue;
+                    const colWidth = fixedColWidth;
+                    const x = 0;
+                    const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
+                    ctx.save();
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = config.selectionBackgroundColor;
+                    ctx.fillRect(x, y, colWidth, drawConfig.cellHeight);
+                    ctx.globalAlpha = 1;
+                    // 绘制选中行的高亮线（加0.5防止模糊）
+                    ctx.beginPath();
+                    ctx.lineWidth = 2;
+                    ctx.moveTo(x + colWidth - 1 + 0.5, y);
+                    ctx.lineTo(x + colWidth - 1 + 0.5, y + drawConfig.cellHeight);
+                    ctx.strokeStyle = config.selectionBorderColor;
+                    ctx.stroke();
+                    ctx.restore();
+                }
             }
         }
     }, [data, drawConfig, selection]);
