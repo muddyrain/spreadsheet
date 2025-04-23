@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { CellData, SelectionSheetType, TableData } from '../types/sheet';
 import { useStore } from './useStore';
+import { getSelection } from '../utils/sheet';
 
 interface DrawConfig {
     cellWidth: number;
@@ -56,10 +57,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         // 绘制选区边框（只绘制在当前可视区域内的部分）
         if (selection?.start && selection?.end) {
             if (!(isOneSelection && isFocused)) {
-                const r1 = Math.min(selection.start.row, selection.end.row);
-                const r2 = Math.max(selection.start.row, selection.end.row);
-                const c1 = Math.min(selection.start.col, selection.end.col);
-                const c2 = Math.max(selection.start.col, selection.end.col);
+                const { r1, r2, c1, c2 } = getSelection(selection)
 
                 // 只绘制在当前可视区域内的部分
                 if (
@@ -278,18 +276,5 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         ctx.restore();
     };
 
-    // 获取选区 r1 最小行 r2 最大行 c1 最小列 c2 最大列
-    const getSelection = (selection?: SelectionSheetType) => {
-        const r1 = Math.min(selection?.start?.row || 0, selection?.end?.row || 0);
-        const r2 = Math.max(selection?.start?.row || 0, selection?.end?.row || 0);
-        const c1 = Math.min(selection?.start?.col || 0, selection?.end?.col || 0);
-        const c2 = Math.max(selection?.start?.col || 0, selection?.end?.col || 0);
-        return {
-            r1,
-            r2,
-            c1,
-            c2
-        }
-    }
     return { drawTable };
 };

@@ -46,6 +46,7 @@ const Spreadsheet: React.FC<{
         row: 1,
         col: 1
       })
+      setEditingCell(null)
       return;
     }
     // 点击固定列时
@@ -58,6 +59,7 @@ const Spreadsheet: React.FC<{
         row: 1,
         col: colIndex
       })
+      setEditingCell(null)
       return
     }
     // 点击固定行时
@@ -70,6 +72,7 @@ const Spreadsheet: React.FC<{
         row: rowIndex,
         col: 1
       })
+      setEditingCell(null)
       return
     }
     const currentCell = data[rowIndex][colIndex];
