@@ -1,10 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
-import { SelectionSheetType, TableData } from '../types/sheet';
+import { TableData } from '../types/sheet';
 import { useStore } from './useStore';
 
 export function useSheetSelection(data: TableData) {
-  const { config } = useStore()
-  const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
+  const { selection, config, setSelection } = useStore()
   const [isSelection, setIsSelection] = useState(false);
   const movedRef = useRef(false);
 

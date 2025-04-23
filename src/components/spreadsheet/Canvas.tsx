@@ -35,10 +35,9 @@ export const Canvas: React.FC<CanvasProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
-    console.log((data[0].length - 1) * cellWidth + config.fixedColWidth + 5);
     const scrollConfig = useMemo(() => ({
-        totalWidth: (data[0].length - 1) * cellWidth + config.fixedColWidth + 5,
-        totalHeight: data.length * cellHeight,
+        totalWidth: (data[0].length - 1) * cellWidth + config.fixedColWidth + 2,
+        totalHeight: data.length * cellHeight + 2,
         viewportWidth: containerWidth,
         viewportHeight: containerHeight,
         onScroll
@@ -137,12 +136,6 @@ export const Canvas: React.FC<CanvasProps> = ({
                             selection,
                         })
                     }}
-                    onClick={(e) => {
-                        if (!movedRef.current && onCellClick) { // 只在没有拖动时才触发
-                            handleGetClient(e, onCellClick)
-                        }
-                        movedRef.current = false; // 重置
-                    }}
                     onDoubleClick={(e) => {
                         if (!movedRef.current && onCellDoubleClick) { // 只在没有拖动时才触发
                             handleGetClient(e, onCellDoubleClick)
@@ -150,8 +143,8 @@ export const Canvas: React.FC<CanvasProps> = ({
                         movedRef.current = false; // 重置
                     }}
                     onMouseDown={(e) => {
-                        onCellClick && handleGetClient(e, onCellClick)
                         handleGetClient(e, (rowIndex, colIndex) => {
+                            onCellClick && onCellClick(rowIndex, colIndex)
                             const currentCell = data[rowIndex][colIndex];
                             if (currentCell?.readOnly) return;
                             handleCellMouseDown(rowIndex, colIndex, wrapperRef, scrollPosition)
@@ -164,7 +157,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <ScrollBar
                     type="horizontal"
                     viewportSize={containerWidth}
-                    contentSize={(data[0].length - 1) * cellWidth + config.fixedColWidth + 5}
+                    contentSize={(data[0].length - 1) * cellWidth + config.fixedColWidth + 2}
                     scrollPosition={scrollPosition.x}
                     onDragStart={handleScrollbarDragStart}
                 />
@@ -174,7 +167,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <ScrollBar
                     type="vertical"
                     viewportSize={containerHeight}
-                    contentSize={data.length * cellHeight}
+                    contentSize={data.length * cellHeight + 2}
                     scrollPosition={scrollPosition.y}
                     onDragStart={handleScrollbarDragStart}
                 />

@@ -53,6 +53,33 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
             }
         }
+        // 绘制选区边框（只绘制在当前可视区域内的部分）
+        if (selection?.start && selection?.end) {
+            if (!(isOneSelection && isFocused)) {
+                const r1 = Math.min(selection.start.row, selection.end.row);
+                const r2 = Math.max(selection.start.row, selection.end.row);
+                const c1 = Math.min(selection.start.col, selection.end.col);
+                const c2 = Math.max(selection.start.col, selection.end.col);
+
+                // 只绘制在当前可视区域内的部分
+                if (
+                    r2 >= startRow && r1 < endRow &&
+                    c2 >= startCol && c1 < endCol
+                ) {
+                    const x = (c1 - 1) * drawConfig.cellWidth - (c1 < FROZEN_COL_COUNT ? 0 : scrollPosition.x) + fixedColWidth;
+                    const y = r1 * drawConfig.cellHeight - (r1 < FROZEN_ROW_COUNT ? 0 : scrollPosition.y);
+                    const width = (c2 - c1 + 1) * drawConfig.cellWidth;
+                    const height = (r2 - r1 + 1) * drawConfig.cellHeight;
+
+                    ctx.save();
+                    ctx.strokeStyle = config.selectionBorderColor;
+                    ctx.lineWidth = 1;
+                    // 防止边框被其他元素遮挡
+                    ctx.strokeRect(x, y, width, height);
+                    ctx.restore();
+                }
+            }
+        }
         // 绘制冻结首列（除左上角交叉单元格）
         for (let rowIndex = startRow;rowIndex < endRow;rowIndex++) {
             for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
@@ -87,33 +114,6 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
             }
         }
-        // 绘制选区边框（只绘制在当前可视区域内的部分）
-        if (selection?.start && selection?.end) {
-            if (!(isOneSelection && isFocused)) {
-                const r1 = Math.min(selection.start.row, selection.end.row);
-                const r2 = Math.max(selection.start.row, selection.end.row);
-                const c1 = Math.min(selection.start.col, selection.end.col);
-                const c2 = Math.max(selection.start.col, selection.end.col);
-
-                // 只绘制在当前可视区域内的部分
-                if (
-                    r2 >= startRow && r1 < endRow &&
-                    c2 >= startCol && c1 < endCol
-                ) {
-                    const x = (c1 - 1) * drawConfig.cellWidth - (c1 < FROZEN_COL_COUNT ? 0 : scrollPosition.x) + fixedColWidth;
-                    const y = r1 * drawConfig.cellHeight - (r1 < FROZEN_ROW_COUNT ? 0 : scrollPosition.y);
-                    const width = (c2 - c1 + 1) * drawConfig.cellWidth;
-                    const height = (r2 - r1 + 1) * drawConfig.cellHeight;
-
-                    ctx.save();
-                    ctx.strokeStyle = config.selectionBorderColor;
-                    ctx.lineWidth = 1;
-                    // 防止边框被其他元素遮挡
-                    ctx.strokeRect(x, y, width, height);
-                    ctx.restore();
-                }
-            }
-        }
         // 绘制 当前选中区域列头行头高亮
         if (selection?.start && selection?.end) {
             const { r1, r2, c1, c2 } = getSelection(selection)
@@ -124,7 +124,6 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             ) {
                 // 列头高亮
                 for (let colIndex = c1;colIndex <= c2;colIndex++) {
-                    if (r1 === 1) continue
                     const cell = data[r1]?.[colIndex];
                     if (!cell) continue;
                     const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
@@ -141,7 +140,6 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 }
                 // 行头高亮
                 for (let rowIndex = r1;rowIndex <= r2;rowIndex++) {
-                    if (c1 === 1) continue
                     const cell = data[rowIndex]?.[c1];
                     if (!cell) continue;
                     const colWidth = fixedColWidth;

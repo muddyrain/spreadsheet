@@ -16,9 +16,6 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
     onDragStart
 }) => {
     const isHorizontal = type === 'horizontal';
-    if (isHorizontal) {
-        console.log(scrollPosition, contentSize);
-    }
     const scrollBarSize = (viewportSize / contentSize) * 100;
     const scrollBarPosition = (scrollPosition / contentSize) * 100;
     return (

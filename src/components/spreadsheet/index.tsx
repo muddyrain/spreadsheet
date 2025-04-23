@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { TableData, SpreadsheetConfig, SpreadsheetType, CellData, } from '../../types/sheet';
+import { TableData, SpreadsheetConfig, SpreadsheetType, CellData, SelectionSheetType, } from '../../types/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
@@ -17,6 +17,8 @@ export const SpreadsheetContext = React.createContext<{
   setUpdater: () => void;
   isFocused: boolean,
   setIsFocused: (isFocused: boolean) => void;
+  selection: SelectionSheetType;
+  setSelection: React.Dispatch<React.SetStateAction<SelectionSheetType>>;
 } | undefined>(undefined)
 const Spreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -27,6 +29,7 @@ const Spreadsheet: React.FC<{
   const { config, selectedCell, setSelectedCell, setEditingCell, data, setData, editingCell, currentCell,
     updater,
     forceUpdate } = props.spreadsheet ?? useSpreadsheet(_config);
+  const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
   const cellInputRef = useRef<CellInputRef>(null);
   const [isFocused, setIsFocused] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -34,6 +37,15 @@ const Spreadsheet: React.FC<{
   const cellWidth = config.width;
   const cellHeight = config.height;
   const onCellClick = (rowIndex: number, colIndex: number) => {
+    console.log('rowIndex, colIndex', rowIndex, colIndex);
+    // 点击固定列时
+    if (rowIndex === 0) {
+      setSelection({
+        start: { row: 1, col: colIndex },
+        end: { row: data.length - 1, col: colIndex }
+      })
+      return
+    }
     if (rowIndex < 0 || colIndex < 0) {
       setSelectedCell(null);
       setEditingCell(null);
@@ -113,7 +125,9 @@ const Spreadsheet: React.FC<{
       updater,
       setUpdater: forceUpdate,
       isFocused,
-      setIsFocused
+      setIsFocused,
+      selection,
+      setSelection
     }}>
       <div className='flex flex-col w-full h-full overflow-hidden'>
         <Header onClick={type => {
