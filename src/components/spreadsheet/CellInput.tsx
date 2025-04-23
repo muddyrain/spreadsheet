@@ -15,7 +15,8 @@ export const CellInput = forwardRef<CellInputRef, {
     y: number;
   };
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-}>(({ style, value, scrollPosition, onChange }, ref) => {
+  onTabKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+}>(({ style, value, scrollPosition, onChange, onTabKeyDown }, ref) => {
   const { data, config, currentCell, setIsFocused } = useStore()
   const cellWidth = config.width;
   const cellHeight = config.height;
@@ -110,6 +111,12 @@ export const CellInput = forwardRef<CellInputRef, {
         onChange={e => {
           onChange(e);
           updateInputSize();
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Tab') {
+            e.preventDefault();
+            onTabKeyDown?.(e);
+          }
         }}
         style={{
           ...style,

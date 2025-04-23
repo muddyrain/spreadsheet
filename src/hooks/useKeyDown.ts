@@ -7,14 +7,14 @@ interface useKeyDownCallback {
   onCellPasteKey?: () => void;
   onCellDeleteKey?: () => void;
   onSelectAll?: () => void;
-  onTab?: () => void;
+  onTabKey?: () => void;
 }
 export const useKeyDown = (config: {
   data: TableData;
   setData: React.Dispatch<React.SetStateAction<TableData>>;
 }, callback: useKeyDownCallback = {}) => {
   const { data, setData } = config;
-  const onKeyDown: CanvasOnKeyDown = (e, { selection, setSelection }) => {
+  const onKeyDown: CanvasOnKeyDown = (e, { selection, }) => {
     e.preventDefault();
     const key = e.key;
     // 处理 ctrl/cmd + a
@@ -34,7 +34,7 @@ export const useKeyDown = (config: {
       const endCol = Math.max(selection.start.col, selection.end.col);
       // 处理 tab 键
       if (key === 'Tab') {
-        callback?.onTab?.();
+        callback?.onTabKey?.();
       }
       // 处理粘贴
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {

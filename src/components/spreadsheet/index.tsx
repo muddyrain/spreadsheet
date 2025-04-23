@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TableData, SpreadsheetConfig, SpreadsheetType, CellData, SelectionSheetType, } from '../../types/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
-import _, { set } from 'lodash';
+import _ from 'lodash';
 import { Header } from './Header';
 import { CellInput, CellInputRef } from './CellInput';
 import { useKeyDown } from '@/hooks/useKeyDown';
@@ -89,6 +89,42 @@ const Spreadsheet: React.FC<{
     setEditingCell({ row: rowIndex, col: colIndex }); // 双击才进入编辑
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
+  const onTabKeyDown = () => {
+    if (!selectedCell) return
+    // 单选格
+    if (selection.start?.row === selection.end?.row && selection.start?.col === selection.end?.col) {
+      if (selectedCell.col + 1 <= data[0].length - 1) {
+        setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 })
+        setEditingCell({ row: selectedCell.row, col: selectedCell.col + 1 })
+        setSelection({
+          start: { row: selectedCell.row, col: selectedCell.col + 1 },
+          end: { row: selectedCell.row, col: selectedCell.col + 1 }
+        })
+      } else {
+        setSelectedCell({ row: selectedCell.row + 1, col: 1 })
+        setEditingCell({ row: selectedCell.row + 1, col: 1 })
+        setSelection({
+          start: { row: selectedCell.row + 1, col: 1 },
+          end: { row: selectedCell.row + 1, col: 1 }
+        })
+      }
+    } else {
+      // 多选格
+      const { r1, r2, c1, c2 } = getAbsoluteSelection(selection)
+      if (selectedCell.col + 1 <= c2) {
+        setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 })
+        setEditingCell({ row: selectedCell.row, col: selectedCell.col + 1 })
+      } else {
+        if (selectedCell.row + 1 <= r2) {
+          setSelectedCell({ row: selectedCell.row + 1, col: c1 })
+          setEditingCell({ row: selectedCell.row + 1, col: c1 })
+        } else {
+          setSelectedCell({ row: r1, col: c1 })
+          setEditingCell({ row: r1, col: c1 })
+        }
+      }
+    }
+  }
   const { onKeyDown } = useKeyDown({
     data,
     setData,
@@ -102,37 +138,7 @@ const Spreadsheet: React.FC<{
     onSelectAll() {
       handleSelectAll()
     },
-    onTab() {
-      if (!selectedCell) return
-      // 单选格
-      if (selection.start?.row === selection.end?.row && selection.start?.col === selection.end?.col) {
-        if (selectedCell.col + 1 <= data[0].length - 1) {
-          setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 })
-          setSelection({
-            start: { row: selectedCell.row, col: selectedCell.col + 1 },
-            end: { row: selectedCell.row, col: selectedCell.col + 1 }
-          })
-        } else {
-          setSelectedCell({ row: selectedCell.row + 1, col: 1 })
-          setSelection({
-            start: { row: selectedCell.row + 1, col: 1 },
-            end: { row: selectedCell.row + 1, col: 1 }
-          })
-        }
-      } else {
-        // 多选格
-        const { r1, r2, c1, c2 } = getAbsoluteSelection(selection)
-        if (selectedCell.col + 1 <= c2) {
-          setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 })
-        } else {
-          if (selectedCell.row + 1 <= r2) {
-            setSelectedCell({ row: selectedCell.row + 1, col: c1 })
-          } else {
-            setSelectedCell({ row: r1, col: c1 })
-          }
-        }
-      }
-    }
+    onTabKey: onTabKeyDown
   })
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (editingCell) {
@@ -213,6 +219,7 @@ const Spreadsheet: React.FC<{
             ref={cellInputRef}
             onChange={handleInputChange}
             value={currentCell?.value || ''}
+            onTabKeyDown={onTabKeyDown}
             style={{
               display: isShowInput,
               fontSize: `${config.fontSize || currentCell?.style.fontSize || 14}px`,
