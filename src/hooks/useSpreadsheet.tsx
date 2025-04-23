@@ -1,4 +1,4 @@
-import { EditingCell, SelectionSheetType, SpreadsheetConfig, SpreadsheetType, TableData } from "@/types/sheet";
+import { EditingCell, SpreadsheetConfig, SpreadsheetType, TableData } from "@/types/sheet";
 import { createInitialData } from "@/utils/sheet";
 import { useMemo, useState } from "react";
 
@@ -23,7 +23,6 @@ export const useSpreadsheet = (
     ..._config
   }
   const [data, setData] = useState<TableData>(() => createInitialData(config, config.rows, config.cols));
-  const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
   const [selectedCell, setSelectedCell] = useState<EditingCell>(null);
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
   const [updater, setUpdater] = useState(+ new Date());
