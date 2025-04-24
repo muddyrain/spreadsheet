@@ -79,7 +79,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-
         // 适配高分屏
         const dpr = window.devicePixelRatio || 1;
         canvas.width = (containerWidth) * dpr;

@@ -163,3 +163,8 @@ export type SpreadsheetType = {
   forceUpdate: () => void;
   clearSelection: () => void;
 }
+
+export type PositionType = {
+  x: number;
+  y: number;
+}
