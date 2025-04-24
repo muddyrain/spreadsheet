@@ -5,6 +5,7 @@ import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
 import { useSheetSelection } from '@/hooks/useSheetSelection';
 import { useStore } from '@/hooks/useStore';
+import { useSideLine } from '@/hooks/useSideLine';
 
 export type CanvasOnKeyDown = (e: React.KeyboardEvent, options: {
     selection: SelectionSheetType;
@@ -33,26 +34,32 @@ export const Canvas: React.FC<CanvasProps> = ({
     onScroll,
     onKeyDown
 }) => {
-    const { config } = useStore()
+    const { config, headerColumnsWidth } = useStore()
     const [currentHoverCell, setCurrentHoverCell] = useState<[number, number] | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
+    const totalWidth = useMemo(() => {
+        return headerColumnsWidth.reduce((sum, prev) => sum += prev, 0) + config.fixedColWidth + 5
+    }, [headerColumnsWidth, config.fixedColWidth])
     const scrollConfig = useMemo(() => ({
-        totalWidth: (data[0].length - 1) * cellWidth + config.fixedColWidth + 5,
+        totalWidth,
         totalHeight: data.length * cellHeight + 5,
         viewportWidth: containerWidth,
         viewportHeight: containerHeight,
         onScroll
-    }), [data, cellWidth, cellHeight, containerWidth, containerHeight, onScroll, config]);
+    }), [data, cellHeight, containerWidth, containerHeight, onScroll, totalWidth]);
     const { selection, movedRef, handleCellMouseDown, setSelection } = useSheetSelection(data);
     const {
         scrollPosition,
         handleScrollbarDragStart,
         handleWheel,
     } = useSheetScroll(scrollConfig);
-
+    const { isMouseDown, currentColSideLineIndex, currentColSideLinePosition, cursor, setIsMouseDown, handleMouseUp } = useSideLine({
+        currentHoverCell,
+        canvasRef
+    })
     const { drawTable } = useSheetDraw(data, {
         cellWidth,
         cellHeight,
@@ -106,9 +113,9 @@ export const Canvas: React.FC<CanvasProps> = ({
     }, [wrapperRef, handleWheel])
 
     function handleGetClient<T extends React.MouseEvent<HTMLCanvasElement, MouseEvent>>(e: T, callback: (
-        rowIndex: number, colIndex: number) => void) {
+        rowIndex: number, colIndex: number, x: number, y: number) => void) {
         const canvas = canvasRef.current;
-        const fixedColWidth = config.fixedColWidth
+        const fixedColWidth = config.fixedColWidth;
         if (canvas) {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -130,11 +137,32 @@ export const Canvas: React.FC<CanvasProps> = ({
                 rowIndex = Math.floor((y + scrollPosition.y - config.height) / cellHeight) + 1;
             } else if (inFixedRow) {
                 // 固定行
-                colIndex = Math.floor((x + scrollPosition.x - fixedColWidth) / cellWidth) + 1;
+                // 动态列宽下，计算 colIndex
+                let accWidth = 0;
+                let found = false;
+                for (let i = 1;i < headerColumnsWidth.length;i++) {
+                    accWidth += headerColumnsWidth[i];
+                    if (x + scrollPosition.x - fixedColWidth < accWidth) {
+                        colIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) colIndex = headerColumnsWidth.length - 1;
                 rowIndex = 0;
             } else {
                 // 普通区域
-                colIndex = Math.floor((x + scrollPosition.x - fixedColWidth) / cellWidth) + 1;
+                let accWidth = 0;
+                let found = false;
+                for (let i = 1;i < headerColumnsWidth.length;i++) {
+                    accWidth += headerColumnsWidth[i];
+                    if (x + scrollPosition.x - fixedColWidth < accWidth) {
+                        colIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) colIndex = headerColumnsWidth.length - 1;
                 rowIndex = Math.floor((y + scrollPosition.y - config.height) / cellHeight) + 1;
             }
 
@@ -144,28 +172,11 @@ export const Canvas: React.FC<CanvasProps> = ({
                 rowIndex >= 0 && rowIndex < data.length &&
                 colIndex >= 0 && colIndex < data[0].length
             ) {
-                callback(rowIndex, colIndex);
+                callback(rowIndex, colIndex, x + scrollPosition.x, y + scrollPosition.y);
             }
         }
     }
-    const cursor = useMemo(() => {
-        if (currentHoverCell) {
-            const [rowIndex, colIndex] = currentHoverCell;
-            const currentCell = data[rowIndex][colIndex];
-            if (currentCell?.readOnly) {
-                if (rowIndex === 0 && colIndex === 0) {
-                    return 'se-resize'
-                }
-                if (rowIndex === 0) {
-                    return 's-resize'
-                }
-                if (colIndex === 0) {
-                    return 'e-resize'
-                }
-            }
-        }
-        return 'cell';
-    }, [currentHoverCell, data])
+
     return (
         <>
             <div
@@ -180,12 +191,13 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <canvas
                     className='outline-0'
                     style={{
-                        cursor: cursor,
+                        cursor,
                     }}
                     tabIndex={0}
                     ref={canvasRef}
                     onMouseMove={e => {
                         handleGetClient(e, (rowIndex, colIndex) => {
+                            if (currentHoverCell && rowIndex === currentHoverCell[0] && colIndex === currentHoverCell[1]) return;
                             setCurrentHoverCell([rowIndex, colIndex])
                         })
                     }}
@@ -202,6 +214,10 @@ export const Canvas: React.FC<CanvasProps> = ({
                         movedRef.current = false; // 重置
                     }}
                     onMouseDown={(e) => {
+                        if (currentColSideLineIndex !== -1) {
+                            setIsMouseDown(true);
+                            return;
+                        }
                         handleGetClient(e, (rowIndex, colIndex) => {
                             onCellClick?.(rowIndex, colIndex)
                             const currentCell = data[rowIndex][colIndex];
@@ -216,7 +232,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <ScrollBar
                     type="horizontal"
                     viewportSize={containerWidth}
-                    contentSize={(data[0].length - 1) * cellWidth + config.fixedColWidth + 5}
+                    contentSize={totalWidth}
                     scrollPosition={scrollPosition.x}
                     onDragStart={handleScrollbarDragStart}
                 />
@@ -231,7 +247,16 @@ export const Canvas: React.FC<CanvasProps> = ({
                     onDragStart={handleScrollbarDragStart}
                 />
             }
-
+            {
+                // 当前列侧线
+                isMouseDown &&
+                <div className="h-full bg-red-400" style={{
+                    width: 1,
+                    position: 'absolute',
+                    left: currentColSideLinePosition,
+                    top: 0,
+                }} onMouseUp={handleMouseUp} />
+            }
         </>
     );
 };

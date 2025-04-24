@@ -71,3 +71,10 @@ export const getAbsoluteSelection = (selection?: SelectionSheetType) => {
     c2
   }
 }
+
+
+// 获取 x - left
+export const getLeft = (col: number, headerColumnsWidth: number[], scrollPosition: { x: number; y: number }) => {
+  const beforeAllWidth = col === 0 ? 0 : headerColumnsWidth.slice(0, col).reduce((a, b) => a + b, 0);
+  return col === 0 ? 0 : beforeAllWidth - scrollPosition.x;
+}

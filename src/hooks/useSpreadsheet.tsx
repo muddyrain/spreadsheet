@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 export const useSpreadsheet = (
   _config?: SpreadsheetConfig
 ): SpreadsheetType => {
-  const config: Required<SpreadsheetConfig> = {
+  const config: Required<SpreadsheetConfig> = useMemo(() => ({
     rows: 200,
     cols: 26,
     fontSize: 14,
@@ -21,8 +21,8 @@ export const useSpreadsheet = (
     backgroundColor: '#FFFFFF',
     color: '#000000',
     ..._config
-  }
-  const [data, setData] = useState<TableData>(() => createInitialData(config, config.rows, config.cols));
+  }), [_config]);
+  const [data, setData] = useState<TableData>(createInitialData(config, config.rows, config.cols));
   const [selectedCell, setSelectedCell] = useState<EditingCell>(null);
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
   const [updater, setUpdater] = useState(+ new Date());
@@ -33,7 +33,7 @@ export const useSpreadsheet = (
   };
 
   const currentCell = useMemo(() => {
-    if (!data) return null;
+    if (!data?.length) return null;
     const cell =
       data[editingCell?.row ?? selectedCell?.row ?? 0][
       editingCell?.col ?? selectedCell?.col ?? 0
@@ -41,6 +41,7 @@ export const useSpreadsheet = (
     if (cell?.readOnly) return null;
     return cell
   }, [data, editingCell, selectedCell]);
+
   return {
     data,
     setData,
@@ -52,6 +53,6 @@ export const useSpreadsheet = (
     updater,
     forceUpdate: () => setUpdater(+ new Date()),
     clearSelection,
-    currentCell,
+    currentCell
   };
 }

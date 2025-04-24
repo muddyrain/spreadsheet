@@ -21,6 +21,7 @@ const Spreadsheet: React.FC<{
     updater,
     // eslint-disable-next-line react-hooks/rules-of-hooks
     forceUpdate } = props.spreadsheet ?? useSpreadsheet(_config);
+  const [headerColumnsWidth, setHeaderColumnsWidth] = useState<number[]>([]);
   const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
   const cellInputRef = useRef<CellInputRef>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -116,6 +117,17 @@ const Spreadsheet: React.FC<{
       }
     }
   }
+  useEffect(() => {
+    setHeaderColumnsWidth(() => {
+      return [config.fixedColWidth, ...Array.from({ length: config.cols }).map((_, index) => {
+        if (index === 1) {
+          return 200
+        } else {
+          return config.width
+        }
+      })]
+    })
+  }, [config.cols, config.fixedColWidth, config.width])
   const { onKeyDown } = useKeyDown({
     data,
     setData,
@@ -182,7 +194,9 @@ const Spreadsheet: React.FC<{
       isFocused,
       setIsFocused,
       selection,
-      setSelection
+      setSelection,
+      headerColumnsWidth,
+      setHeaderColumnsWidth
     }}>
       <div className='flex flex-col w-full h-full overflow-hidden'>
         <Header onClick={type => {
@@ -211,6 +225,7 @@ const Spreadsheet: React.FC<{
           <CellInput
             scrollPosition={scrollPosition}
             ref={cellInputRef}
+            selectedCell={selectedCell}
             onChange={handleInputChange}
             value={currentCell?.value || ''}
             onTabKeyDown={onTabKeyDown}
