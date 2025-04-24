@@ -55,7 +55,7 @@ const Spreadsheet: React.FC<{
     if (colIndex === 0) {
       setSelection({
         start: { row: rowIndex, col: 1 },
-        end: { row: rowIndex, col: data.length - 1 }
+        end: { row: rowIndex, col: data[0].length - 1 }
       })
       setSelectedCell({ row: rowIndex, col: 1 })
       setEditingCell(null)

@@ -69,8 +69,8 @@ export const CellInput = forwardRef<CellInputRef, {
     updateInputSize,
     focus() {
       updateInputSize();
-      inputRef.current?.focus();
       setIsFocused(true)
+      inputRef.current?.focus();
     },
     blur() {
       updateInputSize();
