@@ -28,7 +28,7 @@ export const useSideLine = (options: {
           const cellWidth = headerColsWidth[colIndex]
           const left = getLeft(colIndex, headerColsWidth, scrollPosition)
           const offset = currentColSideLinePosition - left
-          if (offset <= 5) {
+          if (offset <= 5 && colIndex > 1) {
             if (!isMouseDown) {
               setCurrentColSideLineIndex(colIndex - 1)
             }

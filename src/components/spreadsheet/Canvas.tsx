@@ -36,16 +36,17 @@ export const Canvas: React.FC<CanvasProps> = ({
     onKeyDown
 }) => {
     const { config, headerColsWidth, headerRowsHeight } = useStore()
+    const rafId = useRef<number | null>(null)
     const [currentHoverCell, setCurrentHoverCell] = useState<[number, number] | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
     const totalWidth = useMemo(() => {
-        return headerColsWidth.reduce((sum, prev) => sum += prev, 0) + 5
+        return headerColsWidth.reduce((sum, prev) => sum += prev, 0) + 50
     }, [headerColsWidth])
     const totalHeight = useMemo(() => {
-        return headerRowsHeight.reduce((sum, prev) => sum += prev, 0) + 5
+        return headerRowsHeight.reduce((sum, prev) => sum += prev, 0) + 50
     }, [headerRowsHeight])
     const scrollConfig = useMemo(() => ({
         totalWidth,
@@ -86,27 +87,33 @@ export const Canvas: React.FC<CanvasProps> = ({
         canvas.style.width = `${containerWidth}px`;
         canvas.style.height = `${containerHeight}px`;
         const ctx = canvas.getContext('2d');
-        let rafId: number | null = null;
         if (ctx) {
-            rafId = requestAnimationFrame(() => {
+            rafId.current = requestAnimationFrame(() => {
                 drawTable(ctx, scrollPosition);
             });
         }
         return () => {
-            if (rafId !== null) {
-                cancelAnimationFrame(rafId);
+            if (rafId.current !== null) {
+                cancelAnimationFrame(rafId.current);
             }
         }
-    }, [drawTable, scrollPosition, containerWidth, containerHeight]);
+    }, [containerHeight, containerWidth, drawTable, scrollPosition])
     useEffect(() => {
         onScroll?.(scrollPosition);
     }, [scrollPosition, onScroll]);
     useEffect(() => {
-        if (containerRef.current) {
-            setContainerWidth(containerRef.current.clientWidth);
-            setContainerHeight(containerRef.current.clientHeight);
+        const handleResize = () => {
+            if (containerRef.current) {
+                setContainerWidth(containerRef.current.clientWidth);
+                setContainerHeight(containerRef.current.clientHeight);
+            }
         }
-    }, [])
+        handleResize()
+        window.addEventListener('resize', handleResize)
+        return () => {
+            window.removeEventListener('resize', handleResize)
+        }
+    }, [containerRef])
     useEffect(() => {
         const currentWrapper = wrapperRef.current;
         if (currentWrapper) {
@@ -181,7 +188,6 @@ export const Canvas: React.FC<CanvasProps> = ({
                     ref={canvasRef}
                     onMouseMove={e => {
                         handleGetClient(e, (rowIndex, colIndex) => {
-                            if (currentHoverCell && rowIndex === currentHoverCell[0] && colIndex === currentHoverCell[1]) return;
                             setCurrentHoverCell([rowIndex, colIndex])
                         })
                     }}
