@@ -63,7 +63,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         handleWheel,
     } = useSheetScroll(scrollConfig);
     // 单元格侧边栏 hooks - 拖拽侧边    
-    const { isMouseDown, currentColSideLinePosition, cursor, setIsMouseDown, handleMouseUp } = useSideLine({
+    const { isMouseDown, sideLineMode, currentRowSideLinePosition, currentColSideLinePosition, cursor, setIsMouseDown, handleMouseUp } = useSideLine({
         currentHoverCell,
         canvasRef,
         scrollPosition
@@ -167,7 +167,6 @@ export const Canvas: React.FC<CanvasProps> = ({
             }
         }
     }
-
     return (
         <>
             <div
@@ -204,7 +203,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                         movedRef.current = false; // 重置
                     }}
                     onMouseDown={(e) => {
-                        if (['col-resize'].includes(cursor)) {
+                        if (['col-resize', 'row-resize'].includes(cursor)) {
                             setIsMouseDown(true);
                             return;
                         }
@@ -239,12 +238,23 @@ export const Canvas: React.FC<CanvasProps> = ({
             }
             {
                 // 当前列侧线
-                isMouseDown &&
+                isMouseDown && sideLineMode === 'col' &&
                 <div className="h-full" style={{
                     width: 1,
                     position: 'absolute',
                     left: currentColSideLinePosition,
                     top: 0,
+                    backgroundColor: config.selectionBorderColor
+                }} onMouseUp={handleMouseUp} />
+            }
+            {
+                // 当前行侧线
+                isMouseDown && sideLineMode === 'row' &&
+                <div className="w-full" style={{
+                    height: 1,
+                    position: 'absolute',
+                    left: 0,
+                    top: currentRowSideLinePosition,
                     backgroundColor: config.selectionBorderColor
                 }} onMouseUp={handleMouseUp} />
             }
