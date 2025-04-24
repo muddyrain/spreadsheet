@@ -153,6 +153,9 @@ export const Canvas: React.FC<CanvasProps> = ({
             const [rowIndex, colIndex] = currentHoverCell;
             const currentCell = data[rowIndex][colIndex];
             if (currentCell?.readOnly) {
+                if (rowIndex === 0 && colIndex === 0) {
+                    return 'se-resize'
+                }
                 if (rowIndex === 0) {
                     return 's-resize'
                 }

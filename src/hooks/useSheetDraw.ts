@@ -283,9 +283,18 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 const cell = data[rowIndex]?.[colIndex];
                 if (!cell) continue;
                 const colWidth = colIndex === 0 ? fixedColWidth : drawConfig.cellWidth;
+                const colHeight = drawConfig.cellHeight
                 const x = colIndex === 0 ? 0 : fixedColWidth + (colIndex - 1) * drawConfig.cellWidth;
                 const y = rowIndex * drawConfig.cellHeight;
                 renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
+                // 绘制一个倒三角作为左上角交叉单元格的标志
+                ctx.fillStyle = config.selectionBorderColor;
+                ctx.beginPath();
+                ctx.moveTo(x + (colWidth / 2) - 5 + 0.5, y + (colHeight / 2) + 5 + 0.5);
+                ctx.lineTo(x + (colWidth / 2) + 5 + 0.5, y + (colHeight / 2) + 5 + 0.5);
+                ctx.lineTo(x + (colWidth / 2) + 5 + 0.5, y + (colHeight / 2) - 5 + 0.5);
+                ctx.closePath();
+                ctx.fill();
             }
         }
     }, [data, drawConfig, selection, selectedCell, config, fixedColWidth, isFocused]);
