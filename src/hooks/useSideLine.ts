@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore } from "./useStore";
+import { PositionType } from "@/types/sheet";
+import { getLeft } from "@/utils/sheet";
 
 export const useSideLine = (options: {
   currentHoverCell: [number, number] | null;
+  scrollPosition: PositionType;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
 }) => {
-  const { currentHoverCell, canvasRef } = options
-  const { data, config } = useStore()
+  const { currentHoverCell, canvasRef, scrollPosition } = options
+  const { data, headerColsWidth, setHeaderColsWidth } = useStore()
   const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(null);
   const [currentColSideLinePosition, setCurrentColSideLinePosition] = useState<number>(-1);
   const [currentColSideLineIndex, setCurrentColSideLineIndex] = useState(-1);
@@ -22,17 +25,21 @@ export const useSideLine = (options: {
         if (rowIndex === 0) {
           const [x] = currentPosition || [0, 0]
           setCurrentColSideLinePosition(x)
-          // 判断是否悬浮在固定列右边界
-          const offset = Math.abs((x - config.fixedColWidth) % config.width);
+          const cellWidth = headerColsWidth[colIndex]
+          const left = getLeft(colIndex, headerColsWidth, scrollPosition)
+          const offset = currentColSideLinePosition - left
           if (offset <= 5) {
-            setCurrentColSideLineIndex(colIndex - 1)
+            if (!isMouseDown) {
+              setCurrentColSideLineIndex(colIndex - 1)
+            }
             return 'col-resize'
           }
-          if (offset >= config.width - 5) {
-            setCurrentColSideLineIndex(colIndex)
+          if (offset >= cellWidth - 5) {
+            if (!isMouseDown) {
+              setCurrentColSideLineIndex(colIndex)
+            }
             return 'col-resize'
           }
-          setCurrentColSideLineIndex(-1)
           return 's-resize'
         }
         if (colIndex === 0) {
@@ -41,13 +48,22 @@ export const useSideLine = (options: {
       }
     }
     return 'cell';
-  }, [currentHoverCell, currentPosition, config, data])
+  }, [currentHoverCell, currentColSideLinePosition, currentPosition, isMouseDown, headerColsWidth, data, scrollPosition])
 
-  const handleMouseUp = () => {
-    setIsMouseDown(false);
-    setCurrentColSideLineIndex(-1)
-    setCurrentColSideLinePosition(-1)
-  }
+  const handleMouseUp = useCallback(() => {
+    if (isMouseDown) {
+      const left = getLeft(currentColSideLineIndex, headerColsWidth, scrollPosition)
+      let width = currentColSideLinePosition - left
+      if (width <= 0) {
+        width = 0
+      }
+      headerColsWidth[currentColSideLineIndex] = width
+      setHeaderColsWidth([...headerColsWidth])
+      setIsMouseDown(false);
+      setCurrentColSideLineIndex(-1)
+      setCurrentColSideLinePosition(-1)
+    }
+  }, [isMouseDown, currentColSideLineIndex, currentColSideLinePosition, headerColsWidth, scrollPosition, setHeaderColsWidth])
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const canvas = canvasRef.current;
@@ -67,7 +83,7 @@ export const useSideLine = (options: {
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('mouseup', handleMouseMove)
     }
-  }, [canvasRef, isMouseDown])
+  }, [canvasRef, isMouseDown, scrollPosition, headerColsWidth, handleMouseUp])
 
   return {
     isMouseDown,

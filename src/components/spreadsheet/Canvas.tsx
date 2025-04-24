@@ -55,15 +55,19 @@ export const Canvas: React.FC<CanvasProps> = ({
         onScroll
     }), [containerWidth, containerHeight, onScroll, totalWidth, totalHeight]);
     const { selection, movedRef, handleCellMouseDown, setSelection } = useSheetSelection();
+    // 滚动 hooks
     const {
         scrollPosition,
         handleScrollbarDragStart,
         handleWheel,
     } = useSheetScroll(scrollConfig);
-    const { isMouseDown, currentColSideLineIndex, currentColSideLinePosition, cursor, setIsMouseDown, handleMouseUp } = useSideLine({
+    // 单元格侧边栏 hooks - 拖拽侧边    
+    const { isMouseDown, currentColSideLinePosition, cursor, setIsMouseDown, handleMouseUp } = useSideLine({
         currentHoverCell,
-        canvasRef
+        canvasRef,
+        scrollPosition
     })
+    // 绘制 hooks
     const { drawTable } = useSheetDraw(data, {
         cellWidth,
         cellHeight,
@@ -195,7 +199,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                         movedRef.current = false; // 重置
                     }}
                     onMouseDown={(e) => {
-                        if (currentColSideLineIndex !== -1) {
+                        if (['col-resize'].includes(cursor)) {
                             setIsMouseDown(true);
                             return;
                         }
@@ -231,11 +235,12 @@ export const Canvas: React.FC<CanvasProps> = ({
             {
                 // 当前列侧线
                 isMouseDown &&
-                <div className="h-full bg-red-400" style={{
+                <div className="h-full" style={{
                     width: 1,
                     position: 'absolute',
                     left: currentColSideLinePosition,
                     top: 0,
+                    backgroundColor: config.selectionBorderColor
                 }} onMouseUp={handleMouseUp} />
             }
         </>

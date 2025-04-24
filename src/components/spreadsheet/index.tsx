@@ -38,6 +38,7 @@ const Spreadsheet: React.FC<{
     setSelectedCell({ row: 1, col: 1 })
     setEditingCell(null)
   }
+  // 监听点击事件
   const onCellClick = (rowIndex: number, colIndex: number) => {
     if (rowIndex === 0 && colIndex === 0) {
       handleSelectAll()
@@ -74,6 +75,7 @@ const Spreadsheet: React.FC<{
     setSelectedCell({ row: rowIndex, col: colIndex })
     setEditingCell(null); // 单击时不进入编辑
   };
+  // 监听双击事件
   const onCellDoubleClick = (rowIndex: number, colIndex: number) => {
     const currentCell = data[rowIndex][colIndex];
     if (currentCell.readOnly) {
@@ -118,24 +120,20 @@ const Spreadsheet: React.FC<{
       }
     }
   }
+  // 初始化 列宽度 行高度
   useEffect(() => {
     setHeaderColsWidth(() => {
-      return [config.fixedColWidth, ...Array.from({ length: config.cols }).map((_, index) => {
-        if (index === 2) {
-          return 200
-        }
+      return [config.fixedColWidth, ...Array.from({ length: config.cols }).map((_) => {
         return config.width
       })]
     })
     setHeaderRowsHeight(() => {
-      return [config.height, ...Array.from({ length: config.rows }).map((_, index) => {
-        if (index === 2) {
-          return 100
-        }
+      return [config.height, ...Array.from({ length: config.rows }).map((_) => {
         return config.height
       })]
     })
   }, [config])
+  // 键盘 hooks
   const { onKeyDown } = useKeyDown({
     data,
     setData,
@@ -154,6 +152,7 @@ const Spreadsheet: React.FC<{
     },
     onTabKey: onTabKeyDown
   })
+  // 监听输入更新事件
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (editingCell) {
       const newData = [...data];
@@ -163,15 +162,18 @@ const Spreadsheet: React.FC<{
       debouncedChange(newData);
     }
   };
+  // 防抖更新
   const debouncedChange = useMemo(() => {
     const handleChange = (data: TableData) => {
       onChange?.(filterData(data))
     };
     return _.debounce(handleChange, 500);
   }, [onChange]);
+  // 更新滚动位置
   const handleScroll = (position: PositionType) => {
     setScrollPosition(position);
   };
+  // 清除选中
   const clearSelection = useCallback(() => {
     setEditingCell(null);
   }, [setEditingCell])
