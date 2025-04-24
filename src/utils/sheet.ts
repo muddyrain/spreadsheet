@@ -1,4 +1,4 @@
-import { TableData, CellData, SpreadsheetConfig, SelectionSheetType } from '../types/sheet';
+import { TableData, CellData, SpreadsheetConfig, SelectionSheetType, PositionType } from '../types/sheet';
 export const createInitialData = (config: SpreadsheetConfig, rows: number, cols: number): TableData => {
   const initialData: TableData = [];
   const readOnlyStyle: CellData['style'] = {
@@ -74,7 +74,81 @@ export const getAbsoluteSelection = (selection?: SelectionSheetType) => {
 
 
 // 获取 x - left
-export const getLeft = (col: number, headerColumnsWidth: number[], scrollPosition: { x: number; y: number }) => {
-  const beforeAllWidth = col === 0 ? 0 : headerColumnsWidth.slice(0, col).reduce((a, b) => a + b, 0);
+export const getLeft = (col: number, headerColsWidth: number[], scrollPosition: PositionType) => {
+  const beforeAllWidth = col === 0 ? 0 : headerColsWidth.slice(0, col).reduce((a, b) => a + b, 0);
   return col === 0 ? 0 : beforeAllWidth - scrollPosition.x;
+}
+// 获取 y - top
+export const getTop = (row: number, headerRowsHeight: number[], scrollPosition: PositionType) => {
+  const beforeAllHeight = row === 0 ? 0 : headerRowsHeight.slice(0, row).reduce((a, b) => a + b, 0);
+  return row === 0 ? 0 : beforeAllHeight - scrollPosition.y;
+}
+
+
+export const getStartEndCol = (headerColsWidth: number[], wrapperWidth: number, scrollPosition: PositionType) => {
+  // 计算 startCol
+  let acc = 0;
+  let startCol = 0;
+  for (let i = 0;i < headerColsWidth.length;i++) {
+    acc += headerColsWidth[i];
+    if (acc > scrollPosition.x) {
+      startCol = i;
+      break;
+    }
+  }
+  // 计算 endCol      
+  let endCol = startCol;
+  let visibleWidth = 0;
+  for (let i = startCol;i < headerColsWidth.length;i++) {
+    visibleWidth += headerColsWidth[i];
+    if (visibleWidth > wrapperWidth) {
+      endCol = i + 1;
+      break;
+    }
+  }
+  endCol = Math.max(endCol, headerColsWidth.length);
+
+  return {
+    startCol,
+    endCol
+  }
+}
+
+export const getStartEndRow = (headerRowsHeight: number[], wrapperHeight: number, scrollPosition: PositionType) => {
+  // 计算 startRow
+  let acc = 0;
+  let startRow = 0;
+  for (let i = 0;i < headerRowsHeight.length;i++) {
+    acc += headerRowsHeight[i];
+    if (acc > scrollPosition.y) {
+      startRow = i;
+      break;
+    }
+  }
+  // 计算 endRow     
+  let endRow = startRow;
+  let visibleHeight = 0;
+  for (let i = startRow;i < headerRowsHeight.length;i++) {
+    visibleHeight += headerRowsHeight[i];
+    if (visibleHeight > wrapperHeight) {
+      endRow = i + 1;
+      break;
+    }
+  }
+  endRow = Math.max(endRow, headerRowsHeight.length);
+
+  return {
+    startRow,
+    endRow
+  }
+}
+
+// 通用的累加查找函数
+export function findIndexByAccumulate(arr: number[], offset: number) {
+  let acc = 0;
+  for (let i = 0;i < arr.length;i++) {
+    acc += arr[i];
+    if (offset < acc) return i;
+  }
+  return arr.length - 1;
 }

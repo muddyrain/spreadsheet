@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import { useStore } from '@/hooks/useStore';
 import { EditingCell } from '@/types/sheet';
+import { getLeft, getTop } from '@/utils/sheet';
 
 export type CellInputRef = {
   setInputStyle: (rowIndex: number, colIndex: number) => void;
@@ -19,15 +20,21 @@ export const CellInput = forwardRef<CellInputRef, {
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onTabKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
 }>(({ style, value, scrollPosition, selectedCell, onChange, onTabKeyDown }, ref) => {
-  const { data, config, currentCell, setIsFocused, headerColumnsWidth } = useStore()
+  const { data, config, currentCell, setIsFocused, headerColsWidth, headerRowsHeight } = useStore()
   const cellWidth = useMemo(() => {
     if (selectedCell) {
-      return headerColumnsWidth[selectedCell.col]
+      return headerColsWidth[selectedCell.col]
     } else {
       return 0
     }
-  }, [headerColumnsWidth, selectedCell])
-  const cellHeight = config.height;
+  }, [headerColsWidth, selectedCell])
+  const cellHeight = useMemo(() => {
+    if (selectedCell) {
+      return headerRowsHeight[selectedCell.row]
+    } else {
+      return 0
+    }
+  }, [headerRowsHeight, selectedCell])
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mirrorRef = useRef<HTMLDivElement>(null);
   const updateInputSize = () => {
@@ -93,26 +100,18 @@ export const CellInput = forwardRef<CellInputRef, {
   }, [style, setIsFocused])
   useEffect(() => {
     if (inputRef.current) {
-      const fixedColWidth = config.fixedColWidth
       const rowIndex = currentCell?.row || 0;
       const colIndex = currentCell?.col || 0;
-      let top = rowIndex * (cellHeight || 0) - scrollPosition.y
       // 固定列宽度 + 其余列宽度 + 滚动条 x 位置
-      const beforeAllWidth = colIndex === 0 ? 0 : headerColumnsWidth.slice(0, colIndex).reduce((a, b) => a + b, 0);
-      let left = colIndex === 0 ? 0 : beforeAllWidth - scrollPosition.x;
-      if (top < config.height) {
-        top = config.height
-      }
-      if (left < config.width) {
-        left = fixedColWidth
-      }
+      const left = getLeft(colIndex, headerColsWidth, scrollPosition)
+      const top = getTop(rowIndex, headerRowsHeight, scrollPosition)
       inputRef.current.style.left = `${left - 1}px`;
       inputRef.current.style.top = `${top - 1}px`;
       inputRef.current.style.minWidth = `${cellWidth + 2}px`;
       inputRef.current.style.minHeight = `${cellHeight + 2}px`;
       updateInputSize();
     }
-  }, [scrollPosition, currentCell, cellHeight, cellWidth, config, headerColumnsWidth, selectedCell]);
+  }, [scrollPosition, currentCell, cellHeight, cellWidth, headerColsWidth, headerRowsHeight, selectedCell]);
   return (
     <>
       <textarea

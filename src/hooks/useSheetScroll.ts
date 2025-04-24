@@ -1,3 +1,4 @@
+import { PositionType } from '@/types/sheet';
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 export const useSheetScroll = (config: {
@@ -5,15 +6,15 @@ export const useSheetScroll = (config: {
     totalHeight: number;
     viewportWidth: number;
     viewportHeight: number;
-    onScroll?: (position: { x: number; y: number }) => void;
+    onScroll?: (position: PositionType) => void;
 }) => {
     const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragType, setDragType] = useState<'horizontal' | 'vertical' | null>(null);
     // dragRef 结构补全
     const dragRef = useRef<{
-        startPos: { x: number; y: number };
-        lastScrollPos: { x: number; y: number };
+        startPos: PositionType;
+        lastScrollPos: PositionType;
         isDragging: boolean;
         dragType: 'horizontal' | 'vertical' | null;
     }>({

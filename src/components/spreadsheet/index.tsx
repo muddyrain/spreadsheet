@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TableData, SpreadsheetConfig, SpreadsheetType, SelectionSheetType, } from '../../types/sheet';
+import { TableData, SpreadsheetConfig, SpreadsheetType, SelectionSheetType, PositionType, } from '../../types/sheet';
 import { Canvas } from './Canvas';
 import { filterData } from '../../utils/filterData';
 import _ from 'lodash';
@@ -21,7 +21,8 @@ const Spreadsheet: React.FC<{
     updater,
     // eslint-disable-next-line react-hooks/rules-of-hooks
     forceUpdate } = props.spreadsheet ?? useSpreadsheet(_config);
-  const [headerColumnsWidth, setHeaderColumnsWidth] = useState<number[]>([]);
+  const [headerColsWidth, setHeaderColsWidth] = useState<number[]>([]);
+  const [headerRowsHeight, setHeaderRowsHeight] = useState<number[]>([]);
   const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
   const cellInputRef = useRef<CellInputRef>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -118,16 +119,23 @@ const Spreadsheet: React.FC<{
     }
   }
   useEffect(() => {
-    setHeaderColumnsWidth(() => {
+    setHeaderColsWidth(() => {
       return [config.fixedColWidth, ...Array.from({ length: config.cols }).map((_, index) => {
-        if (index === 1) {
+        if (index === 2) {
           return 200
-        } else {
-          return config.width
         }
+        return config.width
       })]
     })
-  }, [config.cols, config.fixedColWidth, config.width])
+    setHeaderRowsHeight(() => {
+      return [config.height, ...Array.from({ length: config.rows }).map((_, index) => {
+        if (index === 2) {
+          return 100
+        }
+        return config.height
+      })]
+    })
+  }, [config])
   const { onKeyDown } = useKeyDown({
     data,
     setData,
@@ -161,7 +169,7 @@ const Spreadsheet: React.FC<{
     };
     return _.debounce(handleChange, 500);
   }, [onChange]);
-  const handleScroll = (position: { x: number; y: number }) => {
+  const handleScroll = (position: PositionType) => {
     setScrollPosition(position);
   };
   const clearSelection = useCallback(() => {
@@ -195,8 +203,10 @@ const Spreadsheet: React.FC<{
       setIsFocused,
       selection,
       setSelection,
-      headerColumnsWidth,
-      setHeaderColumnsWidth
+      headerColsWidth,
+      setHeaderColsWidth,
+      headerRowsHeight,
+      setHeaderRowsHeight,
     }}>
       <div className='flex flex-col w-full h-full overflow-hidden'>
         <Header onClick={type => {

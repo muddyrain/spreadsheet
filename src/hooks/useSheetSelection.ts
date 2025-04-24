@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
-import { TableData } from '../types/sheet';
 import { useStore } from './useStore';
+import { findIndexByAccumulate } from '@/utils/sheet';
 
-export function useSheetSelection(data: TableData) {
-  const { selection, config, setSelection, headerColumnsWidth } = useStore()
+export function useSheetSelection() {
+  const { selection, setSelection, headerColsWidth, headerRowsHeight } = useStore()
   const [isSelection, setIsSelection] = useState(false);
   const movedRef = useRef(false);
 
@@ -20,27 +20,10 @@ export function useSheetSelection(data: TableData) {
       const rect = wrapperRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left + scrollPosition.x;
       const y = e.clientY - rect.top + scrollPosition.y;
-      // 动态计算列索引
-      let col: number;
-      if (x < config.fixedColWidth) {
-        col = 0;
-      } else {
-        let accWidth = config.fixedColWidth;
-        col = 1;
-        for (let i = 1;i < data[0].length;i++) {
-          accWidth += headerColumnsWidth[i] || config.width;
-          if (x < accWidth) {
-            col = i;
-            break;
-          }
-          // 如果遍历到最后都没break，col会是最后一列
-          if (i === data[0].length - 1) {
-            col = i;
-          }
-        }
-      }
-      col = Math.max(0, Math.min(col, data[0].length - 1));
-      const row = Math.max(0, Math.min(Math.floor(y / config.height), data.length - 1));
+      // 列索引
+      const col = findIndexByAccumulate(headerColsWidth, x);
+      // 行索引
+      const row = findIndexByAccumulate(headerRowsHeight, y);
       if (row !== lastRow || col !== lastCol) {
         setSelection(sel => ({
           start: sel.start,
@@ -61,7 +44,7 @@ export function useSheetSelection(data: TableData) {
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-  }, [data, config, setSelection, headerColumnsWidth]);
+  }, [setSelection, headerColsWidth, headerRowsHeight]);
 
   return { selection, isSelection, movedRef, setSelection, handleCellMouseDown };
 }

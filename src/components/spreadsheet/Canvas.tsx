@@ -1,11 +1,12 @@
 import React, { useMemo, useRef, useEffect, useState, } from 'react';
-import { EditingCell, SelectionSheetType, TableData } from '../../types/sheet';
+import { EditingCell, PositionType, SelectionSheetType, TableData } from '../../types/sheet';
 import { useSheetScroll } from '../../hooks/useSheetScroll';
 import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
 import { useSheetSelection } from '@/hooks/useSheetSelection';
 import { useStore } from '@/hooks/useStore';
 import { useSideLine } from '@/hooks/useSideLine';
+import { findIndexByAccumulate } from '@/utils/sheet';
 
 export type CanvasOnKeyDown = (e: React.KeyboardEvent, options: {
     selection: SelectionSheetType;
@@ -20,7 +21,7 @@ interface CanvasProps {
     onCellClick?: (row: number, col: number) => void;
     onCellDoubleClick?: (row: number, col: number) => void;
     onKeyDown?: CanvasOnKeyDown;
-    onScroll: (position: { x: number; y: number }) => void;
+    onScroll: (position: PositionType) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -34,23 +35,26 @@ export const Canvas: React.FC<CanvasProps> = ({
     onScroll,
     onKeyDown
 }) => {
-    const { config, headerColumnsWidth } = useStore()
+    const { config, headerColsWidth, headerRowsHeight } = useStore()
     const [currentHoverCell, setCurrentHoverCell] = useState<[number, number] | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
     const totalWidth = useMemo(() => {
-        return headerColumnsWidth.reduce((sum, prev) => sum += prev, 0) + config.fixedColWidth + 5
-    }, [headerColumnsWidth, config.fixedColWidth])
+        return headerColsWidth.reduce((sum, prev) => sum += prev, 0) + 5
+    }, [headerColsWidth])
+    const totalHeight = useMemo(() => {
+        return headerRowsHeight.reduce((sum, prev) => sum += prev, 0) + 5
+    }, [headerRowsHeight])
     const scrollConfig = useMemo(() => ({
         totalWidth,
-        totalHeight: data.length * cellHeight + 5,
+        totalHeight,
         viewportWidth: containerWidth,
         viewportHeight: containerHeight,
         onScroll
-    }), [data, cellHeight, containerWidth, containerHeight, onScroll, totalWidth]);
-    const { selection, movedRef, handleCellMouseDown, setSelection } = useSheetSelection(data);
+    }), [containerWidth, containerHeight, onScroll, totalWidth, totalHeight]);
+    const { selection, movedRef, handleCellMouseDown, setSelection } = useSheetSelection();
     const {
         scrollPosition,
         handleScrollbarDragStart,
@@ -134,38 +138,15 @@ export const Canvas: React.FC<CanvasProps> = ({
             } else if (inFixedCol) {
                 // 固定列
                 colIndex = 0;
-                rowIndex = Math.floor((y + scrollPosition.y - config.height) / cellHeight) + 1;
+                rowIndex = findIndexByAccumulate(headerRowsHeight, y + scrollPosition.y)
             } else if (inFixedRow) {
                 // 固定行
-                // 动态列宽下，计算 colIndex
-                let accWidth = 0;
-                let found = false;
-                for (let i = 1;i < headerColumnsWidth.length;i++) {
-                    accWidth += headerColumnsWidth[i];
-                    if (x + scrollPosition.x - fixedColWidth < accWidth) {
-                        colIndex = i;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) colIndex = headerColumnsWidth.length - 1;
+                colIndex = findIndexByAccumulate(headerColsWidth, x + scrollPosition.x)
                 rowIndex = 0;
             } else {
-                // 普通区域
-                let accWidth = 0;
-                let found = false;
-                for (let i = 1;i < headerColumnsWidth.length;i++) {
-                    accWidth += headerColumnsWidth[i];
-                    if (x + scrollPosition.x - fixedColWidth < accWidth) {
-                        colIndex = i;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) colIndex = headerColumnsWidth.length - 1;
-                rowIndex = Math.floor((y + scrollPosition.y - config.height) / cellHeight) + 1;
+                colIndex = findIndexByAccumulate(headerColsWidth, x + scrollPosition.x)
+                rowIndex = findIndexByAccumulate(headerRowsHeight, y + scrollPosition.y)
             }
-
             // 判断是否越界
             if (
                 rowIndex != null && colIndex != null &&
@@ -242,7 +223,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 <ScrollBar
                     type="vertical"
                     viewportSize={containerHeight}
-                    contentSize={data.length * cellHeight + 5}
+                    contentSize={totalHeight}
                     scrollPosition={scrollPosition.y}
                     onDragStart={handleScrollbarDragStart}
                 />

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { CellData, EditingCell, SelectionSheetType, TableData } from '../types/sheet';
+import { CellData, EditingCell, PositionType, SelectionSheetType, TableData } from '../types/sheet';
 import { useStore } from './useStore';
-import { getAbsoluteSelection, getLeft } from '../utils/sheet';
+import { getAbsoluteSelection, getLeft, getStartEndCol, getStartEndRow, getTop } from '../utils/sheet';
 
 interface DrawConfig {
     cellWidth: number;
@@ -15,10 +15,10 @@ const FROZEN_ROW_COUNT = 1;
 const FROZEN_COL_COUNT = 1;
 
 export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selection?: SelectionSheetType; selectedCell: EditingCell }) => {
-    const { config, isFocused, headerColumnsWidth } = useStore();
+    const { config, isFocused, headerColsWidth, headerRowsHeight } = useStore();
     const selection = drawConfig.selection;
     const selectedCell = drawConfig.selectedCell;
-    const drawTable = useCallback((ctx: CanvasRenderingContext2D, scrollPosition: { x: number; y: number }) => {
+    const drawTable = useCallback((ctx: CanvasRenderingContext2D, scrollPosition: PositionType) => {
         const isCellSelected = (row: number, col: number) => {
             if (!selection?.start || !selection?.end) return false;
             const r1 = Math.min(selection.start.row, selection.end.row);
@@ -34,19 +34,19 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             x: number;
             y: number;
             cell: CellData;
-            colWidth: number;
             isHeader?: boolean;
             isRow?: boolean;
             selection?: SelectionSheetType;
         }) => {
-            const { rowIndex, colIndex, x, y, cell, colWidth, isHeader, isRow } = options;
-
+            const { rowIndex, colIndex, x, y, cell, isHeader, isRow } = options;
+            const cellWidth = headerColsWidth[colIndex];
+            const cellHeight = headerRowsHeight[rowIndex];
             // 绘制网格
             ctx.strokeStyle = cell.style.borderColor || config.borderColor;
-            ctx.strokeRect(x, y, colWidth, drawConfig.cellHeight);
+            ctx.strokeRect(x, y, cellWidth, cellHeight);
             // 设置背景颜色
             ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
-            ctx.fillRect(x + 1, y + 1, colWidth - 1, drawConfig.cellHeight - 1);
+            ctx.fillRect(x + 1, y + 1, cellWidth - 1, cellHeight - 1);
 
             // 如果是表头，并且当前列在选中范围内
             if ((isHeader || isRow) && selection && selection.start && selection.end) {
@@ -55,7 +55,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                     // 设置选中高亮颜色
                     ctx.globalAlpha = 0.85;
                     ctx.fillStyle = config.selectionBackgroundColor;
-                    ctx.fillRect(x + 1, y + 1, colWidth - 1, drawConfig.cellHeight - 1);
+                    ctx.fillRect(x + 1, y + 1, cellWidth - 1, cellHeight - 1);
                     ctx.globalAlpha = 1;
                 }
             }
@@ -65,7 +65,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             if (isCellSelected && isCellSelected(rowIndex, colIndex)) {
                 ctx.save();
                 ctx.fillStyle = config.selectionBackgroundColor;
-                ctx.fillRect(x, y, colWidth, drawConfig.cellHeight);
+                ctx.fillRect(x, y, cellWidth, cellHeight);
                 ctx.restore();
             }
             // 设置字体样式
@@ -80,7 +80,7 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             // 设置剪裁区域
             ctx.save();
             ctx.beginPath();
-            ctx.rect(x - 12, y, colWidth, drawConfig.cellHeight);
+            ctx.rect(x - 12, y, cellWidth, cellHeight);
             ctx.clip();
 
             // 设置文本对齐
@@ -88,9 +88,9 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             ctx.textBaseline = 'middle';
             // 计算文本位置
             let textX = x + 10;
-            if (ctx.textAlign === 'center') textX = x + colWidth / 2;
-            if (ctx.textAlign === 'right') textX = x + colWidth - 10;
-            const textY = y + drawConfig.cellHeight / 2 + 2;
+            if (ctx.textAlign === 'center') textX = x + cellWidth / 2;
+            if (ctx.textAlign === 'right') textX = x + cellWidth - 10;
+            const textY = y + cellHeight / 2 + 2;
             ctx.fillText(cell.value, textX, textY);
 
             const textDecoration = cell.style.textDecoration || 'none';
@@ -149,44 +149,20 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
         };
         ctx.clearRect(0, 0, drawConfig.wrapperWidth, drawConfig.wrapperHeight);
         ctx.lineWidth = 1;
-        const startRow = Math.floor(scrollPosition.y / drawConfig.cellHeight) + FROZEN_ROW_COUNT;
-        const endRow = Math.min(
-            startRow + Math.ceil(drawConfig.wrapperHeight / drawConfig.cellHeight),
-            data.length
-        );
-        // 计算 startCol
-        let accWidth = 0;
-        let startCol = 0;
-        for (let i = 0;i < headerColumnsWidth.length;i++) {
-            accWidth += headerColumnsWidth[i];
-            if (accWidth > scrollPosition.x) {
-                startCol = i;
-                break;
-            }
-        }
-        // 计算 endCol      
-        let endCol = startCol;
-        let visibleWidth = 0;
-        for (let i = startCol;i < headerColumnsWidth.length;i++) {
-            visibleWidth += headerColumnsWidth[i];
-            if (visibleWidth > drawConfig.wrapperWidth) {
-                endCol = i + 1;
-                break;
-            }
-        }
-        endCol = Math.min(endCol, data[0].length);
+        const { startRow, endRow } = getStartEndRow(headerRowsHeight, drawConfig.wrapperHeight, scrollPosition)
+        const { startCol, endCol } = getStartEndCol(headerColsWidth, drawConfig.wrapperWidth, scrollPosition)
         // 当前是否为单个单元格的选区
         const isOneSelection = selection?.start?.row === selection?.end?.row && selection?.start?.col === selection?.end?.col;
         ctx.translate(0.5, 0.5);
         // 绘制内容区（非冻结区）单元格
         for (let rowIndex = startRow;rowIndex < endRow;rowIndex++) {
             for (let colIndex = startCol;colIndex < endCol;colIndex++) {
+                if (colIndex === 0 || rowIndex === 0) continue
                 const cell = data[rowIndex]?.[colIndex];
                 if (!cell) continue;
-                const colWidth = headerColumnsWidth[colIndex];
-                const x = getLeft(colIndex, headerColumnsWidth, scrollPosition);
-                const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
+                const x = getLeft(colIndex, headerColsWidth, scrollPosition);
+                const y = getTop(rowIndex, headerRowsHeight, scrollPosition);
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell });
             }
         }
         // 绘制选区边框（只绘制在当前可视区域内的部分）
@@ -198,10 +174,10 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                     r2 >= startRow && r1 < endRow &&
                     c2 >= startCol && c1 < endCol
                 ) {
-                    const x = getLeft(c1, headerColumnsWidth, scrollPosition);
-                    const y = r1 * drawConfig.cellHeight - (r1 < FROZEN_ROW_COUNT ? 0 : scrollPosition.y);
-                    const width = headerColumnsWidth.slice(c1, c2 + 1).reduce((a, b) => a + b, 0);
-                    const height = (r2 - r1 + 1) * drawConfig.cellHeight;
+                    const x = getLeft(c1, headerColsWidth, scrollPosition);
+                    const y = getTop(r1, headerRowsHeight, scrollPosition);
+                    const width = headerColsWidth.slice(c1, c2 + 1).reduce((a, b) => a + b, 0);
+                    const height = headerRowsHeight.slice(r1, r2 + 1).reduce((a, b) => a + b, 0);
                     ctx.save();
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.lineWidth = 1;
@@ -216,14 +192,15 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             const { row, col } = selectedCell
             const cell = data[row]?.[col];
             if (!cell) return;
-            const colWidth = headerColumnsWidth[col];
-            const x = getLeft(col, headerColumnsWidth, scrollPosition);
-            const y = row * drawConfig.cellHeight - scrollPosition.y;
+            const cellWidth = headerColsWidth[col];
+            const cellHeight = headerRowsHeight[row];
+            const x = getLeft(col, headerColsWidth, scrollPosition);
+            const y = getTop(row, headerRowsHeight, scrollPosition);
             ctx.save();
             ctx.strokeStyle = config.selectionBorderColor;
             ctx.lineWidth = 1.5;
             // 防止边框被其他元素遮挡
-            ctx.strokeRect(x - 0.5, y - 0.5, colWidth, drawConfig.cellHeight);
+            ctx.strokeRect(x - 0.5, y - 0.5, cellWidth, cellHeight);
             ctx.restore();
         }
         // 绘制冻结首列（除左上角交叉单元格）
@@ -231,10 +208,9 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
                 const cell = data[rowIndex]?.[colIndex];
                 if (!cell) continue;
-                const colWidth = headerColumnsWidth[colIndex];
                 const x = 0;
-                const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth, isRow: true });
+                const y = getTop(rowIndex, headerRowsHeight, scrollPosition);
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, isRow: true });
             }
         }
         // 绘制冻结首行（除左上角交叉单元格）
@@ -242,10 +218,9 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             for (let colIndex = startCol;colIndex < endCol;colIndex++) {
                 const cell = data[rowIndex]?.[colIndex];
                 if (!cell) continue;
-                const colWidth = headerColumnsWidth[colIndex];
-                const x = getLeft(colIndex, headerColumnsWidth, scrollPosition);
-                const y = rowIndex * drawConfig.cellHeight;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth, selection, isHeader: true });
+                const x = getLeft(colIndex, headerColsWidth, scrollPosition);
+                const y = 0;
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell, selection, isHeader: true });
             }
         }
         // 绘制 当前选中区域列头行头高亮
@@ -260,14 +235,15 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 for (let colIndex = c1;colIndex <= c2;colIndex++) {
                     const cell = data[r1]?.[colIndex];
                     if (!cell) continue;
-                    const colWidth = headerColumnsWidth[colIndex];
-                    const x = getLeft(colIndex, headerColumnsWidth, scrollPosition);
+                    const colWidth = headerColsWidth[colIndex];
+                    const cellHeight = headerRowsHeight[0];
+                    const x = getLeft(colIndex, headerColsWidth, scrollPosition);
                     const y = 0;
                     ctx.save();
                     ctx.beginPath();
                     ctx.lineWidth = 1.5;
-                    ctx.moveTo(x, y + drawConfig.cellHeight - 0.5);
-                    ctx.lineTo(x + colWidth, y + drawConfig.cellHeight - 0.5);
+                    ctx.moveTo(x, y + cellHeight - 0.5);
+                    ctx.lineTo(x + colWidth, y + cellHeight - 0.5);
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.stroke();
                     ctx.restore();
@@ -276,14 +252,15 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 for (let rowIndex = r1;rowIndex <= r2;rowIndex++) {
                     const cell = data[rowIndex]?.[c1];
                     if (!cell) continue;
-                    const colWidth = headerColumnsWidth[0];
+                    const colWidth = headerColsWidth[0];
+                    const cellHeight = headerRowsHeight[rowIndex];
                     const x = 0;
-                    const y = rowIndex * drawConfig.cellHeight - scrollPosition.y;
+                    const y = getTop(rowIndex, headerRowsHeight, scrollPosition);
                     ctx.save();
                     ctx.beginPath();
                     ctx.lineWidth = 1.5;
                     ctx.moveTo(x + colWidth - 0.5, y);
-                    ctx.lineTo(x + colWidth - 0.5, y + drawConfig.cellHeight);
+                    ctx.lineTo(x + colWidth - 0.5, y + cellHeight);
                     ctx.strokeStyle = config.selectionBorderColor;
                     ctx.stroke();
                     ctx.restore();
@@ -295,11 +272,11 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             for (let colIndex = 0;colIndex < FROZEN_COL_COUNT;colIndex++) {
                 const cell = data[rowIndex]?.[colIndex];
                 if (!cell) continue;
-                const colWidth = headerColumnsWidth[colIndex];
-                const colHeight = drawConfig.cellHeight
-                const x = getLeft(colIndex, headerColumnsWidth, scrollPosition);
-                const y = rowIndex * drawConfig.cellHeight;
-                renderCell(ctx, { rowIndex, colIndex, x, y, cell, colWidth });
+                const colWidth = headerColsWidth[colIndex];
+                const colHeight = headerRowsHeight[rowIndex];
+                const x = getLeft(colIndex, headerColsWidth, scrollPosition);
+                const y = getTop(rowIndex, headerRowsHeight, scrollPosition);
+                renderCell(ctx, { rowIndex, colIndex, x, y, cell });
                 // 绘制一个倒三角作为左上角交叉单元格的标志
                 ctx.fillStyle = config.selectionBorderColor;
                 ctx.beginPath();
@@ -310,6 +287,6 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 ctx.fill();
             }
         }
-    }, [data, drawConfig, selection, selectedCell, config, isFocused, headerColumnsWidth]);
+    }, [data, drawConfig, selection, selectedCell, config, isFocused, headerColsWidth, headerRowsHeight]);
     return { drawTable };
 };
