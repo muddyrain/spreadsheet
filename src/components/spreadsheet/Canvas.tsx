@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { EditingCell, PositionType, SelectionSheetType, TableData } from '../../types/sheet';
+import { EditingCell, SelectionSheetType, TableData } from '../../types/sheet';
 import { useSheetScroll } from '../../hooks/useSheetScroll';
 import { useSheetDraw } from '../../hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
@@ -22,7 +22,6 @@ interface CanvasProps {
     onCellClick?: (row: number, col: number) => void;
     onCellDoubleClick?: (row: number, col: number) => void;
     onKeyDown?: CanvasOnKeyDown;
-    onScroll: (position: PositionType) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -33,7 +32,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     selectedCell,
     onCellClick,
     onCellDoubleClick,
-    onScroll,
     onKeyDown
 }) => {
     const { config, headerColsWidth, headerRowsHeight } = useStore()
@@ -54,8 +52,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         totalHeight,
         viewportWidth: containerWidth,
         viewportHeight: containerHeight,
-        onScroll
-    }), [containerWidth, containerHeight, onScroll, totalWidth, totalHeight]);
+    }), [containerWidth, containerHeight, totalWidth, totalHeight]);
     const { selection, movedRef, handleCellMouseDown, setSelection } = useSheetSelection();
     // 滚动 hooks
     const {
@@ -115,9 +112,6 @@ export const Canvas: React.FC<CanvasProps> = ({
             }
         }
     }, [containerHeight, containerWidth, drawTable, scrollPosition])
-    useEffect(() => {
-        onScroll?.(scrollPosition);
-    }, [scrollPosition, onScroll]);
     useEffect(() => {
         const handleResize = () => {
             if (containerRef.current) {

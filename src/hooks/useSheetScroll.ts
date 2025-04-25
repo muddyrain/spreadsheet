@@ -1,14 +1,14 @@
 import { PositionType } from '@/types/sheet';
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useStore } from './useStore';
 
 export const useSheetScroll = (config: {
     totalWidth: number;
     totalHeight: number;
     viewportWidth: number;
     viewportHeight: number;
-    onScroll?: (position: PositionType) => void;
 }) => {
-    const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
+    const { scrollPosition, setScrollPosition } = useStore()
     const [isDragging, setIsDragging] = useState(false);
     const [dragType, setDragType] = useState<'horizontal' | 'vertical' | null>(null);
     // dragRef 结构补全
@@ -40,7 +40,6 @@ export const useSheetScroll = (config: {
                 const newPosition = { x: newScrollX, y: lastScrollPos.y };
                 if (newScrollX !== lastScrollPos.x) {
                     setScrollPosition(newPosition);
-                    config.onScroll?.(newPosition);
                 }
             } else if (dragType === 'vertical') {
                 const deltaY = e.clientY - startPos.y;
@@ -53,7 +52,6 @@ export const useSheetScroll = (config: {
                 const newPosition = { x: lastScrollPos.x, y: newScrollY };
                 if (newScrollY !== lastScrollPos.y) {
                     setScrollPosition(newPosition);
-                    config.onScroll?.(newPosition);
                 }
             }
         };
@@ -70,7 +68,7 @@ export const useSheetScroll = (config: {
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
         };
-    }, [config]);
+    }, [config, setScrollPosition]);
 
     const handleScrollbarDragStart = useCallback((e: React.MouseEvent, type: 'horizontal' | 'vertical') => {
         setIsDragging(true);
@@ -93,9 +91,8 @@ export const useSheetScroll = (config: {
         const newPosition = { x: newScrollX, y: newScrollY };
         if (newScrollX !== scrollPosition.x || newScrollY !== scrollPosition.y) {
             setScrollPosition(newPosition);
-            config.onScroll?.(newPosition);
         }
-    }, [scrollPosition, config]);
+    }, [scrollPosition, config, setScrollPosition]);
 
     // handleScrollbarDragEnd 只用于外部主动取消拖动（一般用不到）
     const handleScrollbarDragEnd = useCallback(() => {
