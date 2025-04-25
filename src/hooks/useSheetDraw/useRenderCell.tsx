@@ -1,43 +1,56 @@
-import { CellData, SelectionSheetType } from "@/types/sheet";
-import { useStore } from "../useStore";
-import { getAbsoluteSelection } from "@/utils/sheet";
-import { useComputed } from "../useComputed";
+import { CellData, SelectionSheetType } from '@/types/sheet';
+import { useStore } from '../useStore';
+import { getAbsoluteSelection } from '@/utils/sheet';
+import { useComputed } from '../useComputed';
 
 export const useRenderCell = () => {
   const { selection, config, headerColsWidth, headerRowsHeight } = useStore();
-  const { getMergeCellSize } = useComputed()
+  const { getMergeCellSize } = useComputed();
   const isCellSelected = (cell: CellData) => {
     if (!selection?.start || !selection?.end) return false;
-    const { row, col } = cell
-    const absoluteRowCol = getAbsoluteSelection(selection)
-    const { r1, r2, c1, c2 } = absoluteRowCol
+    const { row, col } = cell;
+    const absoluteRowCol = getAbsoluteSelection(selection);
+    const { r1, r2, c1, c2 } = absoluteRowCol;
     return row >= r1 && row <= r2 && col >= c1 && col <= c2;
   };
   // 单元格绘制函数
-  const renderCell = (ctx: CanvasRenderingContext2D, options: {
-    rowIndex: number;
-    colIndex: number;
-    x: number;
-    y: number;
-    cell: CellData;
-    isHeader?: boolean;
-    isRow?: boolean;
-    selection?: SelectionSheetType;
-  }) => {
+  const renderCell = (
+    ctx: CanvasRenderingContext2D,
+    options: {
+      rowIndex: number;
+      colIndex: number;
+      x: number;
+      y: number;
+      cell: CellData;
+      isHeader?: boolean;
+      isRow?: boolean;
+      selection?: SelectionSheetType;
+    }
+  ) => {
     const { rowIndex, colIndex, x, y, cell, isHeader, isRow } = options;
 
-    const { width, height } = getMergeCellSize(cell, headerColsWidth[colIndex], headerRowsHeight[rowIndex])
-    const cellWidth = width
-    const cellHeight = height
+    const { width, height } = getMergeCellSize(
+      cell,
+      headerColsWidth[colIndex],
+      headerRowsHeight[rowIndex]
+    );
+    const cellWidth = width;
+    const cellHeight = height;
 
-    // 设置背景颜色
-    ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
-    ctx.fillRect(x + 1, y + 1, cellWidth - 1, cellHeight - 1);
+    // 如果是非合并单元格
+    if (!cell.mergeParent) {
+      // 设置背景颜色
+      ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
+      ctx.fillRect(x + 1, y + 1, cellWidth - 1, cellHeight - 1);
+    }
 
     // 如果是表头，并且当前列在选中范围内
     if ((isHeader || isRow) && selection && selection.start && selection.end) {
-      const { c1, c2, r1, r2 } = getAbsoluteSelection(selection)
-      if (c1 <= colIndex && colIndex <= c2 || r1 <= rowIndex && rowIndex <= r2) {
+      const { c1, c2, r1, r2 } = getAbsoluteSelection(selection);
+      if (
+        (c1 <= colIndex && colIndex <= c2) ||
+        (r1 <= rowIndex && rowIndex <= r2)
+      ) {
         // 设置选中高亮颜色
         ctx.globalAlpha = 0.85;
         ctx.fillStyle = config.selectionBackgroundColor;
@@ -47,14 +60,14 @@ export const useRenderCell = () => {
     }
 
     // 判断是否选中，绘制高亮背景
-    if (isCellSelected && isCellSelected(cell)) {
+    if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
       ctx.save();
       ctx.fillStyle = config.selectionBackgroundColor;
       ctx.fillRect(x, y, cellWidth, cellHeight);
       ctx.restore();
     }
     if (cell.mergeParent) {
-      return
+      return;
     }
     // 绘制网格
     ctx.strokeStyle = cell.style.borderColor || config.borderColor;
@@ -63,10 +76,12 @@ export const useRenderCell = () => {
     const fontWeight = cell.style.fontWeight || 'normal';
     const fontStyle = cell.style.fontStyle || 'normal';
     const fontSize = cell.style.fontSize || config.fontSize || 14;
-    let color = cell.style.color || config.color || '#000000'
-    if (cell.readOnly) color = config.readOnlyColor || cell.style.color || config.color || '#000000'
+    let color = cell.style.color || config.color || '#000000';
+    if (cell.readOnly)
+      color =
+        config.readOnlyColor || cell.style.color || config.color || '#000000';
     ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Arial`;
-    ctx.fillStyle = color
+    ctx.fillStyle = color;
     if (cellWidth > 30) {
       // 设置剪裁区域
       ctx.save();
@@ -75,18 +90,20 @@ export const useRenderCell = () => {
       ctx.clip();
     }
     // 设置文本对齐
-    ctx.textAlign = cell.style.textAlign as CanvasTextAlign || 'left';
+    ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || 'left';
     ctx.textBaseline = 'middle';
-    // 计算文本位置 
+    // 计算文本位置
     let textX = cellWidth > 30 ? x + 6 : x;
     if (ctx.textAlign === 'center') textX = x + cellWidth / 2;
     if (ctx.textAlign === 'right') textX = x + cellWidth - 5;
+    if (cell.mergeSpan) {
+    }
     if (cell.readOnly) {
       const textY = y + cellHeight / 2;
       ctx.fillText(cell.value, textX, textY);
     } else {
       const contents = cell.value.split('\n');
-      for (let i = 0;i < contents.length;i++) {
+      for (let i = 0; i < contents.length; i++) {
         const text = contents[i];
         const textMetrics = ctx.measureText(text);
         const textY = i * 7 + y + 15 + i * fontSize;
@@ -116,7 +133,7 @@ export const useRenderCell = () => {
           ctx.stroke();
           ctx.restore();
         }
-        // 绘制下划线   
+        // 绘制下划线
         if (textDecoration.includes('underline')) {
           const lineY = textY + fontSize / 2 - 2;
           let lineStartX = textX;
@@ -146,5 +163,5 @@ export const useRenderCell = () => {
   };
   return {
     renderCell,
-  }
-}
+  };
+};

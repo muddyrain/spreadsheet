@@ -12,7 +12,7 @@ import { useStore } from '@/hooks/useStore';
 
 const Spreadsheet: React.FC<{
   onChange?: (data: TableData) => void;
-}> = (props) => {
+}> = props => {
   const { onChange } = props;
   const {
     config,
@@ -29,7 +29,7 @@ const Spreadsheet: React.FC<{
     setEditingCell,
     setSelectedCell,
     setIsFocused,
-  } = useStore()
+  } = useStore();
   const cellInputRef = useRef<CellInputRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const cellWidth = config.width;
@@ -37,42 +37,43 @@ const Spreadsheet: React.FC<{
   const handleSelectAll = () => {
     setSelection({
       start: { row: 1, col: 1 },
-      end: { row: data.length - 1, col: data[0].length - 1 }
-    })
-    setSelectedCell({ row: 1, col: 1 })
-    setEditingCell(null)
-  }
+      end: { row: data.length - 1, col: data[0].length - 1 },
+    });
+    setSelectedCell({ row: 1, col: 1 });
+    setEditingCell(null);
+  };
   // 监听点击事件
   const onCellClick = (rowIndex: number, colIndex: number) => {
     if (rowIndex === 0 && colIndex === 0) {
-      handleSelectAll()
+      handleSelectAll();
       return;
     }
     // 点击固定列时
     if (rowIndex === 0) {
       setSelection({
         start: { row: 1, col: colIndex },
-        end: { row: data.length - 1, col: colIndex }
-      })
-      setSelectedCell({ row: 1, col: colIndex })
-      setEditingCell(null)
-      return
+        end: { row: data.length - 1, col: colIndex },
+      });
+      setSelectedCell({ row: 1, col: colIndex });
+      setEditingCell(null);
+      return;
     }
     // 点击固定行时
     if (colIndex === 0) {
       setSelection({
         start: { row: rowIndex, col: 1 },
-        end: { row: rowIndex, col: data[0].length - 1 }
-      })
-      setSelectedCell({ row: rowIndex, col: 1 })
-      setEditingCell(null)
-      return
+        end: { row: rowIndex, col: data[0].length - 1 },
+      });
+      setSelectedCell({ row: rowIndex, col: 1 });
+      setEditingCell(null);
+      return;
     }
     const currentCell = data[rowIndex][colIndex];
     if (currentCell.readOnly) {
       return;
     }
-    const cell = data[rowIndex][colIndex]
+    const cell = data[rowIndex][colIndex];
+    setEditingCell(null); // 单击时不进入编辑
     if (cell.mergeSpan) {
       setSelection({
         start: {
@@ -82,14 +83,14 @@ const Spreadsheet: React.FC<{
         end: {
           row: cell.mergeSpan.r2,
           col: cell.mergeSpan.c2,
-        }
-      })
-      setSelectedCell({ row: rowIndex, col: colIndex })
-      return
+        },
+      });
+      setSelectedCell({ row: rowIndex, col: colIndex });
+      return;
     }
     if (cell.mergeParent) {
-      const { row, col } = cell.mergeParent
-      const parentCell = data[row][col]
+      const { row, col } = cell.mergeParent;
+      const parentCell = data[row][col];
       if (parentCell.mergeSpan) {
         setSelection({
           start: {
@@ -99,96 +100,117 @@ const Spreadsheet: React.FC<{
           end: {
             row: parentCell.mergeSpan.r2,
             col: parentCell.mergeSpan.c2,
-          }
-        })
-        setSelectedCell({ row, col })
-        return
+          },
+        });
+        setSelectedCell({ row, col });
+        return;
       }
     }
-    setSelectedCell({ row: rowIndex, col: colIndex })
-    setEditingCell(null); // 单击时不进入编辑
+    setSelectedCell({ row: rowIndex, col: colIndex });
     setSelection({
       start: { row: rowIndex, col: colIndex },
-      end: { row: rowIndex, col: colIndex }
-    })
+      end: { row: rowIndex, col: colIndex },
+    });
   };
   // 监听双击事件
-  const onCellDoubleClick = (rowIndex: number, colIndex: number) => {
+  const onCellDoubleClick = (_rowIndex: number, _colIndex: number) => {
+    let colIndex = _colIndex;
+    let rowIndex = _rowIndex;
     const currentCell = data[rowIndex][colIndex];
     if (currentCell.readOnly) {
       return;
+    }
+    if (currentCell.mergeParent) {
+      const { row, col } = currentCell.mergeParent;
+      colIndex = col;
+      rowIndex = row;
     }
     setEditingCell({ row: rowIndex, col: colIndex }); // 双击才进入编辑
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
   const onTabKeyDown = () => {
-    if (!selectedCell) return
+    if (!selectedCell) return;
     // 单选格
-    if (selection.start?.row === selection.end?.row && selection.start?.col === selection.end?.col) {
+    if (
+      selection.start?.row === selection.end?.row &&
+      selection.start?.col === selection.end?.col
+    ) {
       if (selectedCell.col + 1 <= data[0].length - 1) {
-        setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 })
-        setEditingCell({ row: selectedCell.row, col: selectedCell.col + 1 })
+        setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 });
+        setEditingCell({ row: selectedCell.row, col: selectedCell.col + 1 });
         setSelection({
           start: { row: selectedCell.row, col: selectedCell.col + 1 },
-          end: { row: selectedCell.row, col: selectedCell.col + 1 }
-        })
+          end: { row: selectedCell.row, col: selectedCell.col + 1 },
+        });
       } else {
-        setSelectedCell({ row: selectedCell.row + 1, col: 1 })
-        setEditingCell({ row: selectedCell.row + 1, col: 1 })
+        setSelectedCell({ row: selectedCell.row + 1, col: 1 });
+        setEditingCell({ row: selectedCell.row + 1, col: 1 });
         setSelection({
           start: { row: selectedCell.row + 1, col: 1 },
-          end: { row: selectedCell.row + 1, col: 1 }
-        })
+          end: { row: selectedCell.row + 1, col: 1 },
+        });
       }
     } else {
       // 多选格
-      const { r1, r2, c1, c2 } = getAbsoluteSelection(selection)
+      const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
       if (selectedCell.col + 1 <= c2) {
-        setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 })
-        setEditingCell({ row: selectedCell.row, col: selectedCell.col + 1 })
+        setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 });
+        setEditingCell({ row: selectedCell.row, col: selectedCell.col + 1 });
       } else {
         if (selectedCell.row + 1 <= r2) {
-          setSelectedCell({ row: selectedCell.row + 1, col: c1 })
-          setEditingCell({ row: selectedCell.row + 1, col: c1 })
+          setSelectedCell({ row: selectedCell.row + 1, col: c1 });
+          setEditingCell({ row: selectedCell.row + 1, col: c1 });
         } else {
-          setSelectedCell({ row: r1, col: c1 })
-          setEditingCell({ row: r1, col: c1 })
+          setSelectedCell({ row: r1, col: c1 });
+          setEditingCell({ row: r1, col: c1 });
         }
       }
     }
-  }
+  };
   // 初始化 列宽度 行高度
   useEffect(() => {
     setHeaderColsWidth(() => {
-      return [config.fixedColWidth, ...Array.from({ length: config.cols }).map((_) => {
-        return config.width
-      })]
-    })
+      return [
+        config.fixedColWidth,
+        ...Array.from({ length: config.cols }).map(_ => {
+          return config.width;
+        }),
+      ];
+    });
     setHeaderRowsHeight(() => {
-      return [config.height, ...Array.from({ length: config.rows }).map((_) => {
-        return config.height
-      })]
-    })
-  }, [config, setHeaderColsWidth, setHeaderRowsHeight])
+      return [
+        config.height,
+        ...Array.from({ length: config.rows }).map(_ => {
+          return config.height;
+        }),
+      ];
+    });
+  }, [config, setHeaderColsWidth, setHeaderRowsHeight]);
   // 键盘 hooks
-  const { onKeyDown } = useKeyDown({
-    data,
-    setData,
-  }, {
-    onCellInputKey(content) {
-      if (selectedCell) {
-        setEditingCell({ row: selectedCell.row, col: selectedCell.col });
-        cellInputRef.current?.setInputStyle(selectedCell.row, selectedCell.col,);
-        if (currentCell) {
-          currentCell.value += content
+  const { onKeyDown } = useKeyDown(
+    {
+      data,
+      setData,
+    },
+    {
+      onCellInputKey(content) {
+        if (selectedCell) {
+          setEditingCell({ row: selectedCell.row, col: selectedCell.col });
+          cellInputRef.current?.setInputStyle(
+            selectedCell.row,
+            selectedCell.col
+          );
+          if (currentCell) {
+            currentCell.value += content;
+          }
         }
-      }
-    },
-    onSelectAll() {
-      handleSelectAll()
-    },
-    onTabKey: onTabKeyDown
-  })
+      },
+      onSelectAll() {
+        handleSelectAll();
+      },
+      onTabKey: onTabKeyDown,
+    }
+  );
   // 监听输入更新事件
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (editingCell) {
@@ -202,44 +224,49 @@ const Spreadsheet: React.FC<{
   // 防抖更新
   const debouncedChange = useMemo(() => {
     const handleChange = (data: TableData) => {
-      onChange?.(filterData(data))
+      onChange?.(filterData(data));
     };
     return _.debounce(handleChange, 500);
   }, [onChange]);
   // 清除选中
   const clearSelection = useCallback(() => {
     setEditingCell(null);
-  }, [setEditingCell])
+  }, [setEditingCell]);
   const isShowInput = useMemo(() => {
     if (editingCell) {
-      return 'block'
+      return 'block';
     } else {
-      return 'none'
+      return 'none';
     }
-  }, [editingCell])
+  }, [editingCell]);
   // 监听热更新，重置状态
   useEffect(() => {
-    if ((import.meta)?.hot) {
+    if (import.meta?.hot) {
       import.meta.hot.dispose(() => {
         clearSelection();
         cellInputRef.current?.blur();
-        setIsFocused(false)
+        setIsFocused(false);
       });
     }
   }, [clearSelection, setIsFocused]);
   return (
     <div className='flex flex-col w-full h-full overflow-hidden'>
-      <Header onClick={type => {
-        if (!['eraser'].includes(type)) {
-          cellInputRef.current?.focus()
-        } else {
-          clearSelection()
-          cellInputRef.current?.blur()
-        }
-      }} />
+      <Header
+        onClick={type => {
+          if (!['eraser'].includes(type)) {
+            cellInputRef.current?.focus();
+          } else {
+            clearSelection();
+            cellInputRef.current?.blur();
+          }
+        }}
+      />
       <Current />
-      <div className="relative overflow-hidden flex-1 flex flex-col" ref={wrapperRef}>
-        <div className="flex-1 overflow-hidden">
+      <div
+        className='relative overflow-hidden flex-1 flex flex-col'
+        ref={wrapperRef}
+      >
+        <div className='flex-1 overflow-hidden'>
           <Canvas
             data={data}
             selectedCell={selectedCell}
@@ -272,4 +299,3 @@ const Spreadsheet: React.FC<{
 };
 
 export default Spreadsheet;
-
