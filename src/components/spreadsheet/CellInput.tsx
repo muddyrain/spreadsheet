@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'rea
 import { useStore } from '@/hooks/useStore';
 import { EditingCell } from '@/types/sheet';
 import { getLeft, getTop } from '@/utils/sheet';
+import { useComputed } from '@/hooks/useComputed';
 
 export type CellInputRef = {
   setInputStyle: (rowIndex: number, colIndex: number) => void;
@@ -20,6 +21,7 @@ export const CellInput = forwardRef<CellInputRef, {
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onTabKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
 }>(({ style, value, scrollPosition, selectedCell, onChange, onTabKeyDown }, ref) => {
+  const { getMergeCellSize } = useComputed()
   const { data, config, currentCell, setIsFocused, headerColsWidth, headerRowsHeight } = useStore()
   const cellWidth = useMemo(() => {
     if (selectedCell) {
@@ -57,8 +59,11 @@ export const CellInput = forwardRef<CellInputRef, {
     if (inputRef.current && mirrorRef.current) {
       const currentCell = data[rowIndex][colIndex];
       inputRef.current.value = currentCell.value;
-      inputRef.current.style.minWidth = `${cellWidth + 2}px`;
-      inputRef.current.style.minHeight = `${cellHeight + 2}px`;
+      const { width, height } = getMergeCellSize(currentCell, cellWidth, cellHeight)
+      const Width = width
+      const Height = height
+      inputRef.current.style.minWidth = `${Width + 2}px`;
+      inputRef.current.style.minHeight = `${Height + 2}px`;
       inputRef.current.style.display = 'block';
       inputRef.current.style.padding = '3px 5px';
       mirrorRef.current.style.padding = '3px 5px';
@@ -99,19 +104,22 @@ export const CellInput = forwardRef<CellInputRef, {
     }
   }, [style, setIsFocused])
   useEffect(() => {
-    if (inputRef.current) {
+    if (inputRef.current && currentCell) {
       const rowIndex = currentCell?.row || 0;
       const colIndex = currentCell?.col || 0;
       // 固定列宽度 + 其余列宽度 + 滚动条 x 位置
       const left = getLeft(colIndex, headerColsWidth, scrollPosition)
       const top = getTop(rowIndex, headerRowsHeight, scrollPosition)
+      const { width, height } = getMergeCellSize(currentCell, cellWidth, cellHeight)
+      const Width = width
+      const Height = height
       inputRef.current.style.left = `${left - 1}px`;
       inputRef.current.style.top = `${top - 1}px`;
-      inputRef.current.style.minWidth = `${cellWidth + 1}px`;
-      inputRef.current.style.minHeight = `${cellHeight + 1}px`;
+      inputRef.current.style.minWidth = `${Width + 1}px`;
+      inputRef.current.style.minHeight = `${Height + 1}px`;
       updateInputSize();
     }
-  }, [scrollPosition, currentCell, cellHeight, cellWidth, headerColsWidth, headerRowsHeight, selectedCell]);
+  }, [scrollPosition, currentCell, cellHeight, cellWidth, headerColsWidth, headerRowsHeight, selectedCell, getMergeCellSize]);
   return (
     <>
       <textarea

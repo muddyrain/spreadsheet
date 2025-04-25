@@ -89,7 +89,6 @@ export const Header: FC<{
       case 'merge': {
         const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
         if (r1 === r2 && c1 === c2) return
-        console.log(selectedCell);
         const cell = data[selectedCell?.row || 0][selectedCell?.col || 0];
         cell.mergeSpan = {
           r1,

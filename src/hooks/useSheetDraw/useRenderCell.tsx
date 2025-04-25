@@ -1,15 +1,16 @@
 import { CellData, SelectionSheetType } from "@/types/sheet";
 import { useStore } from "../useStore";
 import { getAbsoluteSelection } from "@/utils/sheet";
+import { useComputed } from "../useComputed";
 
 export const useRenderCell = () => {
   const { selection, config, headerColsWidth, headerRowsHeight } = useStore();
-  const isCellSelected = (row: number, col: number) => {
+  const { getMergeCellSize } = useComputed()
+  const isCellSelected = (cell: CellData) => {
     if (!selection?.start || !selection?.end) return false;
-    const r1 = Math.min(selection.start.row, selection.end.row);
-    const r2 = Math.max(selection.start.row, selection.end.row);
-    const c1 = Math.min(selection.start.col, selection.end.col);
-    const c2 = Math.max(selection.start.col, selection.end.col);
+    const { row, col } = cell
+    const absoluteRowCol = getAbsoluteSelection(selection)
+    const { r1, r2, c1, c2 } = absoluteRowCol
     return row >= r1 && row <= r2 && col >= c1 && col <= c2;
   };
   // 单元格绘制函数
@@ -24,11 +25,11 @@ export const useRenderCell = () => {
     selection?: SelectionSheetType;
   }) => {
     const { rowIndex, colIndex, x, y, cell, isHeader, isRow } = options;
-    const cellWidth = headerColsWidth[colIndex];
-    const cellHeight = headerRowsHeight[rowIndex];
-    // 绘制网格
-    ctx.strokeStyle = cell.style.borderColor || config.borderColor;
-    ctx.strokeRect(x, y, cellWidth, cellHeight);
+
+    const { width, height } = getMergeCellSize(cell, headerColsWidth[colIndex], headerRowsHeight[rowIndex])
+    const cellWidth = width
+    const cellHeight = height
+
     // 设置背景颜色
     ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
     ctx.fillRect(x + 1, y + 1, cellWidth - 1, cellHeight - 1);
@@ -45,14 +46,19 @@ export const useRenderCell = () => {
       }
     }
 
-
     // 判断是否选中，绘制高亮背景
-    if (isCellSelected && isCellSelected(rowIndex, colIndex)) {
+    if (isCellSelected && isCellSelected(cell)) {
       ctx.save();
       ctx.fillStyle = config.selectionBackgroundColor;
       ctx.fillRect(x, y, cellWidth, cellHeight);
       ctx.restore();
     }
+    if (cell.mergeParent) {
+      return
+    }
+    // 绘制网格
+    ctx.strokeStyle = cell.style.borderColor || config.borderColor;
+    ctx.strokeRect(x, y, cellWidth, cellHeight);
     // 设置字体样式
     const fontWeight = cell.style.fontWeight || 'normal';
     const fontStyle = cell.style.fontStyle || 'normal';

@@ -9,7 +9,6 @@ export function useSheetSelection() {
 
 
   const handleCellMouseDown = useCallback((rowIndex: number, colIndex: number, wrapperRef: React.RefObject<HTMLDivElement | null>, scrollPosition: { x: number, y: number }) => {
-    setSelection({ start: { row: rowIndex, col: colIndex }, end: { row: rowIndex, col: colIndex } });
     setIsSelection(false);
     movedRef.current = false;
     let lastRow = rowIndex;

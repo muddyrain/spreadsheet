@@ -121,7 +121,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
     }, [wrapperRef, handleWheel])
 
-    function handleGetClient<T extends React.MouseEvent<HTMLCanvasElement, MouseEvent>>(e: T, callback: (
+    function handleGetClient<T extends React.MouseEvent<HTMLCanvasElement, MouseEvent>>(e: T, _: "click" | 'doubleClick' | 'move', callback: (
         rowIndex: number, colIndex: number, x: number, y: number) => void) {
         const canvas = canvasRef.current;
         const fixedColWidth = config.fixedColWidth;
@@ -181,7 +181,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                     tabIndex={0}
                     ref={canvasRef}
                     onMouseMove={e => {
-                        handleGetClient(e, (rowIndex, colIndex) => {
+                        handleGetClient(e, 'move', (rowIndex, colIndex) => {
                             if (currentHoverCell && currentHoverCell[0] === rowIndex && currentHoverCell[1] === colIndex) return;
                             setCurrentHoverCell([rowIndex, colIndex])
                         })
@@ -194,7 +194,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                     }}
                     onDoubleClick={(e) => {
                         if (!movedRef.current && onCellDoubleClick) { // 只在没有拖动时才触发
-                            handleGetClient(e, onCellDoubleClick)
+                            handleGetClient(e, 'doubleClick', onCellDoubleClick)
                         }
                         movedRef.current = false; // 重置
                     }}
@@ -209,7 +209,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                             }
                             return;
                         }
-                        handleGetClient(e, (rowIndex, colIndex) => {
+                        handleGetClient(e, 'click', (rowIndex, colIndex) => {
                             onCellClick?.(rowIndex, colIndex)
                             const currentCell = data[rowIndex][colIndex];
                             if (currentCell?.readOnly) return;

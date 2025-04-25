@@ -1,4 +1,4 @@
-import { TableData, CellData, SpreadsheetConfig, SelectionSheetType, PositionType } from '../types/sheet';
+import { TableData, CellData, SpreadsheetConfig, SelectionSheetType, PositionType, MergeSpanType } from '../types/sheet';
 export const createInitialData = (config: SpreadsheetConfig, rows: number, cols: number): TableData => {
   const initialData: TableData = [];
   const readOnlyStyle: CellData['style'] = {
@@ -65,7 +65,7 @@ const generateColName = (index: number) => {
 
 
 // 获取选区 r1 最小行 r2 最大行 c1 最小列 c2 最大列
-export const getAbsoluteSelection = (selection?: SelectionSheetType) => {
+export const getAbsoluteSelection = (selection?: SelectionSheetType): MergeSpanType => {
   const r1 = Math.min(selection?.start?.row || 0, selection?.end?.row || 0);
   const r2 = Math.max(selection?.start?.row || 0, selection?.end?.row || 0);
   const c1 = Math.min(selection?.start?.col || 0, selection?.end?.col || 0);
@@ -158,3 +158,4 @@ export function findIndexByAccumulate(arr: number[], offset: number) {
   }
   return arr.length - 1;
 }
+

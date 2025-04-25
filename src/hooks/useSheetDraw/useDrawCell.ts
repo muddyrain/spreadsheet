@@ -2,6 +2,7 @@ import { getAbsoluteSelection, getLeft, getStartEndCol, getStartEndRow, getTop }
 import { useStore } from "../useStore";
 import { DrawConfig } from "@/types/sheet";
 import { useRenderCell } from "./useRenderCell";
+import { useComputed } from "../useComputed";
 
 // 冻结行数和列数（可根据需要调整）
 const FROZEN_ROW_COUNT = 1;
@@ -13,6 +14,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   const { startRow, endRow } = getStartEndRow(headerRowsHeight, drawConfig.wrapperHeight, scrollPosition)
   const { startCol, endCol } = getStartEndCol(headerColsWidth, drawConfig.wrapperWidth, scrollPosition)
   const { renderCell } = useRenderCell()
+  const { getMergeCellSize } = useComputed()
   // 当前是否为单个单元格的选区
   const isOneSelection = selection?.start?.row === selection?.end?.row && selection?.start?.col === selection?.end?.col;
   // 绘制冻结首列（除左上角交叉单元格）
@@ -77,11 +79,17 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   // 绘制选中单元格
   const drawSelectedCell = (ctx: CanvasRenderingContext2D) => {
     if (selectedCell && !isFocused) {
-      const { row, col } = selectedCell
-      const cell = data[row]?.[col];
+      let { row, col } = selectedCell
+      let cell = data[row]?.[col];
       if (!cell) return;
-      const cellWidth = headerColsWidth[col];
-      const cellHeight = headerRowsHeight[row];
+      if (cell.mergeParent) {
+        cell = data[cell.mergeParent.row]?.[cell.mergeParent.col];
+        row = cell.row
+        col = cell.col
+      }
+      const { width, height } = getMergeCellSize(cell, headerColsWidth[col], headerRowsHeight[row])
+      const cellWidth = width
+      const cellHeight = height
       const x = getLeft(col, headerColsWidth, scrollPosition);
       const y = getTop(row, headerRowsHeight, scrollPosition);
       ctx.save();
@@ -92,8 +100,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       ctx.restore();
     }
   }
-  // 绘制高亮选区
-  const drawHighLightCell = (ctx: CanvasRenderingContext2D) => {
+  // 绘制选中区域边框
+  const drawSelectedAreaBorder = (ctx: CanvasRenderingContext2D) => {
     if (selection?.start && selection?.end) {
       const { r1, r2, c1, c2 } = getAbsoluteSelection(selection)
       // 只绘制在当前可视区域内的部分
@@ -138,8 +146,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       }
     }
   }
-  // 绘制选中区域边框
-  const drawSelectedAreaBorder = (ctx: CanvasRenderingContext2D) => {
+  // 绘制高亮选区
+  const drawHighLightCell = (ctx: CanvasRenderingContext2D) => {
     if (selection?.start && selection?.end) {
       if (!(isOneSelection && isFocused)) {
         const { r1, r2, c1, c2 } = getAbsoluteSelection(selection)

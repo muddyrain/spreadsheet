@@ -116,10 +116,12 @@ export const useSideLine = (options: {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        if (currentPosition && currentPosition[0] === x && currentPosition[1] === y) {
-          return
-        }
-        setCurrentPosition([x, y])
+        setCurrentPosition(_currentPosition => {
+          if (_currentPosition && _currentPosition[0] === x && _currentPosition[1] === y) {
+            return _currentPosition
+          }
+          return [x, y]
+        })
         if (isMouseDown) {
           setCurrentSideLinePosition([x, y])
         }
@@ -131,7 +133,7 @@ export const useSideLine = (options: {
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('mousemove', handleMouseMove)
     }
-  }, [canvasRef, currentPosition, handleMouseUp, isMouseDown, setCurrentSideLinePosition])
+  }, [canvasRef, handleMouseUp, isMouseDown, setCurrentSideLinePosition])
 
   return {
     currentPosition,

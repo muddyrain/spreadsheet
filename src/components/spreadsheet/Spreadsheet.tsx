@@ -72,12 +72,45 @@ const Spreadsheet: React.FC<{
     if (currentCell.readOnly) {
       return;
     }
+    const cell = data[rowIndex][colIndex]
+    if (cell.mergeSpan) {
+      setSelection({
+        start: {
+          row: cell.mergeSpan.r1,
+          col: cell.mergeSpan.c1,
+        },
+        end: {
+          row: cell.mergeSpan.r2,
+          col: cell.mergeSpan.c2,
+        }
+      })
+      setSelectedCell({ row: rowIndex, col: colIndex })
+      return
+    }
+    if (cell.mergeParent) {
+      const { row, col } = cell.mergeParent
+      const parentCell = data[row][col]
+      if (parentCell.mergeSpan) {
+        setSelection({
+          start: {
+            row: parentCell.mergeSpan.r1,
+            col: parentCell.mergeSpan.c1,
+          },
+          end: {
+            row: parentCell.mergeSpan.r2,
+            col: parentCell.mergeSpan.c2,
+          }
+        })
+        setSelectedCell({ row, col })
+        return
+      }
+    }
+    setSelectedCell({ row: rowIndex, col: colIndex })
+    setEditingCell(null); // 单击时不进入编辑
     setSelection({
       start: { row: rowIndex, col: colIndex },
       end: { row: rowIndex, col: colIndex }
     })
-    setSelectedCell({ row: rowIndex, col: colIndex })
-    setEditingCell(null); // 单击时不进入编辑
   };
   // 监听双击事件
   const onCellDoubleClick = (rowIndex: number, colIndex: number) => {
