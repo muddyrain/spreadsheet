@@ -4,17 +4,23 @@ export const createInitialData = (config: SpreadsheetConfig, rows: number, cols:
   const readOnlyStyle: CellData['style'] = {
     backgroundColor: config?.readOnlyBackgroundColor, textAlign: 'center', borderColor: config.readOnlyBorderColor,
   }
-  const colNames: CellData[] = [{ value: '', readOnly: true, style: readOnlyStyle, row: 0, col: 0, }];
+  const defaultCellData = {
+    mergeSpan: null,
+    mergeParent: null,
+  }
+  const colNames: CellData[] = [{
+    ...defaultCellData, value: '', readOnly: true, style: readOnlyStyle, row: 0, col: 0,
+  }];
   for (let i = 0;i < cols;i++) {
-    colNames.push({ value: generateColName(i), readOnly: true, style: readOnlyStyle, row: 0, col: i + 1, });
+    colNames.push({ ...defaultCellData, value: generateColName(i), readOnly: true, style: readOnlyStyle, row: 0, col: i + 1, });
   }
   initialData.push(colNames);
 
   for (let i = 1;i <= rows;i++) {
     // 每一行：第一列是行号，其余列都是空白 取名为 行头
-    const rowData: CellData[] = [{ value: `${i}`, readOnly: true, style: readOnlyStyle, row: i, col: 0, }];
+    const rowData: CellData[] = [{ ...defaultCellData, value: `${i}`, readOnly: true, style: readOnlyStyle, row: i, col: 0, }];
     for (let j = 0;j < cols;j++) {
-      rowData.push({ value: ``, style: {}, row: i, col: j + 1, });
+      rowData.push({ ...defaultCellData, value: ``, style: {}, row: i, col: j + 1, });
     }
     initialData.push(rowData);
   }

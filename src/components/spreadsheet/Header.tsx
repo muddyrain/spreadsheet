@@ -1,15 +1,16 @@
 import { FC, useMemo } from 'react';
 import { Toggle } from "@/components/ui/toggle"
-import { Bold, Eraser, Italic, PaintRoller, Redo, Save, Strikethrough, Underline, Undo } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { Bold, Eraser, Italic, Merge, PaintRoller, Redo, Save, Strikethrough, Underline, Undo } from "lucide-react"
 import { useStore } from '@/hooks/useStore';
 import { Tooltip } from '../ui/tooltip';
 import { getAbsoluteSelection } from '@/utils/sheet';
 import { CellData } from '@/types/sheet';
-export type ClickType = 'save' | 'undo' | 'redo' | 'paint' | 'eraser' | 'bold' | 'italic' | 'strikethrough' | 'underline'
+export type ClickType = 'save' | 'undo' | 'redo' | 'paint' | 'eraser' | 'bold' | 'italic' | 'strikethrough' | 'underline' | 'merge'
 export const Header: FC<{
   onClick?: (type: ClickType) => void;
 }> = ({ onClick }) => {
-  const { selection, data, setUpdater } = useStore();
+  const { selection, selectedCell, data, setUpdater } = useStore();
   const selectionCells = useMemo(() => {
     const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
     if (r1 === r2 && c1 === c2) {
@@ -85,6 +86,28 @@ export const Header: FC<{
           })
           break;
         }
+      case 'merge': {
+        const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
+        if (r1 === r2 && c1 === c2) return
+        console.log(selectedCell);
+        const cell = data[selectedCell?.row || 0][selectedCell?.col || 0];
+        cell.mergeSpan = {
+          r1,
+          r2,
+          c1,
+          c2
+        }
+        for (let i = r1;i <= r2;i++) {
+          for (let j = c1;j <= c2;j++) {
+            if (i === r1 && j === c1) continue
+            data[i][j].mergeParent = {
+              row: selectedCell?.row || 0,
+              col: selectedCell?.col || 0
+            }
+          }
+        }
+        break;
+      }
     }
     setUpdater();
     onClick?.(type)
@@ -159,6 +182,15 @@ export const Header: FC<{
       }}
       >
         <Underline />
+      </Toggle>
+    </Tooltip>
+    <Separator orientation='vertical' />
+    <Tooltip content="合并单元格">
+      <Toggle className='text-lg' onClick={() => {
+        handleClick('merge')
+      }}
+      >
+        <Merge />
       </Toggle>
     </Tooltip>
   </div >

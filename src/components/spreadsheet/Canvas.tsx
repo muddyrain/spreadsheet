@@ -182,6 +182,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                     ref={canvasRef}
                     onMouseMove={e => {
                         handleGetClient(e, (rowIndex, colIndex) => {
+                            if (currentHoverCell && currentHoverCell[0] === rowIndex && currentHoverCell[1] === colIndex) return;
                             setCurrentHoverCell([rowIndex, colIndex])
                         })
                     }}

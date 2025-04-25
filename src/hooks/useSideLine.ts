@@ -69,9 +69,8 @@ export const useSideLine = (options: {
           return
         }
       }
-    } else {
-      setCursor('cell')
     }
+    setCursor('cell')
   }, [currentHoverCell, currentPosition, isMouseDown, headerColsWidth, headerRowsHeight, data, scrollPosition, setCurrentSideLineIndex, setSideLineMode])
   const clearState = useCallback(() => {
     setCurrentSideLinePosition([-1, -1])
@@ -117,6 +116,9 @@ export const useSideLine = (options: {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
+        if (currentPosition && currentPosition[0] === x && currentPosition[1] === y) {
+          return
+        }
         setCurrentPosition([x, y])
         if (isMouseDown) {
           setCurrentSideLinePosition([x, y])
@@ -129,7 +131,7 @@ export const useSideLine = (options: {
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('mousemove', handleMouseMove)
     }
-  }, [canvasRef, handleMouseUp, isMouseDown, setCurrentSideLinePosition])
+  }, [canvasRef, currentPosition, handleMouseUp, isMouseDown, setCurrentSideLinePosition])
 
   return {
     currentPosition,

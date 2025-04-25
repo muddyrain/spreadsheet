@@ -57,6 +57,20 @@ export type CellData = {
    * @default false
    */
   readOnly?: boolean;
+  /**
+   * @description 合并列数
+   */
+  mergeSpan: {
+    r1: number;
+    c1: number;
+    r2: number;
+    c2: number;
+  } | null;
+  /**
+   * @description 单元格父级单元格
+   * @default null  
+   */
+  mergeParent: { row: number; col: number } | null;
 } & EditingCell;
 
 export type TableData = CellData[][];
