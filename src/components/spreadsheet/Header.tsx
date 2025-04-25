@@ -27,8 +27,8 @@ export const Header: FC<{
     return {
       isBold: selectionCells.every(cell => cell.style.fontWeight === 'bold'),
       isItalic: selectionCells.every(cell => cell.style.fontStyle === 'italic'),
-      isLineThrough: selectionCells.every(cell => cell.style.textDecoration === 'line-through'),
-      isUnderline: selectionCells.every(cell => cell.style.textDecoration === 'underline'),
+      isLineThrough: selectionCells.every(cell => cell.style.textDecoration?.includes('line-through')),
+      isUnderline: selectionCells.every(cell => cell.style.textDecoration?.includes('underline')),
     }
   }, [selectionCells])
   const handleClick = (type: ClickType) => {
@@ -63,24 +63,24 @@ export const Header: FC<{
         break;
       }
       case 'strikethrough': {
-        const isAll = selectionCells.every(cell => cell.style.textDecoration === 'line-through');
+        const isAll = selectionCells.every(cell => cell.style.textDecoration?.includes('line-through'));
         selectionCells.forEach(cell => {
           if (isAll) {
-            cell.style.textDecoration = 'none';
+            cell.style.textDecoration?.replace('line-through', '');
           } else {
-            cell.style.textDecoration = 'line-through';
+            cell.style.textDecoration = `line-through ${cell.style.textDecoration || ''}`;
           }
         })
         break;
       }
       case 'underline':
         {
-          const isAll = selectionCells.every(cell => cell.style.textDecoration === 'underline');
+          const isAll = selectionCells.every(cell => cell.style.textDecoration?.includes('underline'));
           selectionCells.forEach(cell => {
             if (isAll) {
-              cell.style.textDecoration = 'none';
+              cell.style.textDecoration?.replace('underline', '');
             } else {
-              cell.style.textDecoration = 'underline';
+              cell.style.textDecoration = `underline ${cell.style.textDecoration || ''}`;
             }
           })
           break;

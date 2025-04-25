@@ -80,70 +80,76 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
                 // 设置剪裁区域
                 ctx.save();
                 ctx.beginPath();
-                ctx.rect(x - 12, y, cellWidth, cellHeight);
+                ctx.rect(x - 8, y, cellWidth, cellHeight);
                 ctx.clip();
             }
             // 设置文本对齐
             ctx.textAlign = cell.style.textAlign as CanvasTextAlign || 'left';
             ctx.textBaseline = 'middle';
-            // 计算文本位置
-            let textX = cellWidth > 30 ? x + 10 : 0;
+            // 计算文本位置 
+            let textX = cellWidth > 30 ? x + 6 : x;
             if (ctx.textAlign === 'center') textX = x + cellWidth / 2;
-            if (ctx.textAlign === 'right') textX = x + cellWidth - 10;
-            const textY = cell.readOnly ? y + cellHeight / 2 : cellHeight > 30 ? y + 16 : 0;
-            ctx.fillText(cell.value, textX, textY);
-
-            const textDecoration = cell.style.textDecoration || 'none';
-            // 绘制删除线
-            if (textDecoration === 'line-through') {
-                const textMetrics = ctx.measureText(cell.value);
-                const lineY = textY;
-                let lineStartX = textX;
-                let lineEndX = textX;
-
-                if (ctx.textAlign === 'left' || !ctx.textAlign) {
-                    lineStartX = textX;
-                    lineEndX = textX + textMetrics.width;
-                } else if (ctx.textAlign === 'center') {
-                    lineStartX = textX - textMetrics.width / 2;
-                    lineEndX = textX + textMetrics.width / 2;
-                } else if (ctx.textAlign === 'right') {
-                    lineStartX = textX - textMetrics.width;
-                    lineEndX = textX;
+            if (ctx.textAlign === 'right') textX = x + cellWidth - 5;
+            if (cell.readOnly) {
+                const textY = y + cellHeight / 2;
+                ctx.fillText(cell.value, textX, textY);
+            } else {
+                const contents = cell.value.split('\n');
+                for (let i = 0;i < contents.length;i++) {
+                    const text = contents[i];
+                    const textMetrics = ctx.measureText(text);
+                    const textY = i * 7 + y + 15 + i * fontSize;
+                    ctx.fillText(text, textX, textY);
+                    const textDecoration = cell.style.textDecoration || 'none';
+                    // 绘制删除线
+                    if (textDecoration.includes('line-through')) {
+                        const lineY = textY - 1;
+                        let lineStartX = textX;
+                        let lineEndX = textX;
+                        if (ctx.textAlign === 'left' || !ctx.textAlign) {
+                            lineStartX = textX;
+                            lineEndX = textX + textMetrics.width;
+                        } else if (ctx.textAlign === 'center') {
+                            lineStartX = textX - textMetrics.width / 2;
+                            lineEndX = textX + textMetrics.width / 2;
+                        } else if (ctx.textAlign === 'right') {
+                            lineStartX = textX - textMetrics.width;
+                            lineEndX = textX;
+                        }
+                        ctx.save();
+                        ctx.strokeStyle = cell.style.color || '#000';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(lineStartX, lineY);
+                        ctx.lineTo(lineEndX, lineY);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                    // 绘制下划线   
+                    if (textDecoration.includes('underline')) {
+                        const lineY = textY + fontSize / 2 - 2;
+                        let lineStartX = textX;
+                        let lineEndX = textX;
+                        if (ctx.textAlign === 'left' || !ctx.textAlign) {
+                            lineStartX = textX;
+                            lineEndX = textX + textMetrics.width;
+                        } else if (ctx.textAlign === 'center') {
+                            lineStartX = textX - textMetrics.width / 2;
+                            lineEndX = textX + textMetrics.width / 2;
+                        } else if (ctx.textAlign === 'right') {
+                            lineStartX = textX - textMetrics.width;
+                            lineEndX = textX;
+                        }
+                        ctx.save();
+                        ctx.strokeStyle = cell.style.color || '#000';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(lineStartX, lineY);
+                        ctx.lineTo(lineEndX, lineY);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
                 }
-                ctx.save();
-                ctx.strokeStyle = cell.style.color || '#000';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(lineStartX, lineY);
-                ctx.lineTo(lineEndX, lineY);
-                ctx.stroke();
-                ctx.restore();
-            }
-            // 绘制下划线
-            if (textDecoration === 'underline') {
-                const textMetrics = ctx.measureText(cell.value);
-                const lineY = textY + fontSize / 2;
-                let lineStartX = textX;
-                let lineEndX = textX;
-                if (ctx.textAlign === 'left' || !ctx.textAlign) {
-                    lineStartX = textX;
-                    lineEndX = textX + textMetrics.width;
-                } else if (ctx.textAlign === 'center') {
-                    lineStartX = textX - textMetrics.width / 2;
-                    lineEndX = textX + textMetrics.width / 2;
-                } else if (ctx.textAlign === 'right') {
-                    lineStartX = textX - textMetrics.width;
-                    lineEndX = textX;
-                }
-                ctx.save();
-                ctx.strokeStyle = cell.style.color || '#000';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(lineStartX, lineY);
-                ctx.lineTo(lineEndX, lineY);
-                ctx.stroke();
-                ctx.restore();
             }
             ctx.restore();
         };

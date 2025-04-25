@@ -60,8 +60,8 @@ export const CellInput = forwardRef<CellInputRef, {
       inputRef.current.style.minWidth = `${cellWidth + 2}px`;
       inputRef.current.style.minHeight = `${cellHeight + 2}px`;
       inputRef.current.style.display = 'block';
-      inputRef.current.style.padding = '3px 10px';
-      mirrorRef.current.style.padding = '3px 10px';
+      inputRef.current.style.padding = '3px 5px';
+      mirrorRef.current.style.padding = '3px 5px';
       // 预先设置字体大小和粗细 防止计算不准确
       inputRef.current.style.fontSize = `${currentCell.style.fontSize || config.fontSize || 14}px`
       inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`
@@ -107,8 +107,8 @@ export const CellInput = forwardRef<CellInputRef, {
       const top = getTop(rowIndex, headerRowsHeight, scrollPosition)
       inputRef.current.style.left = `${left - 1}px`;
       inputRef.current.style.top = `${top - 1}px`;
-      inputRef.current.style.minWidth = `${cellWidth + 2}px`;
-      inputRef.current.style.minHeight = `${cellHeight + 2}px`;
+      inputRef.current.style.minWidth = `${cellWidth + 1}px`;
+      inputRef.current.style.minHeight = `${cellHeight + 1}px`;
       updateInputSize();
     }
   }, [scrollPosition, currentCell, cellHeight, cellWidth, headerColsWidth, headerRowsHeight, selectedCell]);
@@ -131,14 +131,17 @@ export const CellInput = forwardRef<CellInputRef, {
         style={{
           ...style,
           border: `2px solid ${config.selectionBorderColor}`,
+          fontFamily: "Arial"
         }}
       />
       {/* 隐藏的 mirror div 用于测量内容尺寸 */}
       <div
         ref={mirrorRef}
-        className='absolute border bg-red-200 whitespace-pre-wrap break-all'
+        className='absolute whitespace-pre-wrap break-all'
         style={{
           ...style,
+          fontFamily: "Arial",
+          border: `2px solid ${config.selectionBorderColor}`,
           visibility: 'hidden',
         }}
       />
