@@ -3,7 +3,7 @@ import { TableData, SpreadsheetConfig, SpreadsheetType, SelectionSheetType, } fr
 import _ from 'lodash';
 import { useSpreadsheet } from '@/hooks/useSpreadsheet';
 import { SpreadsheetContext } from './context';
-import Spreadsheet from './spreadsheet';
+import Spreadsheet from './Spreadsheet';
 
 const RootSpreadsheet: React.FC<{
   config?: SpreadsheetConfig;

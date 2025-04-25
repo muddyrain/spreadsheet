@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { EditingCell, SelectionSheetType, TableData } from '../../types/sheet';
-import { useSheetScroll } from '../../hooks/useSheetScroll';
-import { useSheetDraw } from '../../hooks/useSheetDraw';
+import { EditingCell, SelectionSheetType, TableData } from '@/types/sheet';
+import { useSheetScroll } from '@/hooks/useSheetScroll';
+import { useSheetDraw } from '@/hooks/useSheetDraw';
 import { ScrollBar } from './ScrollBar';
 import { useSheetSelection } from '@/hooks/useSheetSelection';
 import { useStore } from '@/hooks/useStore';
@@ -83,7 +83,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
     }, [currentRowSideLineIndex, headerRowsHeight, scrollPosition])
     // 绘制 hooks
-    const { drawTable } = useSheetDraw(data, {
+    const { drawTable } = useSheetDraw({
         cellWidth,
         cellHeight,
         wrapperWidth: containerWidth,
@@ -103,7 +103,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         const ctx = canvas.getContext('2d');
         if (ctx) {
             rafId.current = requestAnimationFrame(() => {
-                drawTable(ctx, scrollPosition);
+                drawTable(ctx);
             });
         }
         return () => {
@@ -111,7 +111,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 cancelAnimationFrame(rafId.current);
             }
         }
-    }, [containerHeight, containerWidth, drawTable, scrollPosition])
+    }, [containerHeight, containerWidth, drawTable])
     useEffect(() => {
         const handleResize = () => {
             if (containerRef.current) {
