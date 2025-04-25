@@ -9,7 +9,7 @@ const FROZEN_COL_COUNT = 1;
 
 
 export const useDrawCell = (drawConfig: DrawConfig) => {
-  const { config, data, selectedCell, isFocused, headerRowsHeight, headerColsWidth, scrollPosition, selection } = useStore()
+  const { config, data, selectedCell, isMouseDown, sideLineMode, currentSideLineIndex, currentSideLinePosition, isFocused, headerRowsHeight, headerColsWidth, scrollPosition, selection } = useStore()
   const { startRow, endRow } = getStartEndRow(headerRowsHeight, drawConfig.wrapperHeight, scrollPosition)
   const { startCol, endCol } = getStartEndCol(headerColsWidth, drawConfig.wrapperWidth, scrollPosition)
   const { renderCell } = useRenderCell()
@@ -162,6 +162,63 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       }
     }
   }
+  // 绘制拖拽标准线
+  const drawDragLine = (ctx: CanvasRenderingContext2D) => {
+    if (isMouseDown && sideLineMode === 'col') {
+      const currentColSideLineIndex = currentSideLineIndex[1]
+      const currentColSideLinePosition = currentSideLinePosition[0]
+      const colFixedSideLinePosition = getLeft(currentColSideLineIndex, headerColsWidth, scrollPosition)
+      if (currentColSideLineIndex !== undefined && currentColSideLinePosition !== undefined) {
+        ctx.save();
+        ctx.strokeStyle = config.selectionBorderColor;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(currentColSideLinePosition, 0);
+        ctx.lineTo(currentColSideLinePosition, drawConfig.wrapperHeight);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (colFixedSideLinePosition) {
+        ctx.save();
+        ctx.strokeStyle = config.selectionBorderColor;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(colFixedSideLinePosition, 0);
+        ctx.lineTo(colFixedSideLinePosition, drawConfig.wrapperHeight);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    if (isMouseDown && sideLineMode === 'row') {
+      const currentRowSideLineIndex = currentSideLineIndex[0]
+      const currentRowSideLinePosition = currentSideLinePosition[1]
+      const rowFixedSideLinePosition = getTop(currentRowSideLineIndex, headerRowsHeight, scrollPosition)
+      if (currentRowSideLineIndex !== undefined && currentRowSideLinePosition !== undefined) {
+        ctx.save();
+        ctx.strokeStyle = config.selectionBorderColor;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0, currentRowSideLinePosition);
+        ctx.lineTo(drawConfig.wrapperWidth, currentRowSideLinePosition);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (rowFixedSideLinePosition) {
+        ctx.save();
+        ctx.strokeStyle = config.selectionBorderColor;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0, rowFixedSideLinePosition);
+        ctx.lineTo(drawConfig.wrapperWidth, rowFixedSideLinePosition);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
   return {
     drawCell,
     drawFrozenCols,
@@ -169,6 +226,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     drawFrozenCrossCell,
     drawHighLightCell,
     drawSelectedCell,
+    drawDragLine,
     drawSelectedAreaBorder
   }
 }

@@ -12,6 +12,7 @@ export const useSheetDraw = (drawConfig: DrawConfig & { selection?: SelectionShe
       drawFrozenCrossCell,
       drawHighLightCell,
       drawSelectedCell,
+      drawDragLine,
       drawSelectedAreaBorder
     } = drawFunctions
     ctx.clearRect(0, 0, drawConfig.wrapperWidth, drawConfig.wrapperHeight);
@@ -21,16 +22,18 @@ export const useSheetDraw = (drawConfig: DrawConfig & { selection?: SelectionShe
     drawCell(ctx)
     // 绘制选区边框（只绘制在当前可视区域内的部分）
     drawSelectedAreaBorder(ctx)
-    // 绘制当前选中单元格 且 没有输入框焦点
-    drawHighLightCell(ctx)
+    // 绘制 当前选中区域列头行头高亮
+    drawSelectedCell(ctx)
     // 绘制冻结首列（除左上角交叉单元格）
     drawFrozenCols(ctx)
     // 绘制冻结首行（除左上角交叉单元格）
     drawFrozenRows(ctx)
-    // 绘制 当前选中区域列头行头高亮
-    drawSelectedCell(ctx)
+    // 绘制当前选中单元格 且 没有输入框焦点
+    drawHighLightCell(ctx)
     // 绘制左上角交叉单元格（冻结区的左上角）
     drawFrozenCrossCell(ctx)
+    // 绘制拖拽标准线 
+    drawDragLine(ctx)
   }, [drawConfig, drawFunctions]);
   return { drawTable };
 };

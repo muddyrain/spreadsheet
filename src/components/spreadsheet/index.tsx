@@ -20,16 +20,22 @@ const RootSpreadsheet: React.FC<{
   const [isFocused, setIsFocused] = useState(false);
   const [selection, setSelection] = useState<SelectionSheetType>({ start: null, end: null });
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
-
+  const [currentSideLineIndex, setCurrentSideLineIndex] = useState([-1, -1]);
+  const [currentSideLinePosition, setCurrentSideLinePosition] = useState([-1, -1]);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [sideLineMode, setSideLineMode] = useState<'row' | 'col' | null>(null)
   return (
     <SpreadsheetContext.Provider value={{
       data,
+      setData,
       config,
       currentCell,
       updater,
       setUpdater: forceUpdate,
       isFocused,
       setIsFocused,
+      isMouseDown,
+      setIsMouseDown,
       selection,
       setSelection,
       headerColsWidth,
@@ -42,7 +48,12 @@ const RootSpreadsheet: React.FC<{
       setSelectedCell,
       editingCell,
       setEditingCell,
-      setData
+      currentSideLineIndex,
+      setCurrentSideLineIndex,
+      currentSideLinePosition,
+      setCurrentSideLinePosition,
+      sideLineMode,
+      setSideLineMode,
     }}>
       <Spreadsheet onChange={onChange} />
     </SpreadsheetContext.Provider>

@@ -11,6 +11,8 @@ export const SpreadsheetContext = React.createContext<{
   setUpdater: () => void;
   isFocused: boolean,
   setIsFocused: (isFocused: boolean) => void;
+  isMouseDown: boolean,
+  setIsMouseDown: (isFocused: boolean) => void;
   selection: SelectionSheetType;
   setSelection: React.Dispatch<React.SetStateAction<SelectionSheetType>>;
   headerColsWidth: number[];
@@ -23,4 +25,10 @@ export const SpreadsheetContext = React.createContext<{
   setSelectedCell: React.Dispatch<React.SetStateAction<EditingCell>>;
   editingCell: EditingCell;
   setEditingCell: React.Dispatch<React.SetStateAction<EditingCell>>;
+  currentSideLineIndex: number[];
+  setCurrentSideLineIndex: React.Dispatch<React.SetStateAction<number[]>>;
+  currentSideLinePosition: number[];
+  setCurrentSideLinePosition: React.Dispatch<React.SetStateAction<number[]>>;
+  sideLineMode: 'row' | 'col' | null;
+  setSideLineMode: React.Dispatch<React.SetStateAction<'row' | 'col' | null>>;
 } | undefined>(undefined)
