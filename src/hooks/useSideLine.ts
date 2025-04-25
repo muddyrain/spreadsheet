@@ -124,6 +124,7 @@ export const useSideLine = (options: {
     sideLineMode,
     currentPosition,
     currentColSideLineIndex,
+    currentRowSideLineIndex,
     currentColSideLinePosition,
     currentRowSideLinePosition,
     setCurrentColSideLineIndex,

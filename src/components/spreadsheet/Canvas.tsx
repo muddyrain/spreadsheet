@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useState, } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { EditingCell, PositionType, SelectionSheetType, TableData } from '../../types/sheet';
 import { useSheetScroll } from '../../hooks/useSheetScroll';
 import { useSheetDraw } from '../../hooks/useSheetDraw';
@@ -6,7 +6,8 @@ import { ScrollBar } from './ScrollBar';
 import { useSheetSelection } from '@/hooks/useSheetSelection';
 import { useStore } from '@/hooks/useStore';
 import { useSideLine } from '@/hooks/useSideLine';
-import { findIndexByAccumulate } from '@/utils/sheet';
+import { findIndexByAccumulate, getLeft, getTop } from '@/utils/sheet';
+
 
 export type CanvasOnKeyDown = (e: React.KeyboardEvent, options: {
     selection: SelectionSheetType;
@@ -63,11 +64,27 @@ export const Canvas: React.FC<CanvasProps> = ({
         handleWheel,
     } = useSheetScroll(scrollConfig);
     // 单元格侧边栏 hooks - 拖拽侧边    
-    const { isMouseDown, sideLineMode, currentRowSideLinePosition, currentColSideLinePosition, cursor, setIsMouseDown, handleMouseUp } = useSideLine({
+    const { isMouseDown, sideLineMode, currentColSideLineIndex, currentRowSideLineIndex, currentRowSideLinePosition, currentColSideLinePosition, cursor, setIsMouseDown, handleMouseUp } = useSideLine({
         currentHoverCell,
         canvasRef,
         scrollPosition
     })
+    // 当前列侧线固定位置
+    const colFixedSideLinePosition = useMemo(() => {
+        if (currentColSideLineIndex) {
+            return getLeft(currentColSideLineIndex, headerColsWidth, scrollPosition)
+        } else {
+            return 0
+        }
+    }, [currentColSideLineIndex, headerColsWidth, scrollPosition])
+    // 当前行侧线固定位置
+    const rowFixedSideLinePosition = useMemo(() => {
+        if (currentRowSideLineIndex) {
+            return getTop(currentRowSideLineIndex, headerRowsHeight, scrollPosition)
+        } else {
+            return 0
+        }
+    }, [currentRowSideLineIndex, headerRowsHeight, scrollPosition])
     // 绘制 hooks
     const { drawTable } = useSheetDraw(data, {
         cellWidth,
@@ -239,24 +256,46 @@ export const Canvas: React.FC<CanvasProps> = ({
             {
                 // 当前列侧线
                 isMouseDown && sideLineMode === 'col' &&
-                <div className="h-full" style={{
-                    width: 1,
-                    position: 'absolute',
-                    left: currentColSideLinePosition,
-                    top: 0,
-                    backgroundColor: config.selectionBorderColor
-                }} onMouseUp={handleMouseUp} />
+                <>
+                    <div className="h-full" style={{
+                        position: 'absolute',
+                        left: colFixedSideLinePosition,
+                        top: 0,
+                        borderLeft: 1,
+                        borderLeftStyle: 'dashed',
+                        borderLeftColor: config.selectionBorderColor
+                    }} />
+                    <div className="h-full" style={{
+                        position: 'absolute',
+                        left: currentColSideLinePosition,
+                        top: 0,
+                        borderLeft: 1,
+                        borderLeftStyle: 'dashed',
+                        borderLeftColor: config.selectionBorderColor
+                    }} onMouseUp={handleMouseUp} />
+                </>
             }
             {
                 // 当前行侧线
                 isMouseDown && sideLineMode === 'row' &&
-                <div className="w-full" style={{
-                    height: 1,
-                    position: 'absolute',
-                    left: 0,
-                    top: currentRowSideLinePosition,
-                    backgroundColor: config.selectionBorderColor
-                }} onMouseUp={handleMouseUp} />
+                <>
+                    <div className="w-full" style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: rowFixedSideLinePosition,
+                        borderTop: 1,
+                        borderTopStyle: 'dashed',
+                        borderTopColor: config.selectionBorderColor
+                    }} />
+                    <div className="w-full" style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: currentRowSideLinePosition,
+                        borderTop: 1,
+                        borderTopStyle: 'dashed',
+                        borderTopColor: config.selectionBorderColor
+                    }} onMouseUp={handleMouseUp} />
+                </>
             }
         </>
     );

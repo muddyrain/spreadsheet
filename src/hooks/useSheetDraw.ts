@@ -76,21 +76,21 @@ export const useSheetDraw = (data: TableData, drawConfig: DrawConfig & { selecti
             if (cell.readOnly) color = config.readOnlyColor || cell.style.color || config.color || '#000000'
             ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Arial`;
             ctx.fillStyle = color
-
-            // 设置剪裁区域
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(x - 12, y, cellWidth, cellHeight);
-            ctx.clip();
-
+            if (cellWidth > 30) {
+                // 设置剪裁区域
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(x - 12, y, cellWidth, cellHeight);
+                ctx.clip();
+            }
             // 设置文本对齐
             ctx.textAlign = cell.style.textAlign as CanvasTextAlign || 'left';
             ctx.textBaseline = 'middle';
             // 计算文本位置
-            let textX = x + 10;
+            let textX = cellWidth > 30 ? x + 10 : 0;
             if (ctx.textAlign === 'center') textX = x + cellWidth / 2;
             if (ctx.textAlign === 'right') textX = x + cellWidth - 10;
-            const textY = y + cellHeight / 2 + 2;
+            const textY = cell.readOnly ? y + cellHeight / 2 : cellHeight > 30 ? y + 16 : 0;
             ctx.fillText(cell.value, textX, textY);
 
             const textDecoration = cell.style.textDecoration || 'none';
