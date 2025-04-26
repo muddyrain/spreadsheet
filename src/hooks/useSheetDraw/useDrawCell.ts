@@ -4,12 +4,12 @@ import {
   getStartEndCol,
   getStartEndRow,
   getTop,
-} from '@/utils/sheet';
-import { useStore } from '../useStore';
-import { DrawConfig } from '@/types/sheet';
-import { useRenderCell } from './useRenderCell';
-import { useComputed } from '../useComputed';
-import { useMemo } from 'react';
+} from "@/utils/sheet";
+import { useStore } from "../useStore";
+import { DrawConfig } from "@/types/sheet";
+import { useRenderCell } from "./useRenderCell";
+import { useComputed } from "../useComputed";
+import { useMemo } from "react";
 
 // 冻结行数和列数（可根据需要调整）
 const FROZEN_ROW_COUNT = 1;
@@ -33,12 +33,12 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   const { startRow, endRow } = getStartEndRow(
     headerRowsHeight,
     drawConfig.wrapperHeight,
-    scrollPosition
+    scrollPosition,
   );
   const { startCol, endCol } = getStartEndCol(
     headerColsWidth,
     drawConfig.wrapperWidth,
-    scrollPosition
+    scrollPosition,
   );
   const { renderCell } = useRenderCell();
   const { getMergeCellSize } = useComputed();
@@ -124,14 +124,14 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   // 绘制选中单元格
   const drawSelectedCell = (ctx: CanvasRenderingContext2D) => {
     if (selectedCell && !isFocused) {
-      let { row, col } = selectedCell;
-      let cell = data[row]?.[col];
+      const { row, col } = selectedCell;
+      const cell = data[row]?.[col];
       if (!cell) return;
 
       const { width, height } = getMergeCellSize(
         cell,
         headerColsWidth[col],
-        headerRowsHeight[row]
+        headerRowsHeight[row],
       );
       const cellWidth = width;
       const cellHeight = height;
@@ -215,13 +215,13 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   };
   // 绘制拖拽标准线
   const drawDragLine = (ctx: CanvasRenderingContext2D) => {
-    if (isMouseDown && sideLineMode === 'col') {
+    if (isMouseDown && sideLineMode === "col") {
       const currentColSideLineIndex = currentSideLineIndex[1];
       const currentColSideLinePosition = currentSideLinePosition[0];
       const colFixedSideLinePosition = getLeft(
         currentColSideLineIndex,
         headerColsWidth,
-        scrollPosition
+        scrollPosition,
       );
       if (
         currentColSideLineIndex !== undefined &&
@@ -249,13 +249,13 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
         ctx.restore();
       }
     }
-    if (isMouseDown && sideLineMode === 'row') {
+    if (isMouseDown && sideLineMode === "row") {
       const currentRowSideLineIndex = currentSideLineIndex[0];
       const currentRowSideLinePosition = currentSideLinePosition[1];
       const rowFixedSideLinePosition = getTop(
         currentRowSideLineIndex,
         headerRowsHeight,
-        scrollPosition
+        scrollPosition,
       );
       if (
         currentRowSideLineIndex !== undefined &&

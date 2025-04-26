@@ -10,29 +10,29 @@ export type CellStyle = {
    */
   fontWeight?: string | number;
   /**
-  * @description 单元格背景颜色
-  * @default '#FFFFFF'
-  */
+   * @description 单元格背景颜色
+   * @default '#FFFFFF'
+   */
   backgroundColor?: string;
   /**
-  * @description 单元格边框颜色
-  * @default '#DFDFDF'
-  */
+   * @description 单元格边框颜色
+   * @default '#DFDFDF'
+   */
   borderColor?: string;
   /**
-  * @description 单元格文字对齐方式
-  * @default 'left'
-  */
+   * @description 单元格文字对齐方式
+   * @default 'left'
+   */
   textAlign?: string;
   /**
-  * @description 单元格字体大小
-  * @default 14
-  */
+   * @description 单元格字体大小
+   * @default 14
+   */
   fontSize?: number;
   /**
-  * @description 单元格 字体样式
-  * @default 'normal'
-  */
+   * @description 单元格 字体样式
+   * @default 'normal'
+   */
   fontStyle?: string;
   /**
    * @description 单元格 文字装饰
@@ -63,7 +63,7 @@ export type CellData = {
   mergeSpan: MergeSpanType | null;
   /**
    * @description 单元格父级单元格
-   * @default null  
+   * @default null
    */
   mergeParent: { row: number; col: number } | null;
 } & EditingCell;
@@ -72,7 +72,7 @@ export type MergeSpanType = {
   c1: number;
   r2: number;
   c2: number;
-}
+};
 export type TableData = CellData[][];
 
 export type SpreadsheetConfig = {
@@ -87,14 +87,14 @@ export type SpreadsheetConfig = {
    */
   cols?: number;
   /**
- * @description 单元格宽度，用于计算单元格的宽度
- * @default 100
- */
+   * @description 单元格宽度，用于计算单元格的宽度
+   * @default 100
+   */
   width?: number;
   /**
-* @description 固定列宽度 - 第一列宽度
-* @default 50
-*/
+   * @description 固定列宽度 - 第一列宽度
+   * @default 50
+   */
   fixedColWidth?: number;
   /**
    * @description 单元格高度，用于计算单元格的高度
@@ -160,9 +160,9 @@ export type EditingCell = {
 } | null;
 
 export type SelectionSheetType = {
-  start: { row: number, col: number } | null,
-  end: { row: number, col: number } | null
-}
+  start: { row: number; col: number } | null;
+  end: { row: number; col: number } | null;
+};
 
 export type SpreadsheetType = {
   data: TableData;
@@ -176,12 +176,12 @@ export type SpreadsheetType = {
   updater: number;
   forceUpdate: () => void;
   clearSelection: () => void;
-}
+};
 
 export type PositionType = {
   x: number;
   y: number;
-}
+};
 
 export interface DrawConfig {
   cellWidth: number;

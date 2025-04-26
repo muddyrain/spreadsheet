@@ -4,11 +4,11 @@ import {
   useImperativeHandle,
   useMemo,
   useRef,
-} from 'react';
-import { useStore } from '@/hooks/useStore';
-import { EditingCell } from '@/types/sheet';
-import { getLeft, getTop } from '@/utils/sheet';
-import { useComputed } from '@/hooks/useComputed';
+} from "react";
+import { useStore } from "@/hooks/useStore";
+import { EditingCell } from "@/types/sheet";
+import { getLeft, getTop } from "@/utils/sheet";
+import { useComputed } from "@/hooks/useComputed";
 
 export type CellInputRef = {
   setInputStyle: (rowIndex: number, colIndex: number) => void;
@@ -32,7 +32,7 @@ export const CellInput = forwardRef<
 >(
   (
     { style, value, scrollPosition, selectedCell, onChange, onTabKeyDown },
-    ref
+    ref,
   ) => {
     const { getMergeCellSize } = useComputed();
     const {
@@ -62,9 +62,9 @@ export const CellInput = forwardRef<
     const updateInputSize = () => {
       if (inputRef.current && mirrorRef.current) {
         // 处理换行，保证最后一行也能被测量
-        let value = inputRef.current.value || '';
-        if (value.endsWith('\n')) {
-          value += '\u200b'; // 补零宽空格，保证最后一行高度
+        let value = inputRef.current.value || "";
+        if (value.endsWith("\n")) {
+          value += "\u200b"; // 补零宽空格，保证最后一行高度
         }
         mirrorRef.current.textContent = value;
         // 用 requestAnimationFrame 等待 DOM 更新
@@ -82,26 +82,26 @@ export const CellInput = forwardRef<
         const { width, height } = getMergeCellSize(
           currentCell,
           cellWidth,
-          cellHeight
+          cellHeight,
         );
         const Width = width;
         const Height = height;
         inputRef.current.style.minWidth = `${Width + 2}px`;
         inputRef.current.style.minHeight = `${Height + 2}px`;
-        inputRef.current.style.display = 'block';
-        inputRef.current.style.padding = '3px 5px';
-        mirrorRef.current.style.padding = '3px 5px';
+        inputRef.current.style.display = "block";
+        inputRef.current.style.padding = "3px 5px";
+        mirrorRef.current.style.padding = "3px 5px";
         // 预先设置字体大小和粗细 防止计算不准确
         inputRef.current.style.fontSize = `${currentCell.style.fontSize || config.fontSize || 14}px`;
-        inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`;
-        inputRef.current.style.fontStyle = `${currentCell.style.fontStyle || 'normal'}`;
-        inputRef.current.style.textDecoration = `${currentCell.style.textDecoration || 'none'}`;
-        inputRef.current.style.color = `${currentCell.style.color || config.color || '#000000'}`;
+        inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
+        inputRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
+        inputRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
+        inputRef.current.style.color = `${currentCell.style.color || config.color || "#000000"}`;
 
         mirrorRef.current.style.fontSize = `${currentCell.style.fontSize || config.fontSize || 14}px`;
-        mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || 'normal'}`;
-        mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || 'normal'}`;
-        mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || 'none'}`;
+        mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
+        mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
+        mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
 
         updateInputSize();
         inputRef.current.focus();
@@ -123,7 +123,7 @@ export const CellInput = forwardRef<
       },
     }));
     useEffect(() => {
-      if (style?.display === 'none') {
+      if (style?.display === "none") {
         setIsFocused(false);
       }
     }, [style, setIsFocused]);
@@ -142,7 +142,7 @@ export const CellInput = forwardRef<
         const { width, height } = getMergeCellSize(
           currentCell,
           cellWidth,
-          cellHeight
+          cellHeight,
         );
         const Width = width;
         const Height = height;
@@ -166,14 +166,14 @@ export const CellInput = forwardRef<
       <>
         <textarea
           ref={inputRef}
-          value={value || ''}
-          className='absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden'
-          onChange={e => {
+          value={value || ""}
+          className="absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
+          onChange={(e) => {
             onChange(e);
             updateInputSize();
           }}
-          onKeyDown={e => {
-            if (e.key === 'Tab') {
+          onKeyDown={(e) => {
+            if (e.key === "Tab") {
               e.preventDefault();
               onTabKeyDown?.(e);
             }
@@ -181,21 +181,21 @@ export const CellInput = forwardRef<
           style={{
             ...style,
             border: `2px solid ${config.selectionBorderColor}`,
-            fontFamily: 'Arial',
+            fontFamily: "Arial",
           }}
         />
         {/* 隐藏的 mirror div 用于测量内容尺寸 */}
         <div
           ref={mirrorRef}
-          className='absolute whitespace-pre-wrap break-all'
+          className="absolute whitespace-pre-wrap break-all"
           style={{
             ...style,
-            fontFamily: 'Arial',
+            fontFamily: "Arial",
             border: `2px solid ${config.selectionBorderColor}`,
-            visibility: 'hidden',
+            visibility: "hidden",
           }}
         />
       </>
     );
-  }
+  },
 );

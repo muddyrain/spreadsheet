@@ -1,5 +1,5 @@
-import { CellData } from '@/types/sheet';
-import { useStore } from './useStore';
+import { CellData } from "@/types/sheet";
+import { useStore } from "./useStore";
 
 export const useComputed = () => {
   const { data, headerColsWidth, headerRowsHeight } = useStore();
@@ -7,7 +7,7 @@ export const useComputed = () => {
   const getMergeCellSize = (
     cell: CellData,
     cellWidth: number,
-    cellHeight: number
+    cellHeight: number,
   ) => {
     let width = 0;
     let height = 0;

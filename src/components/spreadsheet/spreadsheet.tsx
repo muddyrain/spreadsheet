@@ -1,18 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { TableData } from '../../types/sheet';
-import { Canvas } from './Canvas';
-import { filterData } from '../../utils/filterData';
-import _ from 'lodash';
-import { Header } from './Header';
-import { CellInput, CellInputRef } from './CellInput';
-import { useKeyDown } from '@/hooks/useKeyDown';
-import { Current } from './Current';
-import { getAbsoluteSelection } from '@/utils/sheet';
-import { useStore } from '@/hooks/useStore';
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { TableData } from "../../types/sheet";
+import { Canvas } from "./Canvas";
+import { filterData } from "../../utils/filterData";
+import _ from "lodash";
+import { Header } from "./Header";
+import { CellInput, CellInputRef } from "./CellInput";
+import { useKeyDown } from "@/hooks/useKeyDown";
+import { Current } from "./Current";
+import { getAbsoluteSelection } from "@/utils/sheet";
+import { useStore } from "@/hooks/useStore";
 
 const Spreadsheet: React.FC<{
   onChange?: (data: TableData) => void;
-}> = props => {
+}> = (props) => {
   const { onChange } = props;
   const {
     config,
@@ -172,7 +172,7 @@ const Spreadsheet: React.FC<{
     setHeaderColsWidth(() => {
       return [
         config.fixedColWidth,
-        ...Array.from({ length: config.cols }).map(_ => {
+        ...Array.from({ length: config.cols }).map((_) => {
           return config.width;
         }),
       ];
@@ -180,7 +180,7 @@ const Spreadsheet: React.FC<{
     setHeaderRowsHeight(() => {
       return [
         config.height,
-        ...Array.from({ length: config.rows }).map(_ => {
+        ...Array.from({ length: config.rows }).map((_) => {
           return config.height;
         }),
       ];
@@ -198,7 +198,7 @@ const Spreadsheet: React.FC<{
           setEditingCell({ row: selectedCell.row, col: selectedCell.col });
           cellInputRef.current?.setInputStyle(
             selectedCell.row,
-            selectedCell.col
+            selectedCell.col,
           );
           if (currentCell) {
             currentCell.value += content;
@@ -209,7 +209,7 @@ const Spreadsheet: React.FC<{
         handleSelectAll();
       },
       onTabKey: onTabKeyDown,
-    }
+    },
   );
   // 监听输入更新事件
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -234,9 +234,9 @@ const Spreadsheet: React.FC<{
   }, [setEditingCell]);
   const isShowInput = useMemo(() => {
     if (editingCell) {
-      return 'block';
+      return "block";
     } else {
-      return 'none';
+      return "none";
     }
   }, [editingCell]);
   // 监听热更新，重置状态
@@ -250,10 +250,10 @@ const Spreadsheet: React.FC<{
     }
   }, [clearSelection, setIsFocused]);
   return (
-    <div className='flex flex-col w-full h-full overflow-hidden'>
+    <div className="flex flex-col w-full h-full overflow-hidden">
       <Header
-        onClick={type => {
-          if (!['eraser'].includes(type)) {
+        onClick={(type) => {
+          if (!["eraser"].includes(type)) {
             cellInputRef.current?.focus();
           } else {
             clearSelection();
@@ -263,10 +263,10 @@ const Spreadsheet: React.FC<{
       />
       <Current />
       <div
-        className='relative overflow-hidden flex-1 flex flex-col'
+        className="relative overflow-hidden flex-1 flex flex-col"
         ref={wrapperRef}
       >
-        <div className='flex-1 overflow-hidden'>
+        <div className="flex-1 overflow-hidden">
           <Canvas
             data={data}
             selectedCell={selectedCell}
@@ -283,14 +283,14 @@ const Spreadsheet: React.FC<{
           ref={cellInputRef}
           selectedCell={selectedCell}
           onChange={handleInputChange}
-          value={currentCell?.value || ''}
+          value={currentCell?.value || ""}
           onTabKeyDown={onTabKeyDown}
           style={{
             display: isShowInput,
             fontSize: `${config.fontSize || currentCell?.style.fontSize || 14}px`,
-            fontWeight: `${currentCell?.style.fontWeight || 'normal'}`,
-            fontStyle: `${currentCell?.style.fontStyle || 'normal'}`,
-            textDecoration: `${currentCell?.style.textDecoration || 'none'}`,
+            fontWeight: `${currentCell?.style.fontWeight || "normal"}`,
+            fontStyle: `${currentCell?.style.fontStyle || "normal"}`,
+            textDecoration: `${currentCell?.style.textDecoration || "none"}`,
           }}
         />
       </div>

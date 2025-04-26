@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   TableData,
   SpreadsheetConfig,
   SpreadsheetType,
   SelectionSheetType,
-} from '../../types/sheet';
-import _ from 'lodash';
-import { useSpreadsheet } from '@/hooks/useSpreadsheet';
-import { SpreadsheetContext } from './context';
-import Spreadsheet from './spreadsheet';
+} from "../../types/sheet";
+import _ from "lodash";
+import { useSpreadsheet } from "@/hooks/useSpreadsheet";
+import { SpreadsheetContext } from "./context";
+import Spreadsheet from "./spreadsheet";
 
 const RootSpreadsheet: React.FC<{
   config?: SpreadsheetConfig;
   spreadsheet?: SpreadsheetType;
   onChange?: (data: TableData) => void;
-}> = props => {
+}> = (props) => {
   const { config: _config, onChange } = props;
   const {
     config,
@@ -26,8 +26,8 @@ const RootSpreadsheet: React.FC<{
     editingCell,
     currentCell,
     updater,
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     forceUpdate,
+    // eslint-disable-next-line react-hooks/rules-of-hooks
   } = props.spreadsheet ?? useSpreadsheet(_config);
   const [headerColsWidth, setHeaderColsWidth] = useState<number[]>([]);
   const [headerRowsHeight, setHeaderRowsHeight] = useState<number[]>([]);
@@ -42,7 +42,7 @@ const RootSpreadsheet: React.FC<{
     -1, -1,
   ]);
   const [isMouseDown, setIsMouseDown] = useState(false);
-  const [sideLineMode, setSideLineMode] = useState<'row' | 'col' | null>(null);
+  const [sideLineMode, setSideLineMode] = useState<"row" | "col" | null>(null);
   return (
     <SpreadsheetContext.Provider
       value={{

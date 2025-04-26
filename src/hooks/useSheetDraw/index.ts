@@ -1,12 +1,12 @@
-import { useCallback } from 'react';
-import { DrawConfig, EditingCell, SelectionSheetType } from '@/types/sheet';
-import { useDrawCell } from './useDrawCell';
+import { useCallback } from "react";
+import { DrawConfig, EditingCell, SelectionSheetType } from "@/types/sheet";
+import { useDrawCell } from "./useDrawCell";
 
 export const useSheetDraw = (
   drawConfig: DrawConfig & {
     selection?: SelectionSheetType;
     selectedCell: EditingCell;
-  }
+  },
 ) => {
   const drawFunctions = useDrawCell(drawConfig);
   const drawTable = useCallback(
@@ -41,7 +41,7 @@ export const useSheetDraw = (
       // 绘制拖拽标准线
       drawDragLine(ctx);
     },
-    [drawConfig, drawFunctions]
+    [drawConfig, drawFunctions],
   );
   return { drawTable };
 };

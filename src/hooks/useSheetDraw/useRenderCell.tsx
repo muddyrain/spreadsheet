@@ -1,7 +1,7 @@
-import { CellData, SelectionSheetType } from '@/types/sheet';
-import { useStore } from '../useStore';
-import { getAbsoluteSelection } from '@/utils/sheet';
-import { useComputed } from '../useComputed';
+import { CellData, SelectionSheetType } from "@/types/sheet";
+import { useStore } from "../useStore";
+import { getAbsoluteSelection } from "@/utils/sheet";
+import { useComputed } from "../useComputed";
 
 export const useRenderCell = () => {
   const { selection, config, headerColsWidth, headerRowsHeight } = useStore();
@@ -25,14 +25,14 @@ export const useRenderCell = () => {
       isHeader?: boolean;
       isRow?: boolean;
       selection?: SelectionSheetType;
-    }
+    },
   ) => {
     const { rowIndex, colIndex, x, y, cell, isHeader, isRow } = options;
 
     const { width, height } = getMergeCellSize(
       cell,
       headerColsWidth[colIndex],
-      headerRowsHeight[rowIndex]
+      headerRowsHeight[rowIndex],
     );
     const cellWidth = width;
     const cellHeight = height;
@@ -73,13 +73,13 @@ export const useRenderCell = () => {
     ctx.strokeStyle = cell.style.borderColor || config.borderColor;
     ctx.strokeRect(x, y, cellWidth, cellHeight);
     // 设置字体样式
-    const fontWeight = cell.style.fontWeight || 'normal';
-    const fontStyle = cell.style.fontStyle || 'normal';
+    const fontWeight = cell.style.fontWeight || "normal";
+    const fontStyle = cell.style.fontStyle || "normal";
     const fontSize = cell.style.fontSize || config.fontSize || 14;
-    let color = cell.style.color || config.color || '#000000';
+    let color = cell.style.color || config.color || "#000000";
     if (cell.readOnly)
       color =
-        config.readOnlyColor || cell.style.color || config.color || '#000000';
+        config.readOnlyColor || cell.style.color || config.color || "#000000";
     ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Arial`;
     ctx.fillStyle = color;
     if (cellWidth > 30) {
@@ -90,42 +90,40 @@ export const useRenderCell = () => {
       ctx.clip();
     }
     // 设置文本对齐
-    ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || 'left';
-    ctx.textBaseline = 'middle';
+    ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
+    ctx.textBaseline = "middle";
     // 计算文本位置
     let textX = cellWidth > 30 ? x + 6 : x;
-    if (ctx.textAlign === 'center') textX = x + cellWidth / 2;
-    if (ctx.textAlign === 'right') textX = x + cellWidth - 5;
-    if (cell.mergeSpan) {
-    }
+    if (ctx.textAlign === "center") textX = x + cellWidth / 2;
+    if (ctx.textAlign === "right") textX = x + cellWidth - 5;
     if (cell.readOnly) {
       const textY = y + cellHeight / 2;
       ctx.fillText(cell.value, textX, textY);
     } else {
-      const contents = cell.value.split('\n');
+      const contents = cell.value.split("\n");
       for (let i = 0; i < contents.length; i++) {
         const text = contents[i];
         const textMetrics = ctx.measureText(text);
         const textY = i * 7 + y + 15 + i * fontSize;
         ctx.fillText(text, textX, textY);
-        const textDecoration = cell.style.textDecoration || 'none';
+        const textDecoration = cell.style.textDecoration || "none";
         // 绘制删除线
-        if (textDecoration.includes('line-through')) {
+        if (textDecoration.includes("line-through")) {
           const lineY = textY - 1;
           let lineStartX = textX;
           let lineEndX = textX;
-          if (ctx.textAlign === 'left' || !ctx.textAlign) {
+          if (ctx.textAlign === "left" || !ctx.textAlign) {
             lineStartX = textX;
             lineEndX = textX + textMetrics.width;
-          } else if (ctx.textAlign === 'center') {
+          } else if (ctx.textAlign === "center") {
             lineStartX = textX - textMetrics.width / 2;
             lineEndX = textX + textMetrics.width / 2;
-          } else if (ctx.textAlign === 'right') {
+          } else if (ctx.textAlign === "right") {
             lineStartX = textX - textMetrics.width;
             lineEndX = textX;
           }
           ctx.save();
-          ctx.strokeStyle = cell.style.color || '#000';
+          ctx.strokeStyle = cell.style.color || "#000";
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(lineStartX, lineY);
@@ -134,22 +132,22 @@ export const useRenderCell = () => {
           ctx.restore();
         }
         // 绘制下划线
-        if (textDecoration.includes('underline')) {
+        if (textDecoration.includes("underline")) {
           const lineY = textY + fontSize / 2 - 2;
           let lineStartX = textX;
           let lineEndX = textX;
-          if (ctx.textAlign === 'left' || !ctx.textAlign) {
+          if (ctx.textAlign === "left" || !ctx.textAlign) {
             lineStartX = textX;
             lineEndX = textX + textMetrics.width;
-          } else if (ctx.textAlign === 'center') {
+          } else if (ctx.textAlign === "center") {
             lineStartX = textX - textMetrics.width / 2;
             lineEndX = textX + textMetrics.width / 2;
-          } else if (ctx.textAlign === 'right') {
+          } else if (ctx.textAlign === "right") {
             lineStartX = textX - textMetrics.width;
             lineEndX = textX;
           }
           ctx.save();
-          ctx.strokeStyle = cell.style.color || '#000';
+          ctx.strokeStyle = cell.style.color || "#000";
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(lineStartX, lineY);
