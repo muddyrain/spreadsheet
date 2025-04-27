@@ -11,8 +11,8 @@ export const useComputed = () => {
     let row = cell.row;
     // 如果单元格是主单元格，则计算其位置
     if (cell.mergeSpan) {
-      col = cell.mergeSpan.c1;
       row = cell.mergeSpan.r1;
+      col = cell.mergeSpan.c1;
     }
     const x = getLeft(col, headerColsWidth, scrollPosition);
     const y = getTop(row, headerRowsHeight, scrollPosition);

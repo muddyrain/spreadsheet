@@ -7,7 +7,6 @@ import {
 } from "react";
 import { useStore } from "@/hooks/useStore";
 import { EditingCell } from "@/types/sheet";
-import { getLeft, getTop } from "@/utils/sheet";
 import { useComputed } from "@/hooks/useComputed";
 
 export type CellInputRef = {
@@ -34,7 +33,7 @@ export const CellInput = forwardRef<
     { style, value, scrollPosition, selectedCell, onChange, onTabKeyDown },
     ref,
   ) => {
-    const { getMergeCellSize } = useComputed();
+    const { getMergeCellSize, getCellPosition } = useComputed();
     const {
       data,
       config,
@@ -129,16 +128,9 @@ export const CellInput = forwardRef<
     }, [style, setIsFocused]);
     useEffect(() => {
       if (inputRef.current && currentCell) {
-        const rowIndex = currentCell?.row || 0;
-        const colIndex = currentCell?.col || 0;
-        // 固定列宽度 + 其余列宽度 + 滚动条 x 位置
-        const parentCell = currentCell.mergeParent;
-        let left = getLeft(colIndex, headerColsWidth, scrollPosition);
-        let top = getTop(rowIndex, headerRowsHeight, scrollPosition);
-        if (parentCell) {
-          left = getLeft(parentCell.col, headerColsWidth, scrollPosition);
-          top = getTop(parentCell.row, headerRowsHeight, scrollPosition);
-        }
+        const { x, y } = getCellPosition(currentCell);
+        const left = x;
+        const top = y;
         const { width, height } = getMergeCellSize(
           currentCell,
           cellWidth,
