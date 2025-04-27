@@ -176,6 +176,7 @@ export type SpreadsheetType = {
   updater: number;
   forceUpdate: () => void;
   clearSelection: () => void;
+  getCurrentCell: (row: number, col: number) => CellData | null;
 };
 
 export type PositionType = {

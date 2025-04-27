@@ -27,6 +27,7 @@ const RootSpreadsheet: React.FC<{
     currentCell,
     updater,
     forceUpdate,
+    getCurrentCell,
     // eslint-disable-next-line react-hooks/rules-of-hooks
   } = props.spreadsheet ?? useSpreadsheet(_config);
   const [headerColsWidth, setHeaderColsWidth] = useState<number[]>([]);
@@ -74,6 +75,7 @@ const RootSpreadsheet: React.FC<{
         setCurrentSideLinePosition,
         sideLineMode,
         setSideLineMode,
+        getCurrentCell,
       }}
     >
       <Spreadsheet onChange={onChange} />

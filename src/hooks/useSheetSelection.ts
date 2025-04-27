@@ -35,28 +35,10 @@ export function useSheetSelection() {
             let endCol = col;
             let startRow = sel.start?.row ?? 0;
             let startCol = sel.start?.col ?? 0;
-
-            // eslint-disable-next-line no-constant-condition
-            if (false) {
-              endRow = 0;
-              endCol = 0;
-              startRow = 0;
-              startCol = 0;
-            }
             const { r1, c1, r2, c2 } = getAbsoluteSelection({
               start: { row: startRow, col: startCol },
               end: { row: endRow, col: endCol },
             });
-            console.log(
-              "startRow",
-              startRow,
-              "startCol",
-              startCol,
-              "endRow",
-              endRow,
-              "endCol",
-              endCol,
-            );
             for (let i = r1; i <= r2; i++) {
               for (let j = c1; j <= c2; j++) {
                 const cell = data[i]?.[j];
@@ -126,13 +108,11 @@ export function useSheetSelection() {
                 }
               }
             }
-
             return {
               start: { row: startRow, col: startCol },
               end: { row: endRow, col: endCol },
             };
           });
-
           setIsSelection(true);
           movedRef.current = true;
           lastRow = row;

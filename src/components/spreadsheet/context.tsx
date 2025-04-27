@@ -41,6 +41,7 @@ export const SpreadsheetContext = React.createContext<
       setSideLineMode: React.Dispatch<
         React.SetStateAction<"row" | "col" | null>
       >;
+      getCurrentCell: (row: number, col: number) => CellData | null;
     }
   | undefined
 >(undefined);

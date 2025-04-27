@@ -128,14 +128,16 @@ export const CellInput = forwardRef<
     }, [style, setIsFocused]);
     useEffect(() => {
       if (inputRef.current && currentCell) {
-        const { x, y } = getCellPosition(currentCell);
+        let cell = currentCell;
+        if (cell.mergeParent) {
+          const row = cell.mergeParent.row;
+          const col = cell.mergeParent.col;
+          cell = data[row]?.[col];
+        }
+        const { x, y } = getCellPosition(cell);
         const left = x;
         const top = y;
-        const { width, height } = getMergeCellSize(
-          currentCell,
-          cellWidth,
-          cellHeight,
-        );
+        const { width, height } = getMergeCellSize(cell, cellWidth, cellHeight);
         const Width = width;
         const Height = height;
         inputRef.current.style.left = `${left - 1}px`;
@@ -145,13 +147,15 @@ export const CellInput = forwardRef<
         updateInputSize();
       }
     }, [
-      scrollPosition,
+      data,
       currentCell,
       cellHeight,
       cellWidth,
       headerColsWidth,
       headerRowsHeight,
       selectedCell,
+      scrollPosition,
+      getCellPosition,
       getMergeCellSize,
     ]);
     return (

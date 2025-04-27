@@ -5,7 +5,7 @@ import {
   TableData,
 } from "@/types/sheet";
 import { createInitialData } from "@/utils/sheet";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export const useSpreadsheet = (
   _config?: SpreadsheetConfig,
@@ -41,16 +41,29 @@ export const useSpreadsheet = (
     setSelectedCell(null);
     setEditingCell(null);
   };
+  // 获取当前单元格
+  const getCurrentCell = useCallback(
+    (row: number, col: number) => {
+      let cell = data[row][col];
+      // 如果是被合并的单元格，获取其父单元格
+      if (cell.mergeParent) {
+        const { row: parentRow, col: parentCol } = cell.mergeParent;
+        cell = data[parentRow][parentCol];
+      }
+      return cell;
+    },
+    [data],
+  );
 
   const currentCell = useMemo(() => {
     if (!data?.length) return null;
-    const cell =
-      data[editingCell?.row ?? selectedCell?.row ?? 0][
-        editingCell?.col ?? selectedCell?.col ?? 0
-      ];
+    const cell = getCurrentCell(
+      editingCell?.row ?? selectedCell?.row ?? 0,
+      editingCell?.col ?? selectedCell?.col ?? 0,
+    );
     if (cell?.readOnly) return null;
     return cell;
-  }, [data, editingCell, selectedCell]);
+  }, [data, editingCell, selectedCell, getCurrentCell]);
 
   return {
     data,
@@ -64,5 +77,6 @@ export const useSpreadsheet = (
     forceUpdate: () => setUpdater(+new Date()),
     clearSelection,
     currentCell,
+    getCurrentCell,
   };
 };

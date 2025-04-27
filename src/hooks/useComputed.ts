@@ -3,8 +3,41 @@ import { useStore } from "./useStore";
 import { getLeft, getTop } from "@/utils/sheet";
 
 export const useComputed = () => {
-  const { data, headerColsWidth, headerRowsHeight, scrollPosition } =
-    useStore();
+  const {
+    data,
+    selectedCell,
+    headerColsWidth,
+    headerRowsHeight,
+    scrollPosition,
+    getCurrentCell,
+  } = useStore();
+
+  // 获取下一个位置
+  const getNextPosition = () => {
+    if (!selectedCell) return;
+    const currentCell = getCurrentCell(selectedCell.row, selectedCell.col);
+    let nextCol = selectedCell.col + 1;
+    let nextRow = selectedCell.row;
+
+    // 如果当前是合并单元格，从合并区域的右边界开始
+    if (currentCell?.mergeSpan) {
+      nextCol = currentCell.mergeSpan.c2 + 1;
+    }
+
+    // 如果到达行尾，转到下一行开头
+    if (nextCol > data[0].length - 1) {
+      nextCol = 1;
+      nextRow = selectedCell.row + 1;
+    }
+
+    // 检查是否超出表格范围
+    if (nextRow > data.length - 1) {
+      nextRow = 1;
+      nextCol = 1;
+    }
+
+    return { nextRow, nextCol };
+  };
 
   const getCellPosition = (cell: CellData) => {
     let col = cell.col;
@@ -50,5 +83,10 @@ export const useComputed = () => {
     }
     return { width: cellWidth, height: cellHeight };
   };
-  return { getMergeCellSize, getCellPosition };
+  return {
+    getMergeCellSize,
+    getCellPosition,
+    getCurrentCell,
+    getNextPosition,
+  };
 };

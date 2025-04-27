@@ -122,10 +122,14 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   // 绘制选中单元格
   const drawSelectedCell = (ctx: CanvasRenderingContext2D) => {
     if (selectedCell && !isFocused) {
-      const { row, col } = selectedCell;
-      const cell = data[row]?.[col];
+      let { row, col } = selectedCell;
+      let cell = data[row]?.[col];
       if (!cell) return;
-
+      if (cell.mergeParent) {
+        row = cell.mergeParent.row;
+        col = cell.mergeParent.col;
+        cell = data[row]?.[col];
+      }
       const { width, height } = getMergeCellSize(
         cell,
         headerColsWidth[col],

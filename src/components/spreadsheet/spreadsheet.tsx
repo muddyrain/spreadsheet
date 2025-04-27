@@ -7,8 +7,8 @@ import { Header } from "./Header";
 import { CellInput, CellInputRef } from "./CellInput";
 import { useKeyDown } from "@/hooks/useKeyDown";
 import { Current } from "./Current";
-import { getAbsoluteSelection } from "@/utils/sheet";
 import { useStore } from "@/hooks/useStore";
+import { useComputed } from "@/hooks/useComputed";
 
 const Spreadsheet: React.FC<{
   onChange?: (data: TableData) => void;
@@ -18,7 +18,6 @@ const Spreadsheet: React.FC<{
     config,
     data,
     selectedCell,
-    selection,
     currentCell,
     editingCell,
     scrollPosition,
@@ -29,7 +28,9 @@ const Spreadsheet: React.FC<{
     setEditingCell,
     setSelectedCell,
     setIsFocused,
+    getCurrentCell,
   } = useStore();
+  const { getNextPosition } = useComputed();
   const cellInputRef = useRef<CellInputRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const cellWidth = config.width;
@@ -130,41 +131,28 @@ const Spreadsheet: React.FC<{
   };
   const onTabKeyDown = () => {
     if (!selectedCell) return;
-    // 单选格
-    if (
-      selection.start?.row === selection.end?.row &&
-      selection.start?.col === selection.end?.col
-    ) {
-      if (selectedCell.col + 1 <= data[0].length - 1) {
-        setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 });
-        setEditingCell({ row: selectedCell.row, col: selectedCell.col + 1 });
+    const position = getNextPosition();
+    if (position) {
+      const row = position.nextRow;
+      const col = position.nextCol;
+      const cell = getCurrentCell(row, col);
+      if (cell?.mergeSpan) {
+        // 如果是合并单元格，选中整个合并区域
+        const { r1, r2, c1, c2 } = cell.mergeSpan;
         setSelection({
-          start: { row: selectedCell.row, col: selectedCell.col + 1 },
-          end: { row: selectedCell.row, col: selectedCell.col + 1 },
+          start: { row: r1, col: c1 },
+          end: { row: r2, col: c2 },
         });
       } else {
-        setSelectedCell({ row: selectedCell.row + 1, col: 1 });
-        setEditingCell({ row: selectedCell.row + 1, col: 1 });
+        // 普通单元格只选中当前格
         setSelection({
-          start: { row: selectedCell.row + 1, col: 1 },
-          end: { row: selectedCell.row + 1, col: 1 },
+          start: { row, col },
+          end: { row, col },
         });
       }
-    } else {
-      // 多选格
-      const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
-      if (selectedCell.col + 1 <= c2) {
-        setSelectedCell({ row: selectedCell.row, col: selectedCell.col + 1 });
-        setEditingCell({ row: selectedCell.row, col: selectedCell.col + 1 });
-      } else {
-        if (selectedCell.row + 1 <= r2) {
-          setSelectedCell({ row: selectedCell.row + 1, col: c1 });
-          setEditingCell({ row: selectedCell.row + 1, col: c1 });
-        } else {
-          setSelectedCell({ row: r1, col: c1 });
-          setEditingCell({ row: r1, col: c1 });
-        }
-      }
+
+      setSelectedCell({ row, col });
+      setEditingCell({ row, col });
     }
   };
   // 初始化 列宽度 行高度
