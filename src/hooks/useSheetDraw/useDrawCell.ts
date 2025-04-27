@@ -41,7 +41,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     scrollPosition,
   );
   const { renderCell } = useRenderCell();
-  const { getMergeCellSize } = useComputed();
+  const { getMergeCellSize, getCellPosition } = useComputed();
   // 当前是否为单个单元格的选区
   const isOneSelection = useMemo(() => {
     if (selectedCell) {
@@ -61,8 +61,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
         if (colIndex === 0 || rowIndex === 0) continue;
         const cell = data[rowIndex]?.[colIndex];
         if (!cell) continue;
-        const x = getLeft(colIndex, headerColsWidth, scrollPosition);
-        const y = getTop(rowIndex, headerRowsHeight, scrollPosition);
+        const { x, y } = getCellPosition(cell);
         renderCell(ctx, { rowIndex, colIndex, x, y, cell });
       }
     }
@@ -73,8 +72,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       for (let colIndex = 0; colIndex < FROZEN_COL_COUNT; colIndex++) {
         const cell = data[rowIndex]?.[colIndex];
         if (!cell) continue;
+        const { y } = getCellPosition(cell);
         const x = 0;
-        const y = getTop(rowIndex, headerRowsHeight, scrollPosition);
         renderCell(ctx, { rowIndex, colIndex, x, y, cell, isRow: true });
       }
     }
@@ -85,7 +84,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       for (let colIndex = startCol; colIndex < endCol; colIndex++) {
         const cell = data[rowIndex]?.[colIndex];
         if (!cell) continue;
-        const x = getLeft(colIndex, headerColsWidth, scrollPosition);
+        const { x } = getCellPosition(cell);
         const y = 0;
         renderCell(ctx, {
           rowIndex,
@@ -107,8 +106,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
         if (!cell) continue;
         const colWidth = headerColsWidth[colIndex];
         const colHeight = headerRowsHeight[rowIndex];
-        const x = getLeft(colIndex, headerColsWidth, scrollPosition);
-        const y = getTop(rowIndex, headerRowsHeight, scrollPosition);
+        const { x, y } = getCellPosition(cell);
         renderCell(ctx, { rowIndex, colIndex, x, y, cell });
         // 绘制一个倒三角作为左上角交叉单元格的标志
         ctx.fillStyle = config.selectionBorderColor;
@@ -133,10 +131,9 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
         headerColsWidth[col],
         headerRowsHeight[row],
       );
+      const { x, y } = getCellPosition(cell);
       const cellWidth = width;
       const cellHeight = height;
-      const x = getLeft(col, headerColsWidth, scrollPosition);
-      const y = getTop(row, headerRowsHeight, scrollPosition);
       ctx.save();
       ctx.strokeStyle = config.selectionBorderColor;
       ctx.lineWidth = 1.5;
@@ -157,7 +154,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           if (!cell) continue;
           const colWidth = headerColsWidth[colIndex];
           const cellHeight = headerRowsHeight[0];
-          const x = getLeft(colIndex, headerColsWidth, scrollPosition);
+          const { x } = getCellPosition(cell);
           const y = 0;
           ctx.save();
           ctx.beginPath();
@@ -174,8 +171,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           if (!cell) continue;
           const colWidth = headerColsWidth[0];
           const cellHeight = headerRowsHeight[rowIndex];
+          const { y } = getCellPosition(cell);
           const x = 0;
-          const y = getTop(rowIndex, headerRowsHeight, scrollPosition);
           ctx.save();
           ctx.beginPath();
           ctx.lineWidth = 1.5;
@@ -196,8 +193,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
       // 只绘制在当前可视区域内的部分
       if (r2 >= startRow && r1 < endRow && c2 >= startCol && c1 < endCol) {
-        const x = getLeft(c1, headerColsWidth, scrollPosition);
-        const y = getTop(r1, headerRowsHeight, scrollPosition);
+        const { x, y } = getCellPosition(data[r1][c1]);
         const width = headerColsWidth
           .slice(c1, c2 + 1)
           .reduce((a, b) => a + b, 0);

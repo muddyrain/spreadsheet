@@ -65,6 +65,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     }),
     [containerWidth, containerHeight, totalWidth, totalHeight],
   );
+  // 选中 hooks
   const { selection, movedRef, handleCellMouseDown, setSelection } =
     useSheetSelection();
   // 滚动 hooks

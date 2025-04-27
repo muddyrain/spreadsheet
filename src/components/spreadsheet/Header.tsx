@@ -132,7 +132,7 @@ export const Header: FC<{
         };
         for (let i = r1; i <= r2; i++) {
           for (let j = c1; j <= c2; j++) {
-            if (i === r1 && j === c1) continue;
+            if (i === selectedCell?.row && j === selectedCell?.col) continue;
             data[i][j].mergeParent = {
               row: selectedCell?.row || 0,
               col: selectedCell?.col || 0,
@@ -245,6 +245,8 @@ export const Header: FC<{
       <Separator orientation="vertical" />
       <Tooltip content="合并单元格">
         <Toggle
+          pressed={false}
+          disabled={!selectionCells?.length || selectionCells.length === 1}
           className="text-lg"
           onClick={() => {
             handleClick("merge");

@@ -1,8 +1,23 @@
 import { CellData } from "@/types/sheet";
 import { useStore } from "./useStore";
+import { getLeft, getTop } from "@/utils/sheet";
 
 export const useComputed = () => {
-  const { data, headerColsWidth, headerRowsHeight } = useStore();
+  const { data, headerColsWidth, headerRowsHeight, scrollPosition } =
+    useStore();
+
+  const getCellPosition = (cell: CellData) => {
+    let col = cell.col;
+    let row = cell.row;
+    // 如果单元格是主单元格，则计算其位置
+    if (cell.mergeSpan) {
+      col = cell.mergeSpan.c1;
+      row = cell.mergeSpan.r1;
+    }
+    const x = getLeft(col, headerColsWidth, scrollPosition);
+    const y = getTop(row, headerRowsHeight, scrollPosition);
+    return { x, y };
+  };
 
   const getMergeCellSize = (
     cell: CellData,
@@ -35,5 +50,5 @@ export const useComputed = () => {
     }
     return { width: cellWidth, height: cellHeight };
   };
-  return { getMergeCellSize };
+  return { getMergeCellSize, getCellPosition };
 };

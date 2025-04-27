@@ -1,10 +1,16 @@
 import { CellData, SelectionSheetType } from "@/types/sheet";
 import { useStore } from "../useStore";
-import { getAbsoluteSelection } from "@/utils/sheet";
+import { getAbsoluteSelection, getLeft, getTop } from "@/utils/sheet";
 import { useComputed } from "../useComputed";
 
 export const useRenderCell = () => {
-  const { selection, config, headerColsWidth, headerRowsHeight } = useStore();
+  const {
+    selection,
+    config,
+    headerColsWidth,
+    headerRowsHeight,
+    scrollPosition,
+  } = useStore();
   const { getMergeCellSize } = useComputed();
   const isCellSelected = (cell: CellData) => {
     if (!selection?.start || !selection?.end) return false;
@@ -61,17 +67,30 @@ export const useRenderCell = () => {
 
     // 判断是否选中，绘制高亮背景
     if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
+      // console.log(cell.row, cell.col, cellWidth, cellHeight, x, y);
       ctx.save();
       ctx.fillStyle = config.selectionBackgroundColor;
       ctx.fillRect(x, y, cellWidth, cellHeight);
       ctx.restore();
     }
+
+    if (cell.mergeSpan) {
+      const { c1, r1 } = cell.mergeSpan;
+      const x = getLeft(c1, headerColsWidth, scrollPosition);
+      const y = getTop(r1, headerRowsHeight, scrollPosition);
+      ctx.strokeStyle = cell.style.borderColor || config.borderColor;
+      ctx.strokeRect(x, y, cellWidth, cellHeight);
+    }
+    // 只有没有合并单元格时才绘制网格
+    if (!(cell.mergeSpan || cell.mergeParent)) {
+      // 绘制网格
+      ctx.strokeStyle = cell.style.borderColor || config.borderColor;
+      ctx.strokeRect(x, y, cellWidth, cellHeight);
+    }
+    // 如果是被动合并单元格，不绘制文本
     if (cell.mergeParent) {
       return;
     }
-    // 绘制网格
-    ctx.strokeStyle = cell.style.borderColor || config.borderColor;
-    ctx.strokeRect(x, y, cellWidth, cellHeight);
     // 设置字体样式
     const fontWeight = cell.style.fontWeight || "normal";
     const fontStyle = cell.style.fontStyle || "normal";
