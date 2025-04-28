@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef } from "react";
 import { useStore } from "./useStore";
-import { findIndexByAccumulate } from "@/utils/sheet";
+import { useComputed } from "./useComputed";
 
 export function useSheetSelection() {
   const { data, selection, setSelection, headerColsWidth, headerRowsHeight } =
     useStore();
   const [isSelection, setIsSelection] = useState(false);
   const movedRef = useRef(false);
-
+  const { findIndexByAccumulate } = useComputed();
   const expandSelection = useCallback(
     (startRow: number, startCol: number, endRow: number, endCol: number) => {
       const checkMergedCells = (
@@ -178,7 +178,13 @@ export function useSheetSelection() {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     },
-    [setSelection, headerColsWidth, headerRowsHeight, expandSelection],
+    [
+      setSelection,
+      headerColsWidth,
+      headerRowsHeight,
+      expandSelection,
+      findIndexByAccumulate,
+    ],
   );
 
   return {

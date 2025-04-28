@@ -2,15 +2,16 @@ import { useStore } from "@/hooks/useStore";
 import { FC } from "react";
 
 export const Current: FC = () => {
-  const { config, currentCell, data, setUpdater } = useStore();
+  const { config, currentCell, data, zoomSize, setUpdater } = useStore();
   const row = currentCell?.row || 0;
   const col = currentCell?.col || 0;
   return (
     <div className="h-8 border-t border-zinc-200 flex">
       <div
-        className="h-full flex justify-center items-center border-r border-zinc-200 text-sm"
+        className="h-full flex justify-center items-center border-r border-zinc-200"
         style={{
-          width: config.fixedColWidth + 1,
+          width: (config.fixedColWidth + 1) * zoomSize,
+          fontSize: config.fontSize * zoomSize,
         }}
       >
         <span>
@@ -22,7 +23,10 @@ export const Current: FC = () => {
         <input
           value={currentCell?.value || ""}
           type="text"
-          className="w-full h-full outline-0 text-sm"
+          className="w-full h-full outline-0"
+          style={{
+            fontSize: config.fontSize * zoomSize,
+          }}
           onChange={(e) => {
             data[row][col].value = e.target.value;
             setUpdater();

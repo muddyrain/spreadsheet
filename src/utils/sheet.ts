@@ -3,7 +3,6 @@ import {
   CellData,
   SpreadsheetConfig,
   SelectionSheetType,
-  PositionType,
   MergeSpanType,
 } from "../types/sheet";
 export const createInitialData = (
@@ -119,79 +118,3 @@ export const getAbsoluteSelection = (
     c2,
   };
 };
-
-export const getStartEndCol = (
-  headerColsWidth: number[],
-  wrapperWidth: number,
-  scrollPosition: PositionType,
-) => {
-  // 计算 startCol
-  let acc = 0;
-  let startCol = 0;
-  for (let i = 0; i < headerColsWidth.length; i++) {
-    acc += headerColsWidth[i];
-    if (acc > scrollPosition.x) {
-      startCol = i;
-      break;
-    }
-  }
-  // 计算 endCol
-  let endCol = startCol;
-  let visibleWidth = 0;
-  for (let i = startCol; i < headerColsWidth.length; i++) {
-    visibleWidth += headerColsWidth[i];
-    if (visibleWidth > wrapperWidth) {
-      endCol = i + 1;
-      break;
-    }
-  }
-  endCol = Math.max(endCol, headerColsWidth.length);
-
-  return {
-    startCol,
-    endCol,
-  };
-};
-
-export const getStartEndRow = (
-  headerRowsHeight: number[],
-  wrapperHeight: number,
-  scrollPosition: PositionType,
-) => {
-  // 计算 startRow
-  let acc = 0;
-  let startRow = 0;
-  for (let i = 0; i < headerRowsHeight.length; i++) {
-    acc += headerRowsHeight[i];
-    if (acc > scrollPosition.y) {
-      startRow = i;
-      break;
-    }
-  }
-  // 计算 endRow
-  let endRow = startRow;
-  let visibleHeight = 0;
-  for (let i = startRow; i < headerRowsHeight.length; i++) {
-    visibleHeight += headerRowsHeight[i];
-    if (visibleHeight > wrapperHeight) {
-      endRow = i + 1;
-      break;
-    }
-  }
-  endRow = Math.max(endRow, headerRowsHeight.length);
-
-  return {
-    startRow,
-    endRow,
-  };
-};
-
-// 通用的累加查找函数
-export function findIndexByAccumulate(arr: number[], offset: number) {
-  let acc = 0;
-  for (let i = 0; i < arr.length; i++) {
-    acc += arr[i];
-    if (offset < acc) return i;
-  }
-  return arr.length - 1;
-}

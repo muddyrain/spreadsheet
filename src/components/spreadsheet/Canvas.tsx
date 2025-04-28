@@ -6,7 +6,7 @@ import { ScrollBar } from "./ScrollBar";
 import { useSheetSelection } from "@/hooks/useSheetSelection";
 import { useStore } from "@/hooks/useStore";
 import { useSideLine } from "@/hooks/useSideLine";
-import { findIndexByAccumulate } from "@/utils/sheet";
+import { useComputed } from "@/hooks/useComputed";
 
 export type CanvasOnKeyDown = (
   e: React.KeyboardEvent,
@@ -47,20 +47,23 @@ export const Canvas: React.FC<CanvasProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
-  const totalWidth = useMemo(() => {
-    return headerColsWidth.reduce((sum, prev) => sum + prev, 0);
-  }, [headerColsWidth]);
-  const totalHeight = useMemo(() => {
-    return headerRowsHeight.reduce((sum, prev) => sum + prev, 0);
-  }, [headerRowsHeight]);
+  const { findIndexByAccumulate } = useComputed();
   const scrollConfig = useMemo(
     () => ({
-      totalWidth: totalWidth,
-      totalHeight: totalHeight,
+      totalWidth:
+        headerColsWidth.reduce((sum, prev) => sum + prev, 0) * zoomSize + 50,
+      totalHeight:
+        headerRowsHeight.reduce((sum, prev) => sum + prev, 0) * zoomSize + 50,
       viewportWidth: containerWidth,
       viewportHeight: containerHeight,
     }),
-    [containerWidth, containerHeight, totalWidth, totalHeight],
+    [
+      containerWidth,
+      containerHeight,
+      headerColsWidth,
+      headerRowsHeight,
+      zoomSize,
+    ],
   );
   // 选中 hooks
   const { selection, movedRef, handleCellMouseDown, setSelection } =
@@ -97,16 +100,18 @@ export const Canvas: React.FC<CanvasProps> = ({
     const ctx = canvas.getContext("2d");
     if (ctx) {
       rafId.current = requestAnimationFrame(() => {
+        ctx.save(); // 确保在绘制前保存上下文状态
+        ctx.scale(dpr, dpr); // 应用设备像素比缩放
         drawTable(ctx);
+        ctx.restore(); // 将 restore 移到这里，确保在绘制后恢复上下文状态
       });
-      ctx.restore();
     }
     return () => {
       if (rafId.current !== null) {
         cancelAnimationFrame(rafId.current);
       }
     };
-  }, [containerHeight, containerWidth, drawTable, zoomSize]);
+  }, [containerHeight, containerWidth, drawTable]);
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
@@ -148,9 +153,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     const fixedColWidth = config.fixedColWidth * zoomSize;
     if (canvas) {
       const rect = canvas.getBoundingClientRect();
-      // 关键：坐标除以 zoomSize
-      const x = (e.clientX - rect.left) / zoomSize;
-      const y = (e.clientY - rect.top) / zoomSize;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
       let colIndex: number | null = null;
       let rowIndex: number | null = null;

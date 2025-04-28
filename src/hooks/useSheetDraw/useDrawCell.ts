@@ -1,8 +1,4 @@
-import {
-  getAbsoluteSelection,
-  getStartEndCol,
-  getStartEndRow,
-} from "@/utils/sheet";
+import { getAbsoluteSelection } from "@/utils/sheet";
 import { useStore } from "../useStore";
 import { DrawConfig } from "@/types/sheet";
 import { useRenderCell } from "./useRenderCell";
@@ -17,6 +13,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   const {
     config,
     data,
+    zoomSize,
     selectedCell,
     isMouseDown,
     sideLineMode,
@@ -25,21 +22,20 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     isFocused,
     headerRowsHeight,
     headerColsWidth,
-    scrollPosition,
     selection,
   } = useStore();
-  const { startRow, endRow } = getStartEndRow(
-    headerRowsHeight,
-    drawConfig.wrapperHeight,
-    scrollPosition,
-  );
-  const { startCol, endCol } = getStartEndCol(
-    headerColsWidth,
-    drawConfig.wrapperWidth,
-    scrollPosition,
-  );
+
   const { renderCell } = useRenderCell();
-  const { getMergeCellSize, getCellPosition, getLeft, getTop } = useComputed();
+  const {
+    getMergeCellSize,
+    getCellPosition,
+    getLeft,
+    getTop,
+    getStartEndRow,
+    getStartEndCol,
+  } = useComputed();
+  const { startRow, endRow } = getStartEndRow(drawConfig.wrapperHeight);
+  const { startCol, endCol } = getStartEndCol(drawConfig.wrapperWidth);
   // 当前是否为单个单元格的选区
   const isOneSelection = useMemo(() => {
     if (selectedCell) {
@@ -154,8 +150,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
         for (let colIndex = c1; colIndex <= c2; colIndex++) {
           const cell = data[r1]?.[colIndex];
           if (!cell) continue;
-          const colWidth = headerColsWidth[colIndex];
-          const cellHeight = headerRowsHeight[0];
+          const colWidth = headerColsWidth[colIndex] * zoomSize;
+          const cellHeight = headerRowsHeight[0] * zoomSize;
           const { x } = getCellPosition(cell);
           const y = 0;
           ctx.save();
@@ -171,8 +167,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
         for (let rowIndex = r1; rowIndex <= r2; rowIndex++) {
           const cell = data[rowIndex]?.[c1];
           if (!cell) continue;
-          const colWidth = headerColsWidth[0];
-          const cellHeight = headerRowsHeight[rowIndex];
+          const colWidth = headerColsWidth[0] * zoomSize;
+          const cellHeight = headerRowsHeight[rowIndex] * zoomSize;
           const { y } = getCellPosition(cell);
           const x = 0;
           ctx.save();
@@ -196,12 +192,12 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       // 只绘制在当前可视区域内的部分
       if (r2 >= startRow && r1 < endRow && c2 >= startCol && c1 < endCol) {
         const { x, y } = getCellPosition(data[r1][c1]);
-        const width = headerColsWidth
-          .slice(c1, c2 + 1)
-          .reduce((a, b) => a + b, 0);
-        const height = headerRowsHeight
-          .slice(r1, r2 + 1)
-          .reduce((a, b) => a + b, 0);
+        const width =
+          headerColsWidth.slice(c1, c2 + 1).reduce((a, b) => a + b, 0) *
+          zoomSize;
+        const height =
+          headerRowsHeight.slice(r1, r2 + 1).reduce((a, b) => a + b, 0) *
+          zoomSize;
         ctx.save();
         ctx.strokeStyle = config.selectionBorderColor;
         ctx.lineWidth = 1;

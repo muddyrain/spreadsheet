@@ -4,7 +4,8 @@ import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "../useComputed";
 
 export const useRenderCell = () => {
-  const { selection, config, headerColsWidth, headerRowsHeight } = useStore();
+  const { selection, zoomSize, config, headerColsWidth, headerRowsHeight } =
+    useStore();
   const { getMergeCellSize, getLeft, getTop } = useComputed();
   const isCellSelected = (cell: CellData) => {
     if (!selection?.start || !selection?.end) return false;
@@ -28,7 +29,6 @@ export const useRenderCell = () => {
     },
   ) => {
     const { rowIndex, colIndex, x, y, cell, isHeader, isRow } = options;
-
     const { width, height } = getMergeCellSize(
       cell,
       headerColsWidth[colIndex],
@@ -60,7 +60,6 @@ export const useRenderCell = () => {
 
     // 判断是否选中，绘制高亮背景
     if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
-      // console.log(cell.row, cell.col, cellWidth, cellHeight, x, y);
       ctx.save();
       ctx.fillStyle = config.selectionBackgroundColor;
       ctx.fillRect(x, y, cellWidth, cellHeight);
@@ -87,27 +86,27 @@ export const useRenderCell = () => {
     // 设置字体样式
     const fontWeight = cell.style.fontWeight || "normal";
     const fontStyle = cell.style.fontStyle || "normal";
-    const fontSize = cell.style.fontSize || config.fontSize || 14;
+    const fontSize = (cell.style.fontSize || config.fontSize || 14) * zoomSize;
     let color = cell.style.color || config.color || "#000000";
     if (cell.readOnly)
       color =
         config.readOnlyColor || cell.style.color || config.color || "#000000";
     ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Arial`;
     ctx.fillStyle = color;
-    if (cellWidth > 30) {
+    if (cellWidth > 30 * zoomSize) {
       // 设置剪裁区域
       ctx.save();
       ctx.beginPath();
-      ctx.rect(x - 8, y, cellWidth, cellHeight);
+      ctx.rect(x - 8 * zoomSize, y, cellWidth, cellHeight);
       ctx.clip();
     }
     // 设置文本对齐
     ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
     ctx.textBaseline = "middle";
     // 计算文本位置
-    let textX = cellWidth > 30 ? x + 6 : x;
+    let textX = cellWidth > 30 * zoomSize ? x + 6 * zoomSize : x;
     if (ctx.textAlign === "center") textX = x + cellWidth / 2;
-    if (ctx.textAlign === "right") textX = x + cellWidth - 5;
+    if (ctx.textAlign === "right") textX = x + cellWidth - 5 * zoomSize;
     if (cell.readOnly) {
       const textY = y + cellHeight / 2;
       ctx.fillText(cell.value, textX, textY);
@@ -116,12 +115,12 @@ export const useRenderCell = () => {
       for (let i = 0; i < contents.length; i++) {
         const text = contents[i];
         const textMetrics = ctx.measureText(text);
-        const textY = i * 7 + y + 15 + i * fontSize;
+        const textY = i * (7 * zoomSize) + y + 15 * zoomSize + i * fontSize;
         ctx.fillText(text, textX, textY);
         const textDecoration = cell.style.textDecoration || "none";
         // 绘制删除线
         if (textDecoration.includes("line-through")) {
-          const lineY = textY - 1;
+          const lineY = textY - 1 * zoomSize;
           let lineStartX = textX;
           let lineEndX = textX;
           if (ctx.textAlign === "left" || !ctx.textAlign) {
@@ -136,7 +135,7 @@ export const useRenderCell = () => {
           }
           ctx.save();
           ctx.strokeStyle = cell.style.color || "#000";
-          ctx.lineWidth = 1;
+          ctx.lineWidth = 1 * zoomSize;
           ctx.beginPath();
           ctx.moveTo(lineStartX, lineY);
           ctx.lineTo(lineEndX, lineY);
@@ -145,7 +144,7 @@ export const useRenderCell = () => {
         }
         // 绘制下划线
         if (textDecoration.includes("underline")) {
-          const lineY = textY + fontSize / 2 - 2;
+          const lineY = textY + fontSize / (2 * zoomSize) - 2 * zoomSize;
           let lineStartX = textX;
           let lineEndX = textX;
           if (ctx.textAlign === "left" || !ctx.textAlign) {
@@ -160,7 +159,7 @@ export const useRenderCell = () => {
           }
           ctx.save();
           ctx.strokeStyle = cell.style.color || "#000";
-          ctx.lineWidth = 1;
+          ctx.lineWidth = 1 * zoomSize;
           ctx.beginPath();
           ctx.moveTo(lineStartX, lineY);
           ctx.lineTo(lineEndX, lineY);

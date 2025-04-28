@@ -14,7 +14,7 @@ export const Footer: FC = () => {
             variant={"ghost"}
             size={"sm"}
             onClick={() => {
-              if (zoomSize <= 0.1) return;
+              if (zoomSize <= 0.5) return;
               setZoomSize(zoomSize - 0.1);
             }}
           >

@@ -37,6 +37,7 @@ export const CellInput = forwardRef<
     const {
       data,
       config,
+      zoomSize,
       currentCell,
       setIsFocused,
       headerColsWidth,
@@ -68,9 +69,11 @@ export const CellInput = forwardRef<
         mirrorRef.current.textContent = value;
         // 用 requestAnimationFrame 等待 DOM 更新
         window.requestAnimationFrame(() => {
-          const mirrorRect = mirrorRef.current!.getBoundingClientRect();
-          inputRef.current!.style.width = `${mirrorRect.width}px`;
-          inputRef.current!.style.height = `${mirrorRect.height}px`;
+          if (mirrorRef.current) {
+            const mirrorRect = mirrorRef.current.getBoundingClientRect();
+            inputRef.current!.style.width = `${mirrorRect.width}px`;
+            inputRef.current!.style.height = `${mirrorRect.height}px`;
+          }
         });
       }
     };
@@ -89,16 +92,16 @@ export const CellInput = forwardRef<
         inputRef.current.style.minWidth = `${Width + 2}px`;
         inputRef.current.style.minHeight = `${Height + 2}px`;
         inputRef.current.style.display = "block";
-        inputRef.current.style.padding = "3px 5px";
-        mirrorRef.current.style.padding = "3px 5px";
+        inputRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
+        mirrorRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
         // 预先设置字体大小和粗细 防止计算不准确
-        inputRef.current.style.fontSize = `${currentCell.style.fontSize || config.fontSize || 14}px`;
+        inputRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
         inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
         inputRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
         inputRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
         inputRef.current.style.color = `${currentCell.style.color || config.color || "#000000"}`;
 
-        mirrorRef.current.style.fontSize = `${currentCell.style.fontSize || config.fontSize || 14}px`;
+        mirrorRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
         mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
         mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
         mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
@@ -128,7 +131,7 @@ export const CellInput = forwardRef<
       }
     }, [style, setIsFocused]);
     useEffect(() => {
-      if (inputRef.current && currentCell) {
+      if (inputRef.current && mirrorRef.current && currentCell) {
         let cell = currentCell;
         if (cell.mergeParent) {
           const row = cell.mergeParent.row;
@@ -145,10 +148,16 @@ export const CellInput = forwardRef<
         inputRef.current.style.top = `${top - 1}px`;
         inputRef.current.style.minWidth = `${Width + 2}px`;
         inputRef.current.style.minHeight = `${Height + 2}px`;
+        inputRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
+        mirrorRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
+        // 预先设置字体大小和粗细 防止计算不准确
+        inputRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
         updateInputSize();
       }
     }, [
       data,
+      config,
+      zoomSize,
       currentCell,
       cellHeight,
       cellWidth,
