@@ -139,12 +139,6 @@ export function useSheetSelection() {
       setIsSelection(false);
       movedRef.current = false;
 
-      // 设置初始选择位置
-      setSelection({
-        start: { row: rowIndex, col: colIndex },
-        end: { row: rowIndex, col: colIndex },
-      });
-
       let lastRow = rowIndex;
       let lastCol = colIndex;
 

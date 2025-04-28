@@ -150,7 +150,6 @@ const Spreadsheet: React.FC<{
           end: { row, col },
         });
       }
-
       setSelectedCell({ row, col });
       setEditingCell({ row, col });
     }
