@@ -20,39 +20,41 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
   const scrollBarPosition = (scrollPosition / contentSize) * 100;
   return (
     <div
+      className="relative border border-zinc-200 bg-zinc-50"
       style={{
         position: "absolute",
         ...(isHorizontal
           ? {
               left: 0,
               bottom: 0,
-              width: "calc(100% - 10px)",
-              height: "8px",
+              width: "calc(100% - 17px)",
+              height: "18px",
             }
           : {
               right: 0,
               top: 0,
-              width: "8px",
+              width: "18px",
               height: "100%",
             }),
-        backgroundColor: "#f0f0f0",
       }}
     >
       <div
+        className="box-border bg-zinc-300"
         style={{
           position: "absolute",
           ...(isHorizontal
             ? {
-                height: "100%",
+                height: "8px",
                 width: `${scrollBarSize}%`,
                 left: `${scrollBarPosition}%`,
+                top: "4px",
               }
             : {
-                width: "100%",
+                width: "8px",
                 height: `${scrollBarSize}%`,
                 top: `${scrollBarPosition}%`,
+                left: "4px",
               }),
-          backgroundColor: "#c1c1c1",
           borderRadius: "4px",
           cursor: "pointer",
         }}

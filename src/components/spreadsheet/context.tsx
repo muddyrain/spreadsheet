@@ -15,6 +15,8 @@ export const SpreadsheetContext = React.createContext<
       currentCell: CellData | null;
       updater: number;
       setUpdater: () => void;
+      zoomSize: number;
+      setZoomSize: React.Dispatch<React.SetStateAction<number>>;
       isFocused: boolean;
       setIsFocused: (isFocused: boolean) => void;
       isMouseDown: boolean;

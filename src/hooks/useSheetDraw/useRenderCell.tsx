@@ -42,7 +42,6 @@ export const useRenderCell = () => {
     );
     const cellWidth = width;
     const cellHeight = height;
-
     // 如果是非合并单元格
     if (!cell.mergeParent) {
       // 设置背景颜色

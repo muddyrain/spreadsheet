@@ -38,6 +38,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 }) => {
   const {
     config,
+    zoomSize,
     headerColsWidth,
     headerRowsHeight,
     setCurrentSideLinePosition,
@@ -51,11 +52,12 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const totalWidth = useMemo(() => {
-    return headerColsWidth.reduce((sum, prev) => (sum += prev), 0) + 50;
-  }, [headerColsWidth]);
+    return headerColsWidth.reduce((sum, prev) => sum + prev, 0) + 50;
+  }, [headerColsWidth, zoomSize]);
+
   const totalHeight = useMemo(() => {
-    return headerRowsHeight.reduce((sum, prev) => (sum += prev), 0) + 50;
-  }, [headerRowsHeight]);
+    return headerRowsHeight.reduce((sum, prev) => sum + prev, 0) + 50;
+  }, [headerRowsHeight, zoomSize]);
   const scrollConfig = useMemo(
     () => ({
       totalWidth,
@@ -92,10 +94,13 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!canvas) return;
     // 适配高分屏
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = containerWidth * dpr;
-    canvas.height = containerHeight * dpr;
-    canvas.style.width = `${containerWidth}px`;
-    canvas.style.height = `${containerHeight}px`;
+    // 根据缩放比例调整画布尺寸
+    const scaledWidth = containerWidth * dpr;
+    const scaledHeight = containerHeight * dpr;
+    canvas.width = scaledWidth;
+    canvas.height = scaledHeight;
+    canvas.style.width = `${scaledWidth}px`;
+    canvas.style.height = `${scaledHeight}px`;
     const ctx = canvas.getContext("2d");
     if (ctx) {
       rafId.current = requestAnimationFrame(() => {
@@ -107,7 +112,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         cancelAnimationFrame(rafId.current);
       }
     };
-  }, [containerHeight, containerWidth, drawTable]);
+  }, [containerHeight, containerWidth, zoomSize, drawTable]);
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {

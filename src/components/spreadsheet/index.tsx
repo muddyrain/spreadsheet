@@ -8,7 +8,7 @@ import {
 import _ from "lodash";
 import { useSpreadsheet } from "@/hooks/useSpreadsheet";
 import { SpreadsheetContext } from "./context";
-import Spreadsheet from "./spreadsheet";
+import Spreadsheet from "./Spreadsheet";
 
 const RootSpreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -30,6 +30,7 @@ const RootSpreadsheet: React.FC<{
     getCurrentCell,
     // eslint-disable-next-line react-hooks/rules-of-hooks
   } = props.spreadsheet ?? useSpreadsheet(_config);
+  const [zoomSize, setZoomSize] = useState<number>(100);
   const [headerColsWidth, setHeaderColsWidth] = useState<number[]>([]);
   const [headerRowsHeight, setHeaderRowsHeight] = useState<number[]>([]);
   const [isFocused, setIsFocused] = useState(false);
@@ -53,6 +54,8 @@ const RootSpreadsheet: React.FC<{
         currentCell,
         updater,
         setUpdater: forceUpdate,
+        zoomSize,
+        setZoomSize,
         isFocused,
         setIsFocused,
         isMouseDown,
