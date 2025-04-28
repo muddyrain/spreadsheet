@@ -26,7 +26,7 @@ const toggleVariants = cva(
   },
 );
 
-function Toggle({
+export function Toggle({
   className,
   variant,
   size,
@@ -44,5 +44,3 @@ function Toggle({
     />
   );
 }
-
-export { Toggle, toggleVariants };

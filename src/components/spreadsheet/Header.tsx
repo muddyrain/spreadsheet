@@ -35,11 +35,16 @@ export const Header: FC<{
   const selectionCells = useMemo(() => {
     const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
     if (r1 === r2 && c1 === c2) {
-      return [data[r1][c1]];
+      if (data[r1][c1]) {
+        return [data[r1][c1]];
+      } else {
+        return [];
+      }
     }
     const cells: CellData[] = [];
     for (let i = r1; i <= r2; i++) {
       for (let j = c1; j <= c2; j++) {
+        if (!data[i][j]) continue;
         cells.push(data[i][j]);
       }
     }
@@ -133,6 +138,9 @@ export const Header: FC<{
         for (let i = r1; i <= r2; i++) {
           for (let j = c1; j <= c2; j++) {
             if (i === selectedCell?.row && j === selectedCell?.col) continue;
+            if (data[i][j].mergeSpan) {
+              data[i][j].mergeSpan = null;
+            }
             data[i][j].mergeParent = {
               row: selectedCell?.row || 0,
               col: selectedCell?.col || 0,
@@ -245,7 +253,6 @@ export const Header: FC<{
       <Separator orientation="vertical" />
       <Tooltip content="合并单元格">
         <Toggle
-          pressed={false}
           disabled={!selectionCells?.length || selectionCells.length === 1}
           className="text-lg"
           onClick={() => {

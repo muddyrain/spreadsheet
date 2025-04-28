@@ -27,8 +27,8 @@ export const SpreadsheetContext = React.createContext<
       setHeaderRowsHeight: React.Dispatch<React.SetStateAction<number[]>>;
       scrollPosition: PositionType;
       setScrollPosition: React.Dispatch<React.SetStateAction<PositionType>>;
-      selectedCell: EditingCell;
-      setSelectedCell: React.Dispatch<React.SetStateAction<EditingCell>>;
+      selectedCell: CellData | null;
+      setSelectedCell: React.Dispatch<React.SetStateAction<CellData | null>>;
       editingCell: EditingCell;
       setEditingCell: React.Dispatch<React.SetStateAction<EditingCell>>;
       currentSideLineIndex: number[];

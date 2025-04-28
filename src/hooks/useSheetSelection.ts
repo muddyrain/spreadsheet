@@ -26,6 +26,7 @@ export function useSheetSelection() {
         for (let i = r1; i <= r2; i++) {
           for (let j = c1; j <= c2; j++) {
             const cell = data[i][j];
+            if (!cell) continue;
             let changed = false;
 
             // 检查主合并单元格
@@ -55,6 +56,7 @@ export function useSheetSelection() {
             if (cell.mergeParent) {
               const parentCell =
                 data[cell.mergeParent.row][cell.mergeParent.col];
+              if (!parentCell) continue;
               if (parentCell.mergeSpan) {
                 const newStartRow = Math.min(
                   finalStartRow,

@@ -169,14 +169,14 @@ export type SpreadsheetType = {
   setData: React.Dispatch<React.SetStateAction<TableData>>;
   config: Required<SpreadsheetConfig>;
   currentCell: CellData | null;
-  selectedCell: EditingCell | null;
-  setSelectedCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
-  editingCell: EditingCell | null;
-  setEditingCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
+  selectedCell: CellData | null;
+  setSelectedCell: React.Dispatch<React.SetStateAction<CellData | null>>;
+  editingCell: EditingCell;
+  setEditingCell: React.Dispatch<React.SetStateAction<EditingCell>>;
   updater: number;
   forceUpdate: () => void;
   clearSelection: () => void;
-  getCurrentCell: (row: number, col: number) => CellData | null;
+  getCurrentCell: (row: number, col: number) => CellData;
 };
 
 export type PositionType = {

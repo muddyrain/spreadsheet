@@ -40,7 +40,7 @@ const Spreadsheet: React.FC<{
       start: { row: 1, col: 1 },
       end: { row: data.length - 1, col: data[0].length - 1 },
     });
-    setSelectedCell({ row: 1, col: 1 });
+    setSelectedCell(data[1][1]);
     setEditingCell(null);
   };
   // 监听点击事件
@@ -55,7 +55,7 @@ const Spreadsheet: React.FC<{
         start: { row: 1, col: colIndex },
         end: { row: data.length - 1, col: colIndex },
       });
-      setSelectedCell({ row: 1, col: colIndex });
+      setSelectedCell(data[1][colIndex]);
       setEditingCell(null);
       return;
     }
@@ -65,17 +65,17 @@ const Spreadsheet: React.FC<{
         start: { row: rowIndex, col: 1 },
         end: { row: rowIndex, col: data[0].length - 1 },
       });
-      setSelectedCell({ row: rowIndex, col: 1 });
+      setSelectedCell(data[rowIndex][1]);
       setEditingCell(null);
       return;
     }
     const currentCell = data[rowIndex][colIndex];
-    if (currentCell.readOnly) {
+    if (currentCell?.readOnly) {
       return;
     }
     const cell = data[rowIndex][colIndex];
     setEditingCell(null); // 单击时不进入编辑
-    if (cell.mergeSpan) {
+    if (cell?.mergeSpan) {
       setSelection({
         start: {
           row: cell.mergeSpan.r1,
@@ -86,13 +86,13 @@ const Spreadsheet: React.FC<{
           col: cell.mergeSpan.c2,
         },
       });
-      setSelectedCell({ row: rowIndex, col: colIndex });
+      setSelectedCell(data[rowIndex][colIndex]);
       return;
     }
-    if (cell.mergeParent) {
+    if (cell?.mergeParent) {
       const { row, col } = cell.mergeParent;
       const parentCell = data[row][col];
-      if (parentCell.mergeSpan) {
+      if (parentCell?.mergeSpan) {
         setSelection({
           start: {
             row: parentCell.mergeSpan.r1,
@@ -103,11 +103,11 @@ const Spreadsheet: React.FC<{
             col: parentCell.mergeSpan.c2,
           },
         });
-        setSelectedCell({ row, col });
+        setSelectedCell(data[row][col]);
         return;
       }
     }
-    setSelectedCell({ row: rowIndex, col: colIndex });
+    setSelectedCell(data[rowIndex][colIndex]);
     setSelection({
       start: { row: rowIndex, col: colIndex },
       end: { row: rowIndex, col: colIndex },
@@ -118,10 +118,10 @@ const Spreadsheet: React.FC<{
     let colIndex = _colIndex;
     let rowIndex = _rowIndex;
     const currentCell = data[rowIndex][colIndex];
-    if (currentCell.readOnly) {
+    if (currentCell?.readOnly) {
       return;
     }
-    if (currentCell.mergeParent) {
+    if (currentCell?.mergeParent) {
       const { row, col } = currentCell.mergeParent;
       colIndex = col;
       rowIndex = row;
@@ -150,7 +150,7 @@ const Spreadsheet: React.FC<{
           end: { row, col },
         });
       }
-      setSelectedCell({ row, col });
+      setSelectedCell(data[row][col]);
       setEditingCell({ row, col });
     }
   };
@@ -203,7 +203,9 @@ const Spreadsheet: React.FC<{
     if (editingCell) {
       const newData = [...data];
       const targetCell = newData[editingCell.row][editingCell.col];
-      targetCell.value = e.target.value;
+      if (targetCell) {
+        targetCell.value = e.target.value;
+      }
       setData(newData);
       debouncedChange(newData);
     }

@@ -77,6 +77,7 @@ export const CellInput = forwardRef<
     const setInputStyle = (rowIndex: number, colIndex: number) => {
       if (inputRef.current && mirrorRef.current) {
         const currentCell = data[rowIndex][colIndex];
+        if (!currentCell) return;
         inputRef.current.value = currentCell.value;
         const { width, height } = getMergeCellSize(
           currentCell,

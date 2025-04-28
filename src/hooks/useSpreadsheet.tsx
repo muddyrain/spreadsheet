@@ -1,4 +1,5 @@
 import {
+  CellData,
   EditingCell,
   SpreadsheetConfig,
   SpreadsheetType,
@@ -33,7 +34,7 @@ export const useSpreadsheet = (
   const [data, setData] = useState<TableData>(
     createInitialData(config, config.rows, config.cols),
   );
-  const [selectedCell, setSelectedCell] = useState<EditingCell>(null);
+  const [selectedCell, setSelectedCell] = useState<CellData | null>(null);
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
   const [updater, setUpdater] = useState(+new Date());
 
@@ -45,8 +46,9 @@ export const useSpreadsheet = (
   const getCurrentCell = useCallback(
     (row: number, col: number) => {
       let cell = data[row][col];
+
       // 如果是被合并的单元格，获取其父单元格
-      if (cell.mergeParent) {
+      if (cell?.mergeParent) {
         const { row: parentRow, col: parentCol } = cell.mergeParent;
         cell = data[parentRow][parentCol];
       }
@@ -55,7 +57,7 @@ export const useSpreadsheet = (
     [data],
   );
 
-  const currentCell = useMemo(() => {
+  const currentCell: CellData | null = useMemo(() => {
     if (!data?.length) return null;
     const cell = getCurrentCell(
       editingCell?.row ?? selectedCell?.row ?? 0,
