@@ -34,8 +34,6 @@ const Spreadsheet: React.FC<{
   const { getNextPosition } = useComputed();
   const cellInputRef = useRef<CellInputRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const cellWidth = config.width;
-  const cellHeight = config.height;
   const handleSelectAll = () => {
     setSelection({
       start: { row: 1, col: 1 },
@@ -261,8 +259,6 @@ const Spreadsheet: React.FC<{
             data={data}
             selectedCell={selectedCell}
             wrapperRef={wrapperRef}
-            cellWidth={cellWidth}
-            cellHeight={cellHeight}
             onCellClick={onCellClick}
             onCellDoubleClick={onCellDoubleClick}
             onKeyDown={onKeyDown}

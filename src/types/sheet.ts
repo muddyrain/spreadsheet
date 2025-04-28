@@ -185,8 +185,6 @@ export type PositionType = {
 };
 
 export interface DrawConfig {
-  cellWidth: number;
-  cellHeight: number;
   wrapperWidth: number;
   wrapperHeight: number;
 }

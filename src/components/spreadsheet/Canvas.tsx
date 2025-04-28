@@ -17,8 +17,6 @@ export type CanvasOnKeyDown = (
 ) => void;
 interface CanvasProps {
   data: TableData;
-  cellWidth: number;
-  cellHeight: number;
   wrapperRef: React.RefObject<HTMLDivElement | null>;
   selectedCell: CellData | null;
   onCellClick?: (row: number, col: number) => void;
@@ -28,8 +26,6 @@ interface CanvasProps {
 
 export const Canvas: React.FC<CanvasProps> = ({
   data,
-  cellWidth,
-  cellHeight,
   wrapperRef,
   selectedCell,
   onCellClick,
@@ -82,8 +78,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     });
   // 绘制 hooks
   const { drawTable } = useSheetDraw({
-    cellWidth,
-    cellHeight,
     wrapperWidth: containerWidth,
     wrapperHeight: containerHeight,
     selection,
