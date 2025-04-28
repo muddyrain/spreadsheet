@@ -120,27 +120,6 @@ export const getAbsoluteSelection = (
   };
 };
 
-// 获取 x - left
-export const getLeft = (
-  col: number,
-  headerColsWidth: number[],
-  scrollPosition: PositionType,
-) => {
-  const beforeAllWidth =
-    col === 0 ? 0 : headerColsWidth.slice(0, col).reduce((a, b) => a + b, 0);
-  return col === 0 ? 0 : beforeAllWidth - scrollPosition.x;
-};
-// 获取 y - top
-export const getTop = (
-  row: number,
-  headerRowsHeight: number[],
-  scrollPosition: PositionType,
-) => {
-  const beforeAllHeight =
-    row === 0 ? 0 : headerRowsHeight.slice(0, row).reduce((a, b) => a + b, 0);
-  return row === 0 ? 0 : beforeAllHeight - scrollPosition.y;
-};
-
 export const getStartEndCol = (
   headerColsWidth: number[],
   wrapperWidth: number,

@@ -30,7 +30,7 @@ const RootSpreadsheet: React.FC<{
     getCurrentCell,
     // eslint-disable-next-line react-hooks/rules-of-hooks
   } = props.spreadsheet ?? useSpreadsheet(_config);
-  const [zoomSize, setZoomSize] = useState<number>(100);
+  const [zoomSize, setZoomSize] = useState<number>(1);
   const [headerColsWidth, setHeaderColsWidth] = useState<number[]>([]);
   const [headerRowsHeight, setHeaderRowsHeight] = useState<number[]>([]);
   const [isFocused, setIsFocused] = useState(false);

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useStore } from "./useStore";
 import { PositionType } from "@/types/sheet";
-import { getLeft, getTop } from "@/utils/sheet";
+import { useComputed } from "./useComputed";
 
 export const useSideLine = (options: {
   currentHoverCell: [number, number] | null;
@@ -24,6 +24,7 @@ export const useSideLine = (options: {
     setCurrentSideLinePosition,
     setCurrentSideLineIndex,
   } = useStore();
+  const { getLeft, getTop } = useComputed();
   const [cursor, setCursor] = useState("cell");
   const [currentPosition, setCurrentPosition] = useState<
     [number, number] | null
@@ -40,7 +41,7 @@ export const useSideLine = (options: {
         const [x, y] = currentPosition || [0, 0];
         if (rowIndex === 0) {
           const cellWidth = headerColsWidth[colIndex];
-          const left = getLeft(colIndex, headerColsWidth, scrollPosition);
+          const left = getLeft(colIndex);
           const offset = x - left;
           if (offset <= 5 && colIndex > 1) {
             if (!isMouseDown) {
@@ -63,7 +64,7 @@ export const useSideLine = (options: {
         }
         if (colIndex === 0) {
           const cellHeight = headerRowsHeight[rowIndex];
-          const top = getTop(rowIndex, headerRowsHeight, scrollPosition);
+          const top = getTop(rowIndex);
           const offset = y - top;
           if (offset <= 5 && rowIndex > 1) {
             if (!isMouseDown) {
@@ -95,6 +96,8 @@ export const useSideLine = (options: {
     headerRowsHeight,
     data,
     scrollPosition,
+    getLeft,
+    getTop,
     setCurrentSideLineIndex,
     setSideLineMode,
   ]);
@@ -110,11 +113,7 @@ export const useSideLine = (options: {
       if (sideLineMode === "col") {
         const currentColSideLineIndex = currentSideLineIndex[1];
         const currentColSideLinePosition = currentSideLinePosition[0];
-        const left = getLeft(
-          currentColSideLineIndex,
-          headerColsWidth,
-          scrollPosition,
-        );
+        const left = getLeft(currentColSideLineIndex);
         let width = currentColSideLinePosition - left;
         if (width <= 0) {
           width = 0;
@@ -127,11 +126,7 @@ export const useSideLine = (options: {
       if (sideLineMode === "row") {
         const currentRowSideLineIndex = currentSideLineIndex[0];
         const currentRowSideLinePosition = currentSideLinePosition[1];
-        const top = getTop(
-          currentRowSideLineIndex,
-          headerRowsHeight,
-          scrollPosition,
-        );
+        const top = getTop(currentRowSideLineIndex);
         let height = currentRowSideLinePosition - top;
         if (height <= 0) {
           height = 0;
@@ -144,12 +139,13 @@ export const useSideLine = (options: {
     }
   }, [
     clearState,
+    getLeft,
+    getTop,
     currentSideLineIndex,
     currentSideLinePosition,
     headerColsWidth,
     headerRowsHeight,
     isMouseDown,
-    scrollPosition,
     setCurrentSideLineIndex,
     setCurrentSideLinePosition,
     setHeaderColsWidth,

@@ -14,23 +14,25 @@ export const Footer: FC = () => {
             variant={"ghost"}
             size={"sm"}
             onClick={() => {
-              if (zoomSize <= 10) return;
-              setZoomSize(zoomSize - 10);
+              if (zoomSize <= 0.1) return;
+              setZoomSize(zoomSize - 0.1);
             }}
           >
             <Minus />
           </Button>
         </Tooltip>
         <Tooltip content="缩放比例">
-          <div className="text-sm w-16 text-center">{zoomSize}%</div>
+          <div className="text-sm w-16 text-center">
+            {parseInt((zoomSize * 100).toString())}%
+          </div>
         </Tooltip>
         <Tooltip content="放大">
           <Button
             variant={"ghost"}
             size={"sm"}
             onClick={() => {
-              if (zoomSize >= 200) return;
-              setZoomSize(zoomSize + 10);
+              if (zoomSize >= 2) return;
+              setZoomSize(zoomSize + 0.1);
             }}
           >
             <Plus />

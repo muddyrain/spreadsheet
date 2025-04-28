@@ -1,9 +1,7 @@
 import {
   getAbsoluteSelection,
-  getLeft,
   getStartEndCol,
   getStartEndRow,
-  getTop,
 } from "@/utils/sheet";
 import { useStore } from "../useStore";
 import { DrawConfig } from "@/types/sheet";
@@ -41,7 +39,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     scrollPosition,
   );
   const { renderCell } = useRenderCell();
-  const { getMergeCellSize, getCellPosition } = useComputed();
+  const { getMergeCellSize, getCellPosition, getLeft, getTop } = useComputed();
   // 当前是否为单个单元格的选区
   const isOneSelection = useMemo(() => {
     if (selectedCell) {
@@ -218,11 +216,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     if (isMouseDown && sideLineMode === "col") {
       const currentColSideLineIndex = currentSideLineIndex[1];
       const currentColSideLinePosition = currentSideLinePosition[0];
-      const colFixedSideLinePosition = getLeft(
-        currentColSideLineIndex,
-        headerColsWidth,
-        scrollPosition,
-      );
+      const colFixedSideLinePosition = getLeft(currentColSideLineIndex);
       if (
         currentColSideLineIndex !== undefined &&
         currentColSideLinePosition !== undefined
@@ -252,11 +246,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     if (isMouseDown && sideLineMode === "row") {
       const currentRowSideLineIndex = currentSideLineIndex[0];
       const currentRowSideLinePosition = currentSideLinePosition[1];
-      const rowFixedSideLinePosition = getTop(
-        currentRowSideLineIndex,
-        headerRowsHeight,
-        scrollPosition,
-      );
+      const rowFixedSideLinePosition = getTop(currentRowSideLineIndex);
       if (
         currentRowSideLineIndex !== undefined &&
         currentRowSideLinePosition !== undefined

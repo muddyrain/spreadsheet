@@ -106,9 +106,11 @@ export const useSheetScroll = (config: {
         maxScrollY,
       );
 
-      const newPosition = { x: newScrollX, y: newScrollY };
       if (newScrollX !== scrollPosition.x || newScrollY !== scrollPosition.y) {
-        setScrollPosition(newPosition);
+        setScrollPosition({
+          x: newScrollX,
+          y: newScrollY,
+        });
       }
     },
     [scrollPosition, config, setScrollPosition],

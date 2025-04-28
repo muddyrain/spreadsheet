@@ -1,6 +1,5 @@
 import { CellData } from "@/types/sheet";
 import { useStore } from "./useStore";
-import { getLeft, getTop } from "@/utils/sheet";
 
 export const useComputed = () => {
   const {
@@ -11,6 +10,18 @@ export const useComputed = () => {
     scrollPosition,
     getCurrentCell,
   } = useStore();
+
+  // 获取 x - left
+  const getLeft = (col: number) => {
+    const beforeAllWidth =
+      col === 0 ? 0 : headerColsWidth.slice(0, col).reduce((a, b) => a + b, 0);
+    return col === 0 ? 0 : beforeAllWidth - scrollPosition.x;
+  };
+  const getTop = (row: number) => {
+    const beforeAllHeight =
+      row === 0 ? 0 : headerRowsHeight.slice(0, row).reduce((a, b) => a + b, 0);
+    return row === 0 ? 0 : beforeAllHeight - scrollPosition.y;
+  };
 
   // 获取下一个位置
   const getNextPosition = () => {
@@ -47,8 +58,8 @@ export const useComputed = () => {
       row = cell.mergeSpan.r1;
       col = cell.mergeSpan.c1;
     }
-    const x = getLeft(col, headerColsWidth, scrollPosition);
-    const y = getTop(row, headerRowsHeight, scrollPosition);
+    const x = getLeft(col);
+    const y = getTop(row);
     return { x, y };
   };
 
@@ -88,5 +99,7 @@ export const useComputed = () => {
     getCellPosition,
     getCurrentCell,
     getNextPosition,
+    getLeft,
+    getTop,
   };
 };

@@ -1,17 +1,11 @@
 import { CellData, SelectionSheetType } from "@/types/sheet";
 import { useStore } from "../useStore";
-import { getAbsoluteSelection, getLeft, getTop } from "@/utils/sheet";
+import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "../useComputed";
 
 export const useRenderCell = () => {
-  const {
-    selection,
-    config,
-    headerColsWidth,
-    headerRowsHeight,
-    scrollPosition,
-  } = useStore();
-  const { getMergeCellSize } = useComputed();
+  const { selection, config, headerColsWidth, headerRowsHeight } = useStore();
+  const { getMergeCellSize, getLeft, getTop } = useComputed();
   const isCellSelected = (cell: CellData) => {
     if (!selection?.start || !selection?.end) return false;
     const { row, col } = cell;
@@ -75,8 +69,8 @@ export const useRenderCell = () => {
 
     if (cell.mergeSpan) {
       const { c1, r1 } = cell.mergeSpan;
-      const x = getLeft(c1, headerColsWidth, scrollPosition);
-      const y = getTop(r1, headerRowsHeight, scrollPosition);
+      const x = getLeft(c1);
+      const y = getTop(r1);
       ctx.strokeStyle = cell.style.borderColor || config.borderColor;
       ctx.strokeRect(x, y, cellWidth, cellHeight);
     }

@@ -52,16 +52,15 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const totalWidth = useMemo(() => {
-    return headerColsWidth.reduce((sum, prev) => sum + prev, 0) + 50;
-  }, [headerColsWidth, zoomSize]);
-
+    return headerColsWidth.reduce((sum, prev) => sum + prev, 0);
+  }, [headerColsWidth]);
   const totalHeight = useMemo(() => {
-    return headerRowsHeight.reduce((sum, prev) => sum + prev, 0) + 50;
-  }, [headerRowsHeight, zoomSize]);
+    return headerRowsHeight.reduce((sum, prev) => sum + prev, 0);
+  }, [headerRowsHeight]);
   const scrollConfig = useMemo(
     () => ({
-      totalWidth,
-      totalHeight,
+      totalWidth: totalWidth,
+      totalHeight: totalHeight,
       viewportWidth: containerWidth,
       viewportHeight: containerHeight,
     }),
@@ -73,6 +72,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   // 滚动 hooks
   const { scrollPosition, handleScrollbarDragStart, handleWheel } =
     useSheetScroll(scrollConfig);
+
   // 单元格侧边栏 hooks - 拖拽侧边
   const { cursor, currentPosition, setIsMouseDown, handleMouseUp } =
     useSideLine({
@@ -92,27 +92,27 @@ export const Canvas: React.FC<CanvasProps> = ({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // 适配高分屏
     const dpr = window.devicePixelRatio || 1;
-    // 根据缩放比例调整画布尺寸
-    const scaledWidth = containerWidth * dpr;
-    const scaledHeight = containerHeight * dpr;
-    canvas.width = scaledWidth;
-    canvas.height = scaledHeight;
-    canvas.style.width = `${scaledWidth}px`;
-    canvas.style.height = `${scaledHeight}px`;
+    // 缩放后实际渲染尺寸
+    const width = containerWidth * dpr;
+    const height = containerHeight * dpr;
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = `${containerWidth}px`;
+    canvas.style.height = `${containerHeight}px`;
     const ctx = canvas.getContext("2d");
     if (ctx) {
       rafId.current = requestAnimationFrame(() => {
         drawTable(ctx);
       });
+      ctx.restore();
     }
     return () => {
       if (rafId.current !== null) {
         cancelAnimationFrame(rafId.current);
       }
     };
-  }, [containerHeight, containerWidth, zoomSize, drawTable]);
+  }, [containerHeight, containerWidth, drawTable, zoomSize]);
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
@@ -151,11 +151,12 @@ export const Canvas: React.FC<CanvasProps> = ({
     ) => void,
   ) {
     const canvas = canvasRef.current;
-    const fixedColWidth = config.fixedColWidth;
+    const fixedColWidth = config.fixedColWidth * zoomSize;
     if (canvas) {
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      // 关键：坐标除以 zoomSize
+      const x = (e.clientX - rect.left) / zoomSize;
+      const y = (e.clientY - rect.top) / zoomSize;
 
       let colIndex: number | null = null;
       let rowIndex: number | null = null;
@@ -223,13 +224,15 @@ export const Canvas: React.FC<CanvasProps> = ({
           ref={canvasRef}
           onMouseMove={(e) => {
             handleGetClient(e, "move", (rowIndex, colIndex) => {
-              if (
-                currentHoverCell &&
-                currentHoverCell[0] === rowIndex &&
-                currentHoverCell[1] === colIndex
-              )
-                return;
-              setCurrentHoverCell([rowIndex, colIndex]);
+              setCurrentHoverCell((currentHoverCell) => {
+                if (
+                  currentHoverCell &&
+                  currentHoverCell[0] === rowIndex &&
+                  currentHoverCell[1] === colIndex
+                )
+                  return currentHoverCell;
+                return [rowIndex, colIndex];
+              });
             });
           }}
           onKeyDown={(e) => {
@@ -270,24 +273,25 @@ export const Canvas: React.FC<CanvasProps> = ({
           }}
         />
       </div>
-      {scrollConfig?.totalWidth > containerWidth && (
+      {scrollConfig && scrollConfig.totalWidth > scrollConfig.viewportWidth && (
         <ScrollBar
           type="horizontal"
-          viewportSize={containerWidth}
-          contentSize={totalWidth}
+          viewportSize={scrollConfig.viewportWidth}
+          contentSize={scrollConfig?.totalWidth}
           scrollPosition={scrollPosition.x}
           onDragStart={handleScrollbarDragStart}
         />
       )}
-      {scrollConfig?.totalHeight > containerHeight && (
-        <ScrollBar
-          type="vertical"
-          viewportSize={containerHeight}
-          contentSize={totalHeight}
-          scrollPosition={scrollPosition.y}
-          onDragStart={handleScrollbarDragStart}
-        />
-      )}
+      {scrollConfig &&
+        scrollConfig.totalHeight > scrollConfig.viewportHeight && (
+          <ScrollBar
+            type="vertical"
+            viewportSize={scrollConfig.viewportHeight}
+            contentSize={scrollConfig?.totalHeight}
+            scrollPosition={scrollPosition.y}
+            onDragStart={handleScrollbarDragStart}
+          />
+        )}
     </>
   );
 };
