@@ -18,8 +18,13 @@ textarea {
   -ms-overflow-style: none;
 }
 
+@font-face {
+  font-family: "PingFangSC";
+  src: url("/PingFangSC.otf") format("opentype");
+}
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: PingFangSC, system-ui, sans-serif;
   font-weight: 400;
   height: 100vh;
   --radius: 0.625rem;

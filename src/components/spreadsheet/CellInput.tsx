@@ -10,15 +10,15 @@ import { EditingCell } from "@/types/sheet";
 import { useComputed } from "@/hooks/useComputed";
 
 export type CellInputRef = {
-  setInputStyle: (rowIndex: number, colIndex: number) => void;
+  setInputStyle: (rowIndex: number, colIndex: number, content?: string) => void;
   updateInputSize: () => void;
   focus: () => void;
   blur: () => void;
+  setValue: (value: string) => void;
 };
 export const CellInput = forwardRef<
   CellInputRef,
   {
-    value: string;
     style?: React.CSSProperties;
     selectedCell: EditingCell;
     scrollPosition: {
@@ -28,180 +28,178 @@ export const CellInput = forwardRef<
     onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
     onTabKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   }
->(
-  (
-    { style, value, scrollPosition, selectedCell, onChange, onTabKeyDown },
-    ref,
-  ) => {
-    const { getMergeCellSize, getCellPosition } = useComputed();
-    const {
-      data,
-      config,
-      zoomSize,
-      currentCell,
-      setIsFocused,
-      headerColsWidth,
-      headerRowsHeight,
-    } = useStore();
-    const cellWidth = useMemo(() => {
-      if (selectedCell) {
-        return headerColsWidth[selectedCell.col];
-      } else {
-        return 0;
+>(({ style, scrollPosition, selectedCell, onChange, onTabKeyDown }, ref) => {
+  const { getMergeCellSize, getCellPosition } = useComputed();
+  const {
+    data,
+    config,
+    zoomSize,
+    currentCell,
+    setIsFocused,
+    headerColsWidth,
+    headerRowsHeight,
+  } = useStore();
+  const cellWidth = useMemo(() => {
+    if (selectedCell) {
+      return headerColsWidth[selectedCell.col];
+    } else {
+      return 0;
+    }
+  }, [headerColsWidth, selectedCell]);
+  const cellHeight = useMemo(() => {
+    if (selectedCell) {
+      return headerRowsHeight[selectedCell.row];
+    } else {
+      return 0;
+    }
+  }, [headerRowsHeight, selectedCell]);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const mirrorRef = useRef<HTMLDivElement>(null);
+  const updateInputSize = () => {
+    if (inputRef.current && mirrorRef.current) {
+      // 处理换行，保证最后一行也能被测量
+      let value = inputRef.current.value || "";
+      if (value.endsWith("\n")) {
+        value += "\u200b"; // 补零宽空格，保证最后一行高度
       }
-    }, [headerColsWidth, selectedCell]);
-    const cellHeight = useMemo(() => {
-      if (selectedCell) {
-        return headerRowsHeight[selectedCell.row];
-      } else {
-        return 0;
-      }
-    }, [headerRowsHeight, selectedCell]);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
-    const mirrorRef = useRef<HTMLDivElement>(null);
-    const updateInputSize = () => {
-      if (inputRef.current && mirrorRef.current) {
-        // 处理换行，保证最后一行也能被测量
-        let value = inputRef.current.value || "";
-        if (value.endsWith("\n")) {
-          value += "\u200b"; // 补零宽空格，保证最后一行高度
+      mirrorRef.current.textContent = value;
+      // 用 requestAnimationFrame 等待 DOM 更新
+      window.requestAnimationFrame(() => {
+        if (mirrorRef.current) {
+          const mirrorRect = mirrorRef.current.getBoundingClientRect();
+          inputRef.current!.style.width = `${mirrorRect.width}px`;
+          inputRef.current!.style.height = `${mirrorRect.height}px`;
         }
-        mirrorRef.current.textContent = value;
-        // 用 requestAnimationFrame 等待 DOM 更新
-        window.requestAnimationFrame(() => {
-          if (mirrorRef.current) {
-            const mirrorRect = mirrorRef.current.getBoundingClientRect();
-            inputRef.current!.style.width = `${mirrorRect.width}px`;
-            inputRef.current!.style.height = `${mirrorRect.height}px`;
+      });
+    }
+  };
+  const setInputStyle = (rowIndex: number, colIndex: number) => {
+    if (inputRef.current && mirrorRef.current) {
+      const currentCell = data[rowIndex][colIndex];
+      if (!currentCell) return;
+      const { width, height } = getMergeCellSize(
+        currentCell,
+        cellWidth,
+        cellHeight,
+      );
+      const Width = width;
+      const Height = height;
+      inputRef.current.style.minWidth = `${Width + 2}px`;
+      inputRef.current.style.minHeight = `${Height + 2}px`;
+      inputRef.current.style.display = "block";
+      inputRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
+      mirrorRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
+      // 预先设置字体大小和粗细 防止计算不准确
+      inputRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
+      inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
+      inputRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
+      inputRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
+      inputRef.current.style.color = `${currentCell.style.color || config.color || "#000000"}`;
+
+      mirrorRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
+      mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
+      mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
+      mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
+      updateInputSize();
+      inputRef.current.focus();
+      setIsFocused(true);
+    }
+  };
+  useImperativeHandle(ref, () => ({
+    setInputStyle,
+    updateInputSize,
+    focus() {
+      updateInputSize();
+      setIsFocused(true);
+      inputRef.current?.focus();
+    },
+    blur() {
+      updateInputSize();
+      inputRef.current?.blur();
+      setIsFocused(false);
+    },
+    setValue(value: string) {
+      if (inputRef.current) {
+        inputRef.current!.value = value;
+      }
+    },
+  }));
+  useEffect(() => {
+    if (style?.display === "none") {
+      setIsFocused(false);
+    }
+  }, [style, setIsFocused]);
+  useEffect(() => {
+    if (inputRef.current && mirrorRef.current && currentCell) {
+      let cell = currentCell;
+      if (cell.mergeParent) {
+        const row = cell.mergeParent.row;
+        const col = cell.mergeParent.col;
+        cell = data[row]?.[col];
+      }
+      const { x, y } = getCellPosition(cell);
+      const left = x;
+      const top = y;
+      const { width, height } = getMergeCellSize(cell, cellWidth, cellHeight);
+      const Width = width;
+      const Height = height;
+      inputRef.current.style.left = `${left - 1}px`;
+      inputRef.current.style.top = `${top - 1}px`;
+      inputRef.current.style.minWidth = `${Width + 2}px`;
+      inputRef.current.style.minHeight = `${Height + 2}px`;
+      mirrorRef.current.style.minWidth = `${Width + 2}px`;
+      mirrorRef.current.style.padding = `${Height + 2}px`;
+      inputRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
+      mirrorRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
+      // 预先设置字体大小和粗细 防止计算不准确
+      inputRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
+    }
+  }, [
+    data,
+    config,
+    zoomSize,
+    currentCell,
+    cellHeight,
+    cellWidth,
+    headerColsWidth,
+    headerRowsHeight,
+    selectedCell,
+    scrollPosition,
+    getCellPosition,
+    getMergeCellSize,
+  ]);
+  return (
+    <>
+      <textarea
+        ref={inputRef}
+        className="absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
+        onChange={(e) => {
+          onChange(e);
+          updateInputSize();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Tab") {
+            e.preventDefault();
+            onTabKeyDown?.(e);
           }
-        });
-      }
-    };
-    const setInputStyle = (rowIndex: number, colIndex: number) => {
-      if (inputRef.current && mirrorRef.current) {
-        const currentCell = data[rowIndex][colIndex];
-        if (!currentCell) return;
-        inputRef.current.value = currentCell.value;
-        const { width, height } = getMergeCellSize(
-          currentCell,
-          cellWidth,
-          cellHeight,
-        );
-        const Width = width;
-        const Height = height;
-        inputRef.current.style.minWidth = `${Width + 2}px`;
-        inputRef.current.style.minHeight = `${Height + 2}px`;
-        inputRef.current.style.display = "block";
-        inputRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
-        mirrorRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
-        // 预先设置字体大小和粗细 防止计算不准确
-        inputRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
-        inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
-        inputRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
-        inputRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
-        inputRef.current.style.color = `${currentCell.style.color || config.color || "#000000"}`;
-
-        mirrorRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
-        mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
-        mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
-        mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
-
-        updateInputSize();
-        inputRef.current.focus();
-        setIsFocused(true);
-      }
-    };
-    useImperativeHandle(ref, () => ({
-      setInputStyle,
-      updateInputSize,
-      focus() {
-        updateInputSize();
-        setIsFocused(true);
-        inputRef.current?.focus();
-      },
-      blur() {
-        updateInputSize();
-        inputRef.current?.blur();
-        setIsFocused(false);
-      },
-    }));
-    useEffect(() => {
-      if (style?.display === "none") {
-        setIsFocused(false);
-      }
-    }, [style, setIsFocused]);
-    useEffect(() => {
-      if (inputRef.current && mirrorRef.current && currentCell) {
-        let cell = currentCell;
-        if (cell.mergeParent) {
-          const row = cell.mergeParent.row;
-          const col = cell.mergeParent.col;
-          cell = data[row]?.[col];
-        }
-        const { x, y } = getCellPosition(cell);
-        const left = x;
-        const top = y;
-        const { width, height } = getMergeCellSize(cell, cellWidth, cellHeight);
-        const Width = width;
-        const Height = height;
-        inputRef.current.style.left = `${left - 1}px`;
-        inputRef.current.style.top = `${top - 1}px`;
-        inputRef.current.style.minWidth = `${Width + 2}px`;
-        inputRef.current.style.minHeight = `${Height + 2}px`;
-        inputRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
-        mirrorRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
-        // 预先设置字体大小和粗细 防止计算不准确
-        inputRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
-        updateInputSize();
-      }
-    }, [
-      data,
-      config,
-      zoomSize,
-      currentCell,
-      cellHeight,
-      cellWidth,
-      headerColsWidth,
-      headerRowsHeight,
-      selectedCell,
-      scrollPosition,
-      getCellPosition,
-      getMergeCellSize,
-    ]);
-    return (
-      <>
-        <textarea
-          ref={inputRef}
-          value={value || ""}
-          className="absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
-          onChange={(e) => {
-            onChange(e);
-            updateInputSize();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Tab") {
-              e.preventDefault();
-              onTabKeyDown?.(e);
-            }
-          }}
-          style={{
-            ...style,
-            border: `2px solid ${config.selectionBorderColor}`,
-            fontFamily: "Arial",
-          }}
-        />
-        {/* 隐藏的 mirror div 用于测量内容尺寸 */}
-        <div
-          ref={mirrorRef}
-          className="absolute whitespace-pre-wrap break-all"
-          style={{
-            ...style,
-            fontFamily: "Arial",
-            border: `2px solid ${config.selectionBorderColor}`,
-            visibility: "hidden",
-          }}
-        />
-      </>
-    );
-  },
-);
+        }}
+        style={{
+          ...style,
+          border: `2px solid ${config.selectionBorderColor}`,
+          fontFamily: "PingFang SC sans-serif",
+        }}
+      />
+      {/* 隐藏的 mirror div 用于测量内容尺寸 */}
+      <div
+        ref={mirrorRef}
+        className="absolute whitespace-pre-wrap break-all box-border"
+        style={{
+          ...style,
+          fontFamily: "PingFang SC sans-serif",
+          border: `2px solid ${config.selectionBorderColor}`,
+          // visibility: "hidden",
+        }}
+      />
+    </>
+  );
+});

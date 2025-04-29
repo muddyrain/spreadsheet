@@ -87,16 +87,20 @@ export const useRenderCell = () => {
     const fontWeight = cell.style.fontWeight || "normal";
     const fontStyle = cell.style.fontStyle || "normal";
     const fontSize = (cell.style.fontSize || config.fontSize || 14) * zoomSize;
+    // 最低宽度尺寸
+    const minWidth = 30 * zoomSize;
     let color = cell.style.color || config.color || "#000000";
     if (cell.readOnly)
       color =
         config.readOnlyColor || cell.style.color || config.color || "#000000";
-    ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Arial`;
+    ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px PingFangSC`;
     ctx.fillStyle = color;
-    if (cellWidth > 30 * zoomSize) {
+    // 大于最小宽度时才 设置裁剪
+    if (cellWidth > minWidth) {
       // 设置剪裁区域
       ctx.save();
       ctx.beginPath();
+      // + 2 是为了防止文本被裁剪
       ctx.rect(x - 8 * zoomSize, y, cellWidth, cellHeight);
       ctx.clip();
     }
@@ -104,9 +108,9 @@ export const useRenderCell = () => {
     ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
     ctx.textBaseline = "middle";
     // 计算文本位置
-    let textX = cellWidth > 30 * zoomSize ? x + 6 * zoomSize : x;
+    let textX = cellWidth > minWidth ? x + 6 * zoomSize : x;
     if (ctx.textAlign === "center") textX = x + cellWidth / 2;
-    if (ctx.textAlign === "right") textX = x + cellWidth - 5 * zoomSize;
+    if (ctx.textAlign === "right") textX = x + cellWidth;
     if (cell.readOnly) {
       const textY = y + cellHeight / 2;
       ctx.fillText(cell.value, textX, textY);
@@ -115,11 +119,13 @@ export const useRenderCell = () => {
       for (let i = 0; i < contents.length; i++) {
         const text = contents[i];
         const textMetrics = ctx.measureText(text);
-        const textY = i * (7 * zoomSize) + y + 15 * zoomSize + i * fontSize;
+        // 计算文本位置 + 起始单元格高度一半 - 边框高度  + 字体大小 + (行间距) 是为了防止文本被裁剪
+        const textY = y + (config.height / 2 - 2) + i * fontSize + i * 6;
         ctx.fillText(text, textX, textY);
         const textDecoration = cell.style.textDecoration || "none";
         // 绘制删除线
         if (textDecoration.includes("line-through")) {
+          // 绘制删除线 -1 代表删除线的高度
           const lineY = textY - 1 * zoomSize;
           let lineStartX = textX;
           let lineEndX = textX;
@@ -144,7 +150,7 @@ export const useRenderCell = () => {
         }
         // 绘制下划线
         if (textDecoration.includes("underline")) {
-          const lineY = textY + fontSize / (2 * zoomSize) - 2 * zoomSize;
+          const lineY = textY + fontSize / (2 * zoomSize);
           let lineStartX = textX;
           let lineEndX = textX;
           if (ctx.textAlign === "left" || !ctx.textAlign) {

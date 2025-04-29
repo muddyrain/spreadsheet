@@ -155,7 +155,6 @@ const Spreadsheet: React.FC<{
   };
   // 初始化 列宽度 行高度
   useEffect(() => {
-    console.log(config.rows);
     setHeaderColsWidth(() => {
       return [
         config.fixedColWidth,
@@ -183,13 +182,14 @@ const Spreadsheet: React.FC<{
       onCellInputKey(content) {
         if (selectedCell) {
           setEditingCell({ row: selectedCell.row, col: selectedCell.col });
+          if (currentCell) {
+            cellInputRef.current?.setValue(currentCell.value + content);
+            currentCell.value += content;
+          }
           cellInputRef.current?.setInputStyle(
             selectedCell.row,
             selectedCell.col,
           );
-          if (currentCell) {
-            currentCell.value += content;
-          }
         }
       },
       onSelectAll() {
@@ -270,7 +270,6 @@ const Spreadsheet: React.FC<{
           ref={cellInputRef}
           selectedCell={selectedCell}
           onChange={handleInputChange}
-          value={currentCell?.value || ""}
           onTabKeyDown={onTabKeyDown}
           style={{
             display: isShowInput,
