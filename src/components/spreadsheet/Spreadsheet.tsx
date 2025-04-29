@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { TableData } from "../../types/sheet";
+import { ArrowDirectionType, TableData } from "../../types/sheet";
 import { Canvas } from "./Canvas";
 import { filterData } from "../../utils/filterData";
 import _ from "lodash";
@@ -18,6 +18,8 @@ const Spreadsheet: React.FC<{
   const {
     config,
     data,
+    isFocused,
+    selection,
     selectedCell,
     currentCell,
     editingCell,
@@ -130,27 +132,93 @@ const Spreadsheet: React.FC<{
   };
   const onTabKeyDown = () => {
     if (!selectedCell) return;
-    const position = getNextPosition();
-    if (position) {
-      const row = position.nextRow;
-      const col = position.nextCol;
-      const cell = getCurrentCell(row, col);
-      if (cell?.mergeSpan) {
-        // 如果是合并单元格，选中整个合并区域
-        const { r1, r2, c1, c2 } = cell.mergeSpan;
-        setSelection({
-          start: { row: r1, col: c1 },
-          end: { row: r2, col: c2 },
-        });
+    if (
+      selection?.start?.row === selection?.end?.row &&
+      selection?.start?.col === selection?.end?.col
+    ) {
+      const position = getNextPosition();
+      if (position) {
+        const row = position.nextRow;
+        const col = position.nextCol;
+        const cell = getCurrentCell(row, col);
+        if (cell?.mergeSpan) {
+          // 如果是合并单元格，选中整个合并区域
+          const { r1, r2, c1, c2 } = cell.mergeSpan;
+          setSelection({
+            start: { row: r1, col: c1 },
+            end: { row: r2, col: c2 },
+          });
+        } else {
+          // 普通单元格只选中当前格
+          setSelection({
+            start: { row, col },
+            end: { row, col },
+          });
+        }
+        setSelectedCell(cell);
+        setEditingCell({ row, col });
+        if (cell) cellInputRef.current?.setValue(cell.value);
+      }
+    } else {
+      let { row, col } = selectedCell;
+      const { start, end } = selection;
+      if (start && end && col + 1 > end.col) {
+        if (row < end.row) {
+          row++;
+        } else {
+          row = start.row;
+        }
+        col = start.col;
       } else {
-        // 普通单元格只选中当前格
-        setSelection({
-          start: { row, col },
-          end: { row, col },
-        });
+        col++;
       }
       setSelectedCell(data[row][col]);
-      setEditingCell({ row, col });
+      if (isFocused) {
+        setEditingCell({ row, col });
+        if (cellInputRef.current)
+          cellInputRef.current.setValue(data[row][col].value);
+      }
+    }
+  };
+  const onDirectionKeyDown = (key: ArrowDirectionType) => {
+    if (selectedCell) {
+      const newSelection = {
+        start: {
+          row: selection.start?.row ?? selectedCell.row,
+          col: selection.start?.col ?? selectedCell.col,
+        },
+        end: {
+          row: selection.end?.row ?? selectedCell.row,
+          col: selection.end?.col ?? selectedCell.col,
+        },
+      };
+      if (key === "ArrowUp") {
+        if (newSelection.start.row === 1) {
+          return;
+        }
+        newSelection.start.row--;
+        newSelection.end.row--;
+      } else if (key === "ArrowDown") {
+        if (newSelection.start.row === data.length - 1) {
+          return;
+        }
+        newSelection.start.row++;
+        newSelection.end.row++;
+      } else if (key === "ArrowLeft") {
+        if (newSelection.start.col === 1) {
+          return;
+        }
+        newSelection.start.col--;
+        newSelection.end.col--;
+      } else if (key === "ArrowRight") {
+        if (newSelection.start.col === data[0].length - 1) {
+          return;
+        }
+        newSelection.start.col++;
+        newSelection.end.col++;
+      }
+      setSelection(newSelection);
+      setSelectedCell(data[newSelection.start.row][newSelection.start.col]);
     }
   };
   // 初始化 列宽度 行高度
@@ -192,10 +260,9 @@ const Spreadsheet: React.FC<{
           );
         }
       },
-      onSelectAll() {
-        handleSelectAll();
-      },
+      onSelectAll: handleSelectAll,
       onTabKey: onTabKeyDown,
+      onDirectionKey: onDirectionKeyDown,
     },
   );
   // 监听输入更新事件

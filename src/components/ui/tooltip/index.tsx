@@ -21,7 +21,7 @@ export const Tooltip: FC<
           <span>{children}</span>
         </TooltipTrigger>
         {content && (
-          <TooltipContent align={align} side={side}>
+          <TooltipContent className="select-none" align={align} side={side}>
             {content}
           </TooltipContent>
         )}

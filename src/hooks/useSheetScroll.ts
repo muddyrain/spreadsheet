@@ -158,7 +158,7 @@ export const useSheetScroll = (config: {
         });
       }
     },
-    [scrollPosition, config, setScrollPosition],
+    [scrollPosition, zoomSize, config, setScrollPosition, setZoomSize],
   );
 
   // handleScrollbarDragEnd 只用于外部主动取消拖动（一般用不到）

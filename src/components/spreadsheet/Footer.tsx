@@ -22,7 +22,7 @@ export const Footer: FC = () => {
         </Tooltip>
         <Tooltip content="缩放比例 (点击复原)">
           <div
-            className="text-sm w-16 text-center cursor-pointer"
+            className="text-sm w-16 text-center cursor-pointer select-none"
             onClick={() => {
               setZoomSize(1);
             }}

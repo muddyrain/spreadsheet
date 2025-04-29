@@ -188,3 +188,9 @@ export interface DrawConfig {
   wrapperWidth: number;
   wrapperHeight: number;
 }
+
+export type ArrowDirectionType =
+  | "ArrowUp"
+  | "ArrowDown"
+  | "ArrowLeft"
+  | "ArrowRight";

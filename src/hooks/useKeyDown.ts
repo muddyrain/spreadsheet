@@ -1,5 +1,5 @@
 import { CanvasOnKeyDown } from "@/components/spreadsheet/Canvas";
-import { EditingCell, TableData } from "@/types/sheet";
+import { ArrowDirectionType, EditingCell, TableData } from "@/types/sheet";
 
 interface useKeyDownCallback {
   onCellInputKey?: (value: string) => void;
@@ -7,6 +7,7 @@ interface useKeyDownCallback {
   onCellPasteKey?: () => void;
   onCellDeleteKey?: () => void;
   onSelectAll?: () => void;
+  onDirectionKey?: (key: ArrowDirectionType) => void;
   onTabKey?: () => void;
 }
 export const useKeyDown = (
@@ -23,6 +24,16 @@ export const useKeyDown = (
     // 处理 ctrl/cmd + a
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
       callback.onSelectAll?.();
+      return;
+    }
+    // 处理上下左右键
+    if (
+      key === "ArrowUp" ||
+      key === "ArrowDown" ||
+      key === "ArrowLeft" ||
+      key === "ArrowRight"
+    ) {
+      callback?.onDirectionKey?.(key);
       return;
     }
     // 已经有选中单元格才会处理键盘事件
