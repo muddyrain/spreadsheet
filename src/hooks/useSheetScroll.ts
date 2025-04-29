@@ -8,7 +8,7 @@ export const useSheetScroll = (config: {
   viewportWidth: number;
   viewportHeight: number;
 }) => {
-  const { scrollPosition, setScrollPosition } = useStore();
+  const { zoomSize, scrollPosition, setScrollPosition } = useStore();
   const [isDragging, setIsDragging] = useState(false);
   const [dragType, setDragType] = useState<"horizontal" | "vertical" | null>(
     null,
@@ -77,6 +77,25 @@ export const useSheetScroll = (config: {
       window.removeEventListener("mouseup", onMouseUp);
     };
   }, [config, setScrollPosition]);
+
+  useEffect(() => {
+    const maxScrollX = config.totalWidth - config.viewportWidth;
+    const maxScrollY = config.totalHeight - config.viewportHeight;
+    setScrollPosition((prevPosition) => {
+      let newX = prevPosition.x;
+      let newY = prevPosition.y;
+
+      if (maxScrollX < 0) newX = 0;
+      if (maxScrollY < 0) newY = 0;
+      if (prevPosition.x > maxScrollX) newX = maxScrollX;
+      if (prevPosition.y > maxScrollY) newY = maxScrollY;
+      // 仅当值实际改变时才返回新对象
+      if (newX === prevPosition.x && newY === prevPosition.y) {
+        return prevPosition;
+      }
+      return { x: newX, y: newY };
+    });
+  }, [config, zoomSize, scrollPosition, setScrollPosition]);
 
   const handleScrollbarDragStart = useCallback(
     (e: React.MouseEvent, type: "horizontal" | "vertical") => {
