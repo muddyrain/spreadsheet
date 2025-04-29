@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { DrawConfig, EditingCell, SelectionSheetType } from "@/types/sheet";
 import { useDrawCell } from "./useDrawCell";
+import { useStore } from "../useStore";
 
 export const useSheetDraw = (
   drawConfig: DrawConfig & {
@@ -9,6 +10,7 @@ export const useSheetDraw = (
   },
 ) => {
   const drawFunctions = useDrawCell(drawConfig);
+  const { config } = useStore();
   const drawTable = useCallback(
     (ctx: CanvasRenderingContext2D) => {
       const {
@@ -41,7 +43,8 @@ export const useSheetDraw = (
       // 绘制拖拽标准线
       drawDragLine(ctx);
     },
-    [drawConfig, drawFunctions],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [config, drawConfig, drawFunctions],
   );
   return { drawTable };
 };

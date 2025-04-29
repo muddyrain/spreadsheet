@@ -155,6 +155,7 @@ const Spreadsheet: React.FC<{
   };
   // 初始化 列宽度 行高度
   useEffect(() => {
+    console.log(config.rows);
     setHeaderColsWidth(() => {
       return [
         config.fixedColWidth,

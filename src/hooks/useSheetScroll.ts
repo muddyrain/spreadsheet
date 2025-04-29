@@ -93,9 +93,13 @@ export const useSheetScroll = (config: {
       if (newX === prevPosition.x && newY === prevPosition.y) {
         return prevPosition;
       }
-      return { x: newX, y: newY };
+      if (maxScrollY > 0 && maxScrollX > 0) {
+        return { x: newX, y: newY };
+      } else {
+        return { x: 0, y: 0 };
+      }
     });
-  }, [config, zoomSize, scrollPosition, setScrollPosition]);
+  }, [config, zoomSize, setScrollPosition]);
 
   const handleScrollbarDragStart = useCallback(
     (e: React.MouseEvent, type: "horizontal" | "vertical") => {
@@ -113,18 +117,30 @@ export const useSheetScroll = (config: {
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
-      if (config.totalHeight <= config.viewportHeight) return;
       const maxScrollX = config.totalWidth - config.viewportWidth;
       const maxScrollY = config.totalHeight - config.viewportHeight;
-      const newScrollX = Math.min(
-        Math.max(0, scrollPosition.x + e.deltaX),
-        maxScrollX,
-      );
-      const newScrollY = Math.min(
-        Math.max(0, scrollPosition.y + e.deltaY),
-        maxScrollY,
-      );
+      // 如果两个方向都不需要滚动，直接返回
+      if (maxScrollX <= 0 && maxScrollY <= 0) {
+        return;
+      }
+      let newScrollX = scrollPosition.x;
+      let newScrollY = scrollPosition.y;
+      // 只在需要横向滚动时处理横向滚动
+      if (maxScrollX > 0) {
+        newScrollX = Math.min(
+          Math.max(0, scrollPosition.x + e.deltaX),
+          maxScrollX,
+        );
+      }
+      // 只在需要纵向滚动时处理纵向滚动
+      if (maxScrollY > 0) {
+        newScrollY = Math.min(
+          Math.max(0, scrollPosition.y + e.deltaY),
+          maxScrollY,
+        );
+      }
 
+      // 只有当位置真正改变时才更新状态
       if (newScrollX !== scrollPosition.x || newScrollY !== scrollPosition.y) {
         setScrollPosition({
           x: newScrollX,

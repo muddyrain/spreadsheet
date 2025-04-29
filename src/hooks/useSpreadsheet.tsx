@@ -11,8 +11,8 @@ import { useCallback, useMemo, useState } from "react";
 export const useSpreadsheet = (
   _config?: SpreadsheetConfig,
 ): SpreadsheetType => {
-  const config: Required<SpreadsheetConfig> = useMemo(
-    () => ({
+  const config: Required<SpreadsheetConfig> = useMemo(() => {
+    return {
       rows: 200,
       cols: 26,
       fontSize: 14,
@@ -28,9 +28,8 @@ export const useSpreadsheet = (
       backgroundColor: "#FFFFFF",
       color: "#000000",
       ..._config,
-    }),
-    [_config],
-  );
+    };
+  }, [_config]);
   const [data, setData] = useState<TableData>(
     createInitialData(config, config.rows, config.cols),
   );
