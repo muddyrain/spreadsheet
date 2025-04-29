@@ -21,7 +21,6 @@ const Spreadsheet: React.FC<{
     selectedCell,
     currentCell,
     editingCell,
-    scrollPosition,
     setData,
     setHeaderColsWidth,
     setHeaderRowsHeight,
@@ -126,6 +125,7 @@ const Spreadsheet: React.FC<{
       rowIndex = row;
     }
     setEditingCell({ row: rowIndex, col: colIndex }); // 双击才进入编辑
+    cellInputRef.current?.setValue(currentCell.value);
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
   const onTabKeyDown = () => {
@@ -266,9 +266,7 @@ const Spreadsheet: React.FC<{
           />
         </div>
         <CellInput
-          scrollPosition={scrollPosition}
           ref={cellInputRef}
-          selectedCell={selectedCell}
           onChange={handleInputChange}
           onTabKeyDown={onTabKeyDown}
           style={{

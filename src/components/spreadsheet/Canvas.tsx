@@ -99,12 +99,17 @@ export const Canvas: React.FC<CanvasProps> = ({
     canvas.style.height = `${containerHeight}px`;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      rafId.current = requestAnimationFrame(() => {
-        ctx.save(); // 确保在绘制前保存上下文状态
-        ctx.scale(dpr, dpr); // 应用设备像素比缩放
-        drawTable(ctx);
-        ctx.restore(); // 将 restore 移到这里，确保在绘制后恢复上下文状态
-      });
+      const loadFonts = async () => {
+        await document.fonts.ready;
+        // 重新渲染 Canvas
+        rafId.current = requestAnimationFrame(() => {
+          ctx.save(); // 确保在绘制前保存上下文状态
+          ctx.scale(dpr, dpr); // 应用设备像素比缩放
+          drawTable(ctx);
+          ctx.restore(); // 将 restore 移到这里，确保在绘制后恢复上下文状态
+        });
+      };
+      loadFonts();
     }
     return () => {
       if (rafId.current !== null) {

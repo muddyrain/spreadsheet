@@ -93,7 +93,11 @@ export const useRenderCell = () => {
     if (cell.readOnly)
       color =
         config.readOnlyColor || cell.style.color || config.color || "#000000";
-    ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px PingFangSC`;
+    // 获取 CSS 变量定义的字体
+    const fontFamily = getComputedStyle(document.documentElement)
+      .getPropertyValue("--font-family")
+      .trim();
+    ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
     ctx.fillStyle = color;
     // 大于最小宽度时才 设置裁剪
     if (cellWidth > minWidth) {
@@ -108,7 +112,7 @@ export const useRenderCell = () => {
     ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
     ctx.textBaseline = "middle";
     // 计算文本位置
-    let textX = cellWidth > minWidth ? x + 6 * zoomSize : x;
+    let textX = cellWidth > minWidth ? x + 5.5 * zoomSize : x;
     if (ctx.textAlign === "center") textX = x + cellWidth / 2;
     if (ctx.textAlign === "right") textX = x + cellWidth;
     if (cell.readOnly) {
@@ -120,7 +124,10 @@ export const useRenderCell = () => {
         const text = contents[i];
         const textMetrics = ctx.measureText(text);
         // 计算文本位置 + 起始单元格高度一半 - 边框高度  + 字体大小 + (行间距) 是为了防止文本被裁剪
-        const textY = y + (config.height / 2 - 2) + i * fontSize + i * 6;
+        const textY =
+          y +
+          (config.height / 2 - 2) * zoomSize +
+          (i * fontSize + i * 6 * zoomSize);
         ctx.fillText(text, textX, textY);
         const textDecoration = cell.style.textDecoration || "none";
         // 绘制删除线

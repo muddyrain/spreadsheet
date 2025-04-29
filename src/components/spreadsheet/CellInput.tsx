@@ -1,12 +1,13 @@
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
 } from "react";
 import { useStore } from "@/hooks/useStore";
-import { EditingCell } from "@/types/sheet";
+import { CellData } from "@/types/sheet";
 import { useComputed } from "@/hooks/useComputed";
 
 export type CellInputRef = {
@@ -20,21 +21,17 @@ export const CellInput = forwardRef<
   CellInputRef,
   {
     style?: React.CSSProperties;
-    selectedCell: EditingCell;
-    scrollPosition: {
-      x: number;
-      y: number;
-    };
     onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
     onTabKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   }
->(({ style, scrollPosition, selectedCell, onChange, onTabKeyDown }, ref) => {
+>(({ style, onChange, onTabKeyDown }, ref) => {
   const { getMergeCellSize, getCellPosition } = useComputed();
   const {
     data,
     config,
     zoomSize,
     currentCell,
+    selectedCell,
     setIsFocused,
     headerColsWidth,
     headerRowsHeight,
@@ -73,6 +70,39 @@ export const CellInput = forwardRef<
       });
     }
   };
+  const applyCellStyles = useCallback(
+    (
+      inputEl: HTMLTextAreaElement,
+      mirrorEl: HTMLDivElement,
+      cell: CellData,
+      width: number,
+      height: number,
+    ) => {
+      // 设置尺寸
+      const baseStyles = {
+        minWidth: `${width + 2}px`,
+        minHeight: `${height + 2}px`,
+        padding: `${3 * zoomSize}px ${5 * zoomSize}px`,
+        fontSize: `${(cell.style.fontSize || config.fontSize || 14) * zoomSize}px`,
+      };
+
+      // 应用到输入框
+      Object.assign(inputEl.style, baseStyles, {
+        fontWeight: cell.style.fontWeight || "normal",
+        fontStyle: cell.style.fontStyle || "normal",
+        textDecoration: cell.style.textDecoration || "none",
+        color: cell.style.color || config.color || "#000000",
+      });
+
+      // 应用到镜像元素
+      Object.assign(mirrorEl.style, baseStyles, {
+        fontWeight: cell.style.fontWeight || "normal",
+        fontStyle: cell.style.fontStyle || "normal",
+        textDecoration: cell.style.textDecoration || "none",
+      });
+    },
+    [config.color, config.fontSize, zoomSize],
+  );
   const setInputStyle = (rowIndex: number, colIndex: number) => {
     if (inputRef.current && mirrorRef.current) {
       const currentCell = data[rowIndex][colIndex];
@@ -82,24 +112,14 @@ export const CellInput = forwardRef<
         cellWidth,
         cellHeight,
       );
-      const Width = width;
-      const Height = height;
-      inputRef.current.style.minWidth = `${Width + 2}px`;
-      inputRef.current.style.minHeight = `${Height + 2}px`;
       inputRef.current.style.display = "block";
-      inputRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
-      mirrorRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
-      // 预先设置字体大小和粗细 防止计算不准确
-      inputRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
-      inputRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
-      inputRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
-      inputRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
-      inputRef.current.style.color = `${currentCell.style.color || config.color || "#000000"}`;
-
-      mirrorRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
-      mirrorRef.current.style.fontWeight = `${currentCell.style.fontWeight || "normal"}`;
-      mirrorRef.current.style.fontStyle = `${currentCell.style.fontStyle || "normal"}`;
-      mirrorRef.current.style.textDecoration = `${currentCell.style.textDecoration || "none"}`;
+      applyCellStyles(
+        inputRef.current,
+        mirrorRef.current,
+        currentCell,
+        width,
+        height,
+      );
       updateInputSize();
       inputRef.current.focus();
       setIsFocused(true);
@@ -138,21 +158,18 @@ export const CellInput = forwardRef<
         cell = data[row]?.[col];
       }
       const { x, y } = getCellPosition(cell);
-      const left = x;
-      const top = y;
       const { width, height } = getMergeCellSize(cell, cellWidth, cellHeight);
-      const Width = width;
-      const Height = height;
-      inputRef.current.style.left = `${left - 1}px`;
-      inputRef.current.style.top = `${top - 1}px`;
-      inputRef.current.style.minWidth = `${Width + 2}px`;
-      inputRef.current.style.minHeight = `${Height + 2}px`;
-      mirrorRef.current.style.minWidth = `${Width + 2}px`;
-      mirrorRef.current.style.padding = `${Height + 2}px`;
-      inputRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
-      mirrorRef.current.style.padding = `${3 * zoomSize}px ${5 * zoomSize}px`;
-      // 预先设置字体大小和粗细 防止计算不准确
-      inputRef.current.style.fontSize = `${(currentCell.style.fontSize || config.fontSize || 14) * zoomSize}px`;
+      // 设置位置
+      inputRef.current.style.left = `${x - 1}px`;
+      inputRef.current.style.top = `${y - 1}px`;
+      applyCellStyles(
+        inputRef.current,
+        mirrorRef.current,
+        currentCell,
+        width,
+        height,
+      );
+      updateInputSize();
     }
   }, [
     data,
@@ -164,9 +181,9 @@ export const CellInput = forwardRef<
     headerColsWidth,
     headerRowsHeight,
     selectedCell,
-    scrollPosition,
     getCellPosition,
     getMergeCellSize,
+    applyCellStyles,
   ]);
   return (
     <>
@@ -186,7 +203,7 @@ export const CellInput = forwardRef<
         style={{
           ...style,
           border: `2px solid ${config.selectionBorderColor}`,
-          fontFamily: "PingFang SC sans-serif",
+          fontFamily: "PingFangSC sans-serif",
         }}
       />
       {/* 隐藏的 mirror div 用于测量内容尺寸 */}
@@ -195,9 +212,9 @@ export const CellInput = forwardRef<
         className="absolute whitespace-pre-wrap break-all box-border"
         style={{
           ...style,
-          fontFamily: "PingFang SC sans-serif",
+          fontFamily: "PingFangSC sans-serif",
           border: `2px solid ${config.selectionBorderColor}`,
-          // visibility: "hidden",
+          visibility: "hidden",
         }}
       />
     </>
