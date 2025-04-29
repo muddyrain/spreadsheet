@@ -13,6 +13,7 @@ export const SpreadsheetContext = React.createContext<
       setData: React.Dispatch<React.SetStateAction<TableData>>;
       config: Required<SpreadsheetConfig>;
       currentCell: CellData | null;
+      currentCtrlKey: string;
       updater: number;
       setUpdater: () => void;
       zoomSize: number;

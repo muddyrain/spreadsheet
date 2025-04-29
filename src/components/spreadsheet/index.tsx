@@ -9,6 +9,7 @@ import _ from "lodash";
 import { useSpreadsheet } from "@/hooks/useSpreadsheet";
 import { SpreadsheetContext } from "./context";
 import Spreadsheet from "./Spreadsheet";
+import { getSystemInfo } from "@/utils";
 
 const RootSpreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -45,6 +46,8 @@ const RootSpreadsheet: React.FC<{
   ]);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [sideLineMode, setSideLineMode] = useState<"row" | "col" | null>(null);
+  const { isMac, isWindows } = getSystemInfo();
+
   return (
     <SpreadsheetContext.Provider
       value={{
@@ -53,9 +56,21 @@ const RootSpreadsheet: React.FC<{
         config,
         currentCell,
         updater,
+        currentCtrlKey: isMac ? "⌘" : isWindows ? "Ctrl" : "Ctrl",
         setUpdater: forceUpdate,
         zoomSize,
-        setZoomSize,
+        setZoomSize: (_size) => {
+          const size = Number(parseFloat(_size.toString()).toFixed(1));
+          if (size >= 2) {
+            setZoomSize(2);
+            return;
+          }
+          if (size <= 0.5) {
+            setZoomSize(0.5);
+            return;
+          }
+          setZoomSize(size);
+        },
         isFocused,
         setIsFocused,
         isMouseDown,

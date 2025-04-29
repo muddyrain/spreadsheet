@@ -8,7 +8,8 @@ export const useSheetScroll = (config: {
   viewportWidth: number;
   viewportHeight: number;
 }) => {
-  const { zoomSize, scrollPosition, setScrollPosition } = useStore();
+  const { zoomSize, scrollPosition, setZoomSize, setScrollPosition } =
+    useStore();
   const [isDragging, setIsDragging] = useState(false);
   const [dragType, setDragType] = useState<"horizontal" | "vertical" | null>(
     null,
@@ -117,6 +118,15 @@ export const useSheetScroll = (config: {
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
+      // 如果是ctrl或者cmd键按下，不处理滚轮事件
+      if (e.ctrlKey || e.metaKey) {
+        if (e.deltaY <= 0) {
+          setZoomSize(zoomSize + 0.1);
+        } else {
+          setZoomSize(zoomSize - 0.1);
+        }
+        return;
+      }
       const maxScrollX = config.totalWidth - config.viewportWidth;
       const maxScrollY = config.totalHeight - config.viewportHeight;
       // 如果两个方向都不需要滚动，直接返回
