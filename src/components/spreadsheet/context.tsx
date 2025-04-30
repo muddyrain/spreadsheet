@@ -1,4 +1,8 @@
-import { EditingCell, PositionType } from "@/types/sheet";
+import {
+  EditingCell,
+  PositionType,
+  SheetCellSettingsConfig,
+} from "@/types/sheet";
 import React from "react";
 import {
   TableData,
@@ -43,6 +47,10 @@ export const SpreadsheetContext = React.createContext<
       currentSideLinePosition: number[];
       setCurrentSideLinePosition: React.Dispatch<
         React.SetStateAction<number[]>
+      >;
+      sheetCellSettingsConfig: SheetCellSettingsConfig;
+      setSheetCellSettingsConfig: React.Dispatch<
+        React.SetStateAction<SheetCellSettingsConfig>
       >;
       sideLineMode: "row" | "col" | null;
       setSideLineMode: React.Dispatch<

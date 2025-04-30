@@ -194,3 +194,10 @@ export type ArrowDirectionType =
   | "ArrowDown"
   | "ArrowLeft"
   | "ArrowRight";
+
+export interface SheetCellSettingsConfig {
+  /**
+   * 是否以选中单元格为基准作为合并点。
+   */
+  isAnchorMergePoint: boolean;
+}

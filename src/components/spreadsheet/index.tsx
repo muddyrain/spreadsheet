@@ -4,6 +4,7 @@ import {
   SpreadsheetConfig,
   SpreadsheetType,
   SelectionSheetType,
+  SheetCellSettingsConfig,
 } from "../../types/sheet";
 import _ from "lodash";
 import { useSpreadsheet } from "@/hooks/useSpreadsheet";
@@ -32,6 +33,10 @@ const RootSpreadsheet: React.FC<{
     // eslint-disable-next-line react-hooks/rules-of-hooks
   } = props.spreadsheet ?? useSpreadsheet(_config);
   const [zoomSize, setZoomSize] = useState<number>(1);
+  const [sheetCellSettingsConfig, setSheetCellSettingsConfig] =
+    useState<SheetCellSettingsConfig>({
+      isAnchorMergePoint: false,
+    });
   const [headerColsWidth, setHeaderColsWidth] = useState<number[]>([]);
   const [headerRowsHeight, setHeaderRowsHeight] = useState<number[]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -97,6 +102,8 @@ const RootSpreadsheet: React.FC<{
         setCurrentSideLineIndex,
         currentSideLinePosition,
         setCurrentSideLinePosition,
+        sheetCellSettingsConfig,
+        setSheetCellSettingsConfig,
         sideLineMode,
         setSideLineMode,
         getCurrentCell,

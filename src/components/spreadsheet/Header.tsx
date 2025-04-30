@@ -17,6 +17,7 @@ import { useStore } from "@/hooks/useStore";
 import { Tooltip } from "../ui/tooltip";
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { CellData } from "@/types/sheet";
+import { Settings } from "./Settings";
 export type ClickType =
   | "save"
   | "undo"
@@ -154,7 +155,7 @@ export const Header: FC<{
     onClick?.(type);
   };
   return (
-    <div className="flex items-center gap-x-1 justify-center bg-zinc-50 px-4 py-1 h-10 z-[900]">
+    <div className="flex items-center gap-x-1 bg-zinc-50 px-4 py-1 h-10 z-[1]">
       <Tooltip content="保存">
         <Toggle
           className="text-lg"
@@ -262,6 +263,9 @@ export const Header: FC<{
           <Merge />
         </Toggle>
       </Tooltip>
+      <div className="ml-auto">
+        <Settings />
+      </div>
     </div>
   );
 };

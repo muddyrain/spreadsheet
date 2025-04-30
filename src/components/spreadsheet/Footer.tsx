@@ -6,7 +6,7 @@ import { Tooltip } from "../ui/tooltip";
 export const Footer: FC = () => {
   const { zoomSize, currentCtrlKey, setZoomSize } = useStore();
   return (
-    <div className="flex items-center gap-x-1 justify-center bg-zinc-50 px-4 py-1 h-8 z-[900]">
+    <div className="flex items-center gap-x-1 justify-center bg-zinc-50 px-4 py-1 h-8 z-[1]">
       <div className="flex-1 bg-red-100"> </div>
       <div className="flex items-center h-full">
         <Tooltip content={`缩小（${currentCtrlKey} + ⬇）`}>
