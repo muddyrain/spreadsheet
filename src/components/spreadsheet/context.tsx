@@ -24,6 +24,10 @@ export const SpreadsheetContext = React.createContext<
       setIsMouseDown: (isFocused: boolean) => void;
       selection: SelectionSheetType;
       setSelection: React.Dispatch<React.SetStateAction<SelectionSheetType>>;
+      containerWidth: number;
+      setContainerWidth: React.Dispatch<React.SetStateAction<number>>;
+      containerHeight: number;
+      setContainerHeight: React.Dispatch<React.SetStateAction<number>>;
       headerColsWidth: number[];
       setHeaderColsWidth: React.Dispatch<React.SetStateAction<number[]>>;
       headerRowsHeight: number[];

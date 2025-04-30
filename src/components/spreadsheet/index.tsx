@@ -34,6 +34,8 @@ const RootSpreadsheet: React.FC<{
   const [zoomSize, setZoomSize] = useState<number>(1);
   const [headerColsWidth, setHeaderColsWidth] = useState<number[]>([]);
   const [headerRowsHeight, setHeaderRowsHeight] = useState<number[]>([]);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [selection, setSelection] = useState<SelectionSheetType>({
     start: null,
@@ -77,6 +79,10 @@ const RootSpreadsheet: React.FC<{
         setIsMouseDown,
         selection,
         setSelection,
+        containerWidth,
+        setContainerWidth,
+        containerHeight,
+        setContainerHeight,
         headerColsWidth,
         setHeaderColsWidth,
         headerRowsHeight,

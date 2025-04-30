@@ -32,7 +32,7 @@ const Spreadsheet: React.FC<{
     setIsFocused,
     getCurrentCell,
   } = useStore();
-  const { getNextPosition } = useComputed();
+  const { getNextPosition, fitCellViewPort } = useComputed();
   const cellInputRef = useRef<CellInputRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const handleSelectAll = () => {
@@ -108,6 +108,7 @@ const Spreadsheet: React.FC<{
       }
     }
     setSelectedCell(data[rowIndex][colIndex]);
+    fitCellViewPort(rowIndex, colIndex);
     setSelection({
       start: { row: rowIndex, col: colIndex },
       end: { row: rowIndex, col: colIndex },
@@ -126,7 +127,7 @@ const Spreadsheet: React.FC<{
       colIndex = col;
       rowIndex = row;
     }
-    setEditingCell({ row: rowIndex, col: colIndex }); // 双击才进入编辑
+    setEditingCell(() => ({ row: rowIndex, col: colIndex })); // 双击才进入编辑
     cellInputRef.current?.setValue(currentCell.value);
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
@@ -155,9 +156,17 @@ const Spreadsheet: React.FC<{
             end: { row, col },
           });
         }
+        if (cell) {
+          fitCellViewPort(cell.row, cell.col);
+        }
         setSelectedCell(cell);
-        setEditingCell({ row, col });
-        if (cell) cellInputRef.current?.setValue(cell.value);
+        setEditingCell(null);
+        if (isFocused) {
+          cellInputRef.current?.blur();
+          setEditingCell(null);
+          // setEditingCell({ row, col });
+          // if (cell) cellInputRef.current?.setValue(cell.value);
+        }
       }
     } else {
       let { row, col } = selectedCell;
@@ -217,8 +226,14 @@ const Spreadsheet: React.FC<{
         newSelection.start.col++;
         newSelection.end.col++;
       }
+      const row = newSelection.start.row;
+      const col = newSelection.start.col;
+      const cell = getCurrentCell(row, col);
+      if (cell) {
+        fitCellViewPort(cell.row, cell.col);
+      }
       setSelection(newSelection);
-      setSelectedCell(data[newSelection.start.row][newSelection.start.col]);
+      setSelectedCell(data[row][col]);
     }
   };
   // 初始化 列宽度 行高度
@@ -241,7 +256,7 @@ const Spreadsheet: React.FC<{
     });
   }, [config, setHeaderColsWidth, setHeaderRowsHeight]);
   // 键盘 hooks
-  const { onKeyDown } = useKeyDown(
+  useKeyDown(
     {
       data,
       setData,
@@ -263,15 +278,21 @@ const Spreadsheet: React.FC<{
       onSelectAll: handleSelectAll,
       onTabKey: onTabKeyDown,
       onDirectionKey: onDirectionKeyDown,
+      onEnterKey: () => {
+        onDirectionKeyDown("ArrowDown");
+        clearSelection();
+        cellInputRef.current?.blur();
+        setIsFocused(false);
+      },
     },
   );
   // 监听输入更新事件
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange = (value: string) => {
     if (editingCell) {
       const newData = [...data];
       const targetCell = newData[editingCell.row][editingCell.col];
       if (targetCell) {
-        targetCell.value = e.target.value;
+        targetCell.value = value;
       }
       setData(newData);
       debouncedChange(newData);
@@ -329,13 +350,18 @@ const Spreadsheet: React.FC<{
             wrapperRef={wrapperRef}
             onCellClick={onCellClick}
             onCellDoubleClick={onCellDoubleClick}
-            onKeyDown={onKeyDown}
           />
         </div>
         <CellInput
           ref={cellInputRef}
           onChange={handleInputChange}
           onTabKeyDown={onTabKeyDown}
+          onEnterKeyDown={() => {
+            onDirectionKeyDown("ArrowDown");
+            clearSelection();
+            cellInputRef.current?.blur();
+            setIsFocused(false);
+          }}
           style={{
             display: isShowInput,
             fontSize: `${config.fontSize || currentCell?.style.fontSize || 14}px`,

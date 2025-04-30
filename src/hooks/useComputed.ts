@@ -10,8 +10,68 @@ export const useComputed = () => {
     headerColsWidth,
     headerRowsHeight,
     scrollPosition,
+    containerWidth,
+    containerHeight,
     getCurrentCell,
+    setScrollPosition,
   } = useStore();
+
+  // 选中单元格适配视口
+  const fitCellViewPort = (row: number, col: number) => {
+    const selectedCell = data?.[row]?.[col];
+    if (!selectedCell) return;
+    const viewPortWidth = containerWidth;
+    const viewPortHeight = containerHeight - 10;
+    const x = getLeft(col);
+    const y = getTop(row);
+    const cellWidth = getCellWidth(col);
+    const cellHeight = getCellHeight(row);
+    const fixedCellWidth = getCellHeight(0);
+    const fixedCellHeight = getCellHeight(0);
+    // X轴处理
+    if (x + cellWidth - fixedCellWidth < cellWidth) {
+      const _x = x + scrollPosition.x - cellWidth;
+      setScrollPosition((scrollPosition) => ({
+        x: _x > 0 ? _x : 0,
+        y: scrollPosition.y,
+      }));
+    } else if (x + cellWidth > viewPortWidth) {
+      const diff = x + cellWidth - viewPortWidth;
+      setScrollPosition((scrollPosition) => ({
+        x: scrollPosition.x + diff + fixedCellWidth,
+        y: scrollPosition.y,
+      }));
+    }
+    // Y轴处理
+    if (y + cellHeight - fixedCellHeight < cellHeight) {
+      const _y = y + scrollPosition.y - cellHeight;
+      setScrollPosition((scrollPosition) => ({
+        x: scrollPosition.x,
+        y: _y > 0 ? _y : 0,
+      }));
+    } else if (y + cellHeight > viewPortHeight) {
+      const diff = y + cellHeight - viewPortHeight;
+      setScrollPosition((scrollPosition) => ({
+        x: scrollPosition.x,
+        y: scrollPosition.y + diff + fixedCellHeight / 2,
+      }));
+    }
+  };
+
+  const getCellWidth = useCallback(
+    (col: number) => {
+      const cellWidth = headerColsWidth[col] * zoomSize;
+      return cellWidth;
+    },
+    [headerColsWidth, zoomSize],
+  );
+  const getCellHeight = useCallback(
+    (row: number) => {
+      const cellHeight = headerRowsHeight[row] * zoomSize;
+      return cellHeight;
+    },
+    [headerRowsHeight, zoomSize],
+  );
 
   // 通用的累加查找函数
   const findIndexByAccumulate = useCallback(
@@ -90,27 +150,40 @@ export const useComputed = () => {
     },
     [zoomSize, scrollPosition, headerColsWidth],
   );
-  // 获取 x - left
-  const getLeft = useCallback(
+  // 获取真实 X
+  const getRealLeft = useCallback(
     (col: number) => {
       const beforeAllWidth =
         col === 0
           ? 0
           : headerColsWidth.slice(0, col).reduce((a, b) => a + b, 0) * zoomSize;
-      return col === 0 ? 0 : beforeAllWidth - scrollPosition.x;
+      return col === 0 ? 0 : beforeAllWidth;
     },
-    [zoomSize, scrollPosition, headerColsWidth],
+    [zoomSize, headerColsWidth],
   );
-  const getTop = useCallback(
+  // 获取 x - left
+  const getLeft = useCallback(
+    (col: number) => {
+      return col === 0 ? 0 : getRealLeft(col) - scrollPosition.x;
+    },
+    [scrollPosition, getRealLeft],
+  );
+  const getRealTop = useCallback(
     (row: number) => {
       const beforeAllHeight =
         row === 0
           ? 0
           : headerRowsHeight.slice(0, row).reduce((a, b) => a + b, 0) *
             zoomSize;
-      return row === 0 ? 0 : beforeAllHeight - scrollPosition.y;
+      return row === 0 ? 0 : beforeAllHeight;
     },
-    [zoomSize, scrollPosition, headerRowsHeight],
+    [zoomSize, headerRowsHeight],
+  );
+  const getTop = useCallback(
+    (row: number) => {
+      return row === 0 ? 0 : getRealTop(row) - scrollPosition.y;
+    },
+    [scrollPosition, getRealTop],
   );
 
   // 获取下一个位置
@@ -194,6 +267,9 @@ export const useComputed = () => {
     getNextPosition,
     getStartEndRow,
     getStartEndCol,
+    getCellWidth,
+    getCellHeight,
+    fitCellViewPort,
     getLeft,
     getTop,
   };

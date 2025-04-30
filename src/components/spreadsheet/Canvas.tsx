@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
-import { CellData, SelectionSheetType, TableData } from "@/types/sheet";
+import { CellData, TableData } from "@/types/sheet";
 import { useSheetScroll } from "@/hooks/useSheetScroll";
 import { useSheetDraw } from "@/hooks/useSheetDraw";
 import { ScrollBar } from "./ScrollBar";
@@ -8,20 +8,12 @@ import { useStore } from "@/hooks/useStore";
 import { useSideLine } from "@/hooks/useSideLine";
 import { useComputed } from "@/hooks/useComputed";
 
-export type CanvasOnKeyDown = (
-  e: React.KeyboardEvent,
-  options: {
-    selection: SelectionSheetType;
-    setSelection: (selection: SelectionSheetType) => void;
-  },
-) => void;
 interface CanvasProps {
   data: TableData;
   wrapperRef: React.RefObject<HTMLDivElement | null>;
   selectedCell: CellData | null;
   onCellClick?: (row: number, col: number) => void;
   onCellDoubleClick?: (row: number, col: number) => void;
-  onKeyDown?: CanvasOnKeyDown;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -30,23 +22,25 @@ export const Canvas: React.FC<CanvasProps> = ({
   selectedCell,
   onCellClick,
   onCellDoubleClick,
-  onKeyDown,
 }) => {
   const {
     config,
     zoomSize,
     headerColsWidth,
     headerRowsHeight,
+    containerWidth,
+    containerHeight,
+    setContainerWidth,
+    setContainerHeight,
     setCurrentSideLinePosition,
   } = useStore();
   const rafId = useRef<number | null>(null);
+  const lastClickRowCol = useRef<[number, number] | null>(null);
   const [currentHoverCell, setCurrentHoverCell] = useState<
     [number, number] | null
   >(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(0);
   const { findIndexByAccumulate } = useComputed();
   const scrollConfig = useMemo(
     () => ({
@@ -66,8 +60,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     ],
   );
   // 选中 hooks
-  const { selection, movedRef, handleCellMouseDown, setSelection } =
-    useSheetSelection();
+  const { selection, movedRef, handleCellMouseDown } = useSheetSelection();
   // 滚动 hooks
   const { scrollPosition, handleScrollbarDragStart, handleWheel } =
     useSheetScroll(scrollConfig);
@@ -129,7 +122,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [containerRef]);
+  }, [containerRef, setContainerWidth, setContainerHeight]);
   useEffect(() => {
     const currentWrapper = wrapperRef.current;
     if (currentWrapper) {
@@ -238,19 +231,6 @@ export const Canvas: React.FC<CanvasProps> = ({
               });
             });
           }}
-          onKeyDown={(e) => {
-            onKeyDown?.(e, {
-              selection,
-              setSelection,
-            });
-          }}
-          onDoubleClick={(e) => {
-            if (!movedRef.current && onCellDoubleClick) {
-              // 只在没有拖动时才触发
-              handleGetClient(e, "doubleClick", onCellDoubleClick);
-            }
-            movedRef.current = false; // 重置
-          }}
           onMouseUp={() => {
             handleMouseUp();
           }}
@@ -262,17 +242,28 @@ export const Canvas: React.FC<CanvasProps> = ({
               }
               return;
             }
-            handleGetClient(e, "click", (rowIndex, colIndex) => {
-              onCellClick?.(rowIndex, colIndex);
-              const currentCell = data[rowIndex][colIndex];
-              if (currentCell?.readOnly) return;
-              handleCellMouseDown(
-                rowIndex,
-                colIndex,
-                wrapperRef,
-                scrollPosition,
-              );
-            });
+            if (e.detail === 1) {
+              handleGetClient(e, "click", (rowIndex, colIndex) => {
+                lastClickRowCol.current = [rowIndex, colIndex];
+                onCellClick?.(rowIndex, colIndex);
+                const currentCell = data[rowIndex][colIndex];
+                if (currentCell?.readOnly) return;
+                handleCellMouseDown(
+                  rowIndex,
+                  colIndex,
+                  wrapperRef,
+                  scrollPosition,
+                );
+              });
+            }
+            // 双击
+            if (e.detail === 2) {
+              if (lastClickRowCol.current) {
+                const [rowIndex, colIndex] = lastClickRowCol.current;
+                onCellDoubleClick?.(rowIndex, colIndex);
+              }
+              movedRef.current = false;
+            }
           }}
         />
       </div>

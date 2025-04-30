@@ -21,10 +21,11 @@ export const CellInput = forwardRef<
   CellInputRef,
   {
     style?: React.CSSProperties;
-    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    onChange: (value: string) => void;
     onTabKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+    onEnterKeyDown?: () => void;
   }
->(({ style, onChange, onTabKeyDown }, ref) => {
+>(({ style, onChange, onTabKeyDown, onEnterKeyDown }, ref) => {
   const { getMergeCellSize, getCellPosition } = useComputed();
   const {
     data,
@@ -33,6 +34,7 @@ export const CellInput = forwardRef<
     currentCell,
     selectedCell,
     setIsFocused,
+    setEditingCell,
     headerColsWidth,
     headerRowsHeight,
   } = useStore();
@@ -121,8 +123,10 @@ export const CellInput = forwardRef<
         height,
       );
       updateInputSize();
-      inputRef.current.focus();
       setIsFocused(true);
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     }
   };
   useImperativeHandle(ref, () => ({
@@ -191,13 +195,42 @@ export const CellInput = forwardRef<
         ref={inputRef}
         className="absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
         onChange={(e) => {
-          onChange(e);
+          onChange(e.target.value);
           updateInputSize();
         }}
         onKeyDown={(e) => {
+          e.stopPropagation();
+
           if (e.key === "Tab") {
+            // 监听 Tab 键
             e.preventDefault();
             onTabKeyDown?.(e);
+          } else if (e.key === "Enter" && e.altKey) {
+            // 监听 alt + Enter 键 换行
+            e.preventDefault();
+            const textarea = e.currentTarget;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const value = textarea.value;
+
+            // 在光标位置插入换行符
+            textarea.value = value.slice(0, start) + "\n" + value.slice(end);
+
+            // 设置新的光标位置
+            textarea.selectionStart = textarea.selectionEnd = start + 1;
+
+            updateInputSize();
+            onChange?.(textarea.value);
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            onEnterKeyDown?.();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            // 监听 esc 键
+            updateInputSize();
+            setEditingCell(null);
+            inputRef.current?.blur();
+            setIsFocused(false);
           }
         }}
         style={{
