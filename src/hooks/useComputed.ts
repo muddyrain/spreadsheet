@@ -54,6 +54,7 @@ export const useComputed = () => {
   );
 
   // 选中单元格适配视口
+  //  TODO:  合并单元格 未计算
   const fitCellViewPort = (row: number, col: number) => {
     const selectedCell = data?.[row]?.[col];
     if (!selectedCell) return;
@@ -283,29 +284,18 @@ export const useComputed = () => {
           }
         }
       }
-      // 如果到达行尾，转到下一行开头
+      // 检查是否超出表格范围 回归原点
+      if (nextCol < 1) {
+        nextCol = 1;
+      }
       if (nextCol > data[0].length - 1) {
-        nextCol = 1;
-        nextRow = selectedCell.row + 1;
-      }
-      // 如果到达行首，转到上一行末尾
-      if (nextCol <= 0) {
         nextCol = data[0].length - 1;
-        nextRow = selectedCell.row - 1;
       }
-      // 如果到达最后一行，转到第一行
-      if (nextRow <= 0) {
+      if (nextRow < 1) {
+        nextRow = 1;
+      }
+      if (nextRow > data.length - 1) {
         nextRow = data.length - 1;
-      }
-      // 如果到达第一行，转到最后一行
-      if (nextRow > data.length - 1) {
-        nextRow = 1;
-      }
-
-      // 检查是否超出表格范围
-      if (nextRow > data.length - 1) {
-        nextRow = 1;
-        nextCol = 1;
       }
       return { nextRow, nextCol };
     },

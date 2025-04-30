@@ -1,11 +1,11 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useStore } from "./useStore";
 import { useComputed } from "./useComputed";
 import { CellInputRef } from "@/components/spreadsheet/CellInput";
+import { MergeSpanType } from "@/types/sheet";
 
 export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
   const {
-    data,
     isFocused,
     selection,
     selectedCell,
@@ -13,9 +13,25 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
     getCurrentCell,
     setSelectedCell,
   } = useStore();
-
+  const [alreadySelectedCell, setAlreadySelectedCell] = useState<
+    MergeSpanType[]
+  >([]);
   const { getNextPosition, fitCellViewPort, updateSelectionAndCell } =
     useComputed();
+
+  const isFindAlreadySelected = useCallback(
+    (mergeSpan: MergeSpanType) => {
+      return alreadySelectedCell.some((item) => {
+        return (
+          item.r1 === mergeSpan.r1 &&
+          item.r2 === mergeSpan.r2 &&
+          item.c1 === mergeSpan.c1 &&
+          item.c2 === mergeSpan.c2
+        );
+      });
+    },
+    [alreadySelectedCell],
+  );
 
   // 处理单个选择的情况
   const handleSingleSelection = useCallback(() => {
@@ -81,32 +97,90 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
       }
     } else {
       let nextCol = col + 1;
-      if (selectedCell.mergeParent) {
-        const parentCell = getCurrentCell(
-          selectedCell.mergeParent.row,
-          selectedCell.mergeParent.col,
-        );
-        if (parentCell?.mergeSpan) {
-          nextCol = parentCell.mergeSpan.c2 + 1;
-        }
-      } else if (selectedCell.mergeSpan) {
-        nextCol = selectedCell.mergeSpan.c2 + 1;
-      }
-      if (start && end && nextCol > end.col) {
-        if (row < end.row) {
-          row++;
+      // 获取当前单元格（如果是子单元格则获取父单元格）
+      const currentCell = selectedCell.mergeParent
+        ? getCurrentCell(
+            selectedCell.mergeParent.row,
+            selectedCell.mergeParent.col,
+          )
+        : selectedCell;
+
+      // 计算下一个列位置
+      nextCol = currentCell?.mergeSpan?.c2
+        ? currentCell.mergeSpan.c2 + 1
+        : nextCol;
+      if (start && end) {
+        // 处理换行逻辑
+        if (nextCol > end.col) {
+          row = row < end.row ? row + 1 : start.row;
+          col = start.col;
         } else {
-          row = start.row;
+          // 获取并处理下一个单元格
+          let nextCell = getCurrentCell(row, nextCol);
+
+          // 如果是子单元格，获取父单元格
+          if (nextCell?.mergeParent) {
+            nextCell = getCurrentCell(
+              nextCell.mergeParent.row,
+              nextCell.mergeParent.col,
+            );
+          }
+          // 处理合并单元格的跳过逻辑
+          while (
+            nextCell?.mergeSpan &&
+            isFindAlreadySelected(nextCell.mergeSpan)
+          ) {
+            nextCol = nextCell.mergeSpan.c2 + 1;
+            // 检查是否超出选中区域范围
+            if (nextCol > end.col) {
+              if (row < end.row) {
+                row++;
+                nextCol = start.col;
+                nextCell = getCurrentCell(row, nextCol);
+                // 如果新行的第一个单元格是子单元格，获取父单元格
+                if (nextCell?.mergeParent) {
+                  nextCell = getCurrentCell(
+                    nextCell.mergeParent.row,
+                    nextCell.mergeParent.col,
+                  );
+                }
+              } else {
+                // 如果已经是最后一行，则回到起始位置
+                row = start.row;
+                nextCol = start.col;
+                nextCell = getCurrentCell(row, nextCol);
+                if (nextCell?.mergeParent) {
+                  nextCell = getCurrentCell(
+                    nextCell.mergeParent.row,
+                    nextCell.mergeParent.col,
+                  );
+                }
+              }
+            } else {
+              nextCell = getCurrentCell(row, nextCol);
+              if (nextCell?.mergeParent) {
+                nextCell = getCurrentCell(
+                  nextCell.mergeParent.row,
+                  nextCell.mergeParent.col,
+                );
+              }
+            }
+          }
+          // 记录新的合并单元格
+          if (nextCell?.mergeSpan) {
+            alreadySelectedCell.push(nextCell.mergeSpan);
+            setAlreadySelectedCell((prev) => [...prev]);
+          }
+          col = nextCol;
         }
-        col = start.col;
-      } else {
-        col = nextCol;
       }
+      // 更新选中状态
       const cell = getCurrentCell(row, col);
       setSelectedCell(cell);
-      if (isFocused) {
+      // 处理编辑状态
+      if (isFocused && cell) {
         setEditingCell({ row, col });
-        cellInputRef.current?.setValue(data[row][col].value);
+        cellInputRef.current?.setValue(cell.value);
       }
     }
   }, [
@@ -118,13 +192,15 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
     isFocused,
     setEditingCell,
     cellInputRef,
-    data,
+    alreadySelectedCell,
+    isFindAlreadySelected,
   ]);
-
+  useEffect(() => {
+    setAlreadySelectedCell(() => []);
+  }, [selection]);
   // Tab 键处理主函数
   const onTabKeyDown = useCallback(() => {
     if (!selectedCell) return;
-
     const isOneSelection =
       selection?.start?.row === selection?.end?.row &&
       selection?.start?.col === selection?.end?.col;
