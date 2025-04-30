@@ -117,7 +117,6 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
         } else {
           // 获取并处理下一个单元格
           let nextCell = getCurrentCell(row, nextCol);
-
           // 如果是子单元格，获取父单元格
           if (nextCell?.mergeParent) {
             nextCell = getCurrentCell(
@@ -145,9 +144,10 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
                   );
                 }
               } else {
-                // 如果已经是最后一行，则回到起始位置
+                // 如果已经是最后一行，则回到起始位置并清空已选中记录
                 row = start.row;
                 nextCol = start.col;
+                setAlreadySelectedCell([]); // 清空已选中的合并单元格记录
                 nextCell = getCurrentCell(row, nextCol);
                 if (nextCell?.mergeParent) {
                   nextCell = getCurrentCell(
