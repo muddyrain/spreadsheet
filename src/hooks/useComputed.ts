@@ -1,4 +1,4 @@
-import { CellData } from "@/types/sheet";
+import { ArrowDirectionType, CellData } from "@/types/sheet";
 import { useStore } from "./useStore";
 import { useCallback } from "react";
 
@@ -13,8 +13,45 @@ export const useComputed = () => {
     containerWidth,
     containerHeight,
     getCurrentCell,
+    setSelection,
+    setSelectedCell,
+    setEditingCell,
     setScrollPosition,
   } = useStore();
+
+  // 更新选择和单元格状态
+  const updateSelectionAndCell = useCallback(
+    (row: number, col: number) => {
+      const cell = getCurrentCell(row, col);
+      if (!cell) return;
+
+      if (cell.mergeSpan) {
+        const { r1, r2, c1, c2 } = cell.mergeSpan;
+        setSelection({
+          start: { row: r1, col: c1 },
+          end: { row: r2, col: c2 },
+        });
+      } else if (cell.mergeParent) {
+        const parentCell = getCurrentCell(
+          cell.mergeParent.row,
+          cell.mergeParent.col,
+        );
+        if (parentCell?.mergeSpan) {
+          const { r1, r2, c1, c2 } = parentCell.mergeSpan;
+          setSelection({
+            start: { row: r1, col: c1 },
+            end: { row: r2, col: c2 },
+          });
+        }
+      } else {
+        setSelection({ start: { row, col }, end: { row, col } });
+      }
+
+      setSelectedCell(data[row][col]);
+      setEditingCell(null);
+    },
+    [data, getCurrentCell, setSelection, setSelectedCell, setEditingCell],
+  );
 
   // 选中单元格适配视口
   const fitCellViewPort = (row: number, col: number) => {
@@ -186,32 +223,94 @@ export const useComputed = () => {
     [scrollPosition, getRealTop],
   );
 
-  // 获取下一个位置
-  const getNextPosition = useCallback(() => {
-    if (!selectedCell) return;
-    const currentCell = getCurrentCell(selectedCell.row, selectedCell.col);
-    let nextCol = selectedCell.col + 1;
-    let nextRow = selectedCell.row;
+  // 获取下一个位置 - 纯单元格
+  const getNextPosition = useCallback(
+    (direction: ArrowDirectionType) => {
+      if (!selectedCell) return;
+      let nextCol = selectedCell.col;
+      let nextRow = selectedCell.row;
+      if (
+        selectedCell &&
+        (selectedCell.mergeParent || selectedCell.mergeSpan)
+      ) {
+        if (selectedCell.mergeParent) {
+          const parentCell = getCurrentCell(
+            selectedCell.mergeParent.row,
+            selectedCell.mergeParent.col,
+          );
+          if (parentCell?.mergeSpan) {
+            if (direction === "ArrowRight") {
+              nextCol = parentCell.mergeSpan.c2 + 1;
+            } else if (direction === "ArrowLeft") {
+              nextCol = parentCell.mergeSpan.c1 - 1;
+            } else if (direction === "ArrowDown") {
+              nextRow = parentCell.mergeSpan.r2 + 1;
+            } else if (direction === "ArrowUp") {
+              nextRow = parentCell.mergeSpan.r1 - 1;
+            }
+          }
+        } else if (selectedCell.mergeSpan) {
+          if (direction === "ArrowRight") {
+            nextCol = selectedCell.mergeSpan.c2 + 1;
+          } else if (direction === "ArrowLeft") {
+            nextCol = selectedCell.mergeSpan.c1 - 1;
+          } else if (direction === "ArrowDown") {
+            nextRow = selectedCell.mergeSpan.r2 + 1;
+          } else if (direction === "ArrowUp") {
+            nextRow = selectedCell.mergeSpan.r1 - 1;
+          }
+        }
+      } else {
+        if (direction === "ArrowRight") {
+          nextCol = nextCol + 1;
+        } else if (direction === "ArrowLeft") {
+          nextCol = nextCol - 1;
+        } else if (direction === "ArrowDown") {
+          nextRow = nextRow + 1;
+        } else if (direction === "ArrowUp") {
+          nextRow = nextRow - 1;
+        }
+        // 如果当前是合并单元格，从合并区域的右边界开始
+        if (selectedCell?.mergeSpan) {
+          if (direction === "ArrowRight") {
+            nextCol = selectedCell.mergeSpan.c2 + 1;
+          } else if (direction === "ArrowLeft") {
+            nextCol = selectedCell.mergeSpan.c1 - 1;
+          } else if (direction === "ArrowDown") {
+            nextRow = selectedCell.mergeSpan.r2 + 1;
+          } else if (direction === "ArrowUp") {
+            nextRow = selectedCell.mergeSpan.r1 - 1;
+          }
+        }
+      }
+      // 如果到达行尾，转到下一行开头
+      if (nextCol > data[0].length - 1) {
+        nextCol = 1;
+        nextRow = selectedCell.row + 1;
+      }
+      // 如果到达行首，转到上一行末尾
+      if (nextCol <= 0) {
+        nextCol = data[0].length - 1;
+        nextRow = selectedCell.row - 1;
+      }
+      // 如果到达最后一行，转到第一行
+      if (nextRow <= 0) {
+        nextRow = data.length - 1;
+      }
+      // 如果到达第一行，转到最后一行
+      if (nextRow > data.length - 1) {
+        nextRow = 1;
+      }
 
-    // 如果当前是合并单元格，从合并区域的右边界开始
-    if (currentCell?.mergeSpan) {
-      nextCol = currentCell.mergeSpan.c2 + 1;
-    }
-
-    // 如果到达行尾，转到下一行开头
-    if (nextCol > data[0].length - 1) {
-      nextCol = 1;
-      nextRow = selectedCell.row + 1;
-    }
-
-    // 检查是否超出表格范围
-    if (nextRow > data.length - 1) {
-      nextRow = 1;
-      nextCol = 1;
-    }
-
-    return { nextRow, nextCol };
-  }, [selectedCell, data, getCurrentCell]);
+      // 检查是否超出表格范围
+      if (nextRow > data.length - 1) {
+        nextRow = 1;
+        nextCol = 1;
+      }
+      return { nextRow, nextCol };
+    },
+    [selectedCell, data, getCurrentCell],
+  );
 
   const getCellPosition = useCallback(
     (cell: CellData) => {
@@ -270,6 +369,7 @@ export const useComputed = () => {
     getCellWidth,
     getCellHeight,
     fitCellViewPort,
+    updateSelectionAndCell,
     getLeft,
     getTop,
   };

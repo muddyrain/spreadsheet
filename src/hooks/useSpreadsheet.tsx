@@ -44,14 +44,7 @@ export const useSpreadsheet = (
   // 获取当前单元格
   const getCurrentCell = useCallback(
     (row: number, col: number) => {
-      let cell = data[row][col];
-
-      // 如果是被合并的单元格，获取其父单元格
-      if (cell?.mergeParent) {
-        const { row: parentRow, col: parentCol } = cell.mergeParent;
-        cell = data[parentRow][parentCol];
-      }
-      return cell;
+      return data[row][col];
     },
     [data],
   );
@@ -65,8 +58,7 @@ export const useSpreadsheet = (
     if (cell?.readOnly) return null;
     return cell;
   }, [data, editingCell, selectedCell, getCurrentCell]);
-
-  return {
+  const $sheet = {
     data,
     setData,
     config,
@@ -80,4 +72,6 @@ export const useSpreadsheet = (
     currentCell,
     getCurrentCell,
   };
+  window.$sheet = $sheet;
+  return $sheet;
 };

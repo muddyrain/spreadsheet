@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { ArrowDirectionType, TableData } from "../../types/sheet";
+import { TableData } from "../../types/sheet";
 import { Canvas } from "./Canvas";
 import { filterData } from "../../utils/filterData";
 import _ from "lodash";
@@ -10,6 +10,8 @@ import { Current } from "./Current";
 import { useStore } from "@/hooks/useStore";
 import { useComputed } from "@/hooks/useComputed";
 import { Footer } from "./Footer";
+import { useTab } from "@/hooks/useTab";
+import { useDirection } from "@/hooks/useDirection";
 
 const Spreadsheet: React.FC<{
   onChange?: (data: TableData) => void;
@@ -18,8 +20,6 @@ const Spreadsheet: React.FC<{
   const {
     config,
     data,
-    isFocused,
-    selection,
     selectedCell,
     currentCell,
     editingCell,
@@ -32,7 +32,7 @@ const Spreadsheet: React.FC<{
     setIsFocused,
     getCurrentCell,
   } = useStore();
-  const { getNextPosition, fitCellViewPort } = useComputed();
+  const { fitCellViewPort } = useComputed();
   const cellInputRef = useRef<CellInputRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const handleSelectAll = () => {
@@ -128,104 +128,14 @@ const Spreadsheet: React.FC<{
       rowIndex = row;
     }
     setEditingCell(() => ({ row: rowIndex, col: colIndex })); // 双击才进入编辑
-    cellInputRef.current?.setValue(currentCell.value);
+    const editingCell = getCurrentCell(rowIndex, colIndex);
+    if (editingCell) {
+      cellInputRef.current?.setValue(editingCell.value);
+    }
     cellInputRef.current?.setInputStyle(rowIndex, colIndex);
   };
-  const onTabKeyDown = () => {
-    if (!selectedCell) return;
-    if (
-      selection?.start?.row === selection?.end?.row &&
-      selection?.start?.col === selection?.end?.col
-    ) {
-      const position = getNextPosition();
-      if (position) {
-        const row = position.nextRow;
-        const col = position.nextCol;
-        const cell = getCurrentCell(row, col);
-        if (cell?.mergeSpan) {
-          // 如果是合并单元格，选中整个合并区域
-          const { r1, r2, c1, c2 } = cell.mergeSpan;
-          setSelection({
-            start: { row: r1, col: c1 },
-            end: { row: r2, col: c2 },
-          });
-        } else {
-          // 普通单元格只选中当前格
-          setSelection({
-            start: { row, col },
-            end: { row, col },
-          });
-        }
-        if (cell) {
-          fitCellViewPort(cell.row, cell.col);
-        }
-        setSelectedCell(cell);
-        setEditingCell(null);
-        if (isFocused) {
-          cellInputRef.current?.blur();
-          setEditingCell(null);
-          // setEditingCell({ row, col });
-          // if (cell) cellInputRef.current?.setValue(cell.value);
-        }
-      }
-    } else {
-      let { row, col } = selectedCell;
-      const { start, end } = selection;
-      if (start && end && col + 1 > end.col) {
-        if (row < end.row) {
-          row++;
-        } else {
-          row = start.row;
-        }
-        col = start.col;
-      } else {
-        col++;
-      }
-      setSelectedCell(data[row][col]);
-      if (isFocused) {
-        setEditingCell({ row, col });
-        if (cellInputRef.current)
-          cellInputRef.current.setValue(data[row][col].value);
-      }
-    }
-  };
-  const onDirectionKeyDown = (key: ArrowDirectionType) => {
-    if (selectedCell) {
-      const newSelectedCell = { ...selectedCell };
-      if (key === "ArrowUp") {
-        if (newSelectedCell.row === 1) {
-          return;
-        }
-        newSelectedCell.row--;
-      } else if (key === "ArrowDown") {
-        if (newSelectedCell.row === data.length - 1) {
-          return;
-        }
-        newSelectedCell.row++;
-      } else if (key === "ArrowLeft") {
-        if (newSelectedCell.col === 1) {
-          return;
-        }
-        newSelectedCell.col--;
-      } else if (key === "ArrowRight") {
-        if (newSelectedCell.col === data[0].length - 1) {
-          return;
-        }
-        newSelectedCell.col++;
-      }
-      const row = newSelectedCell.row;
-      const col = newSelectedCell.col;
-      const cell = getCurrentCell(row, col);
-      if (cell) {
-        fitCellViewPort(cell.row, cell.col);
-      }
-      setSelection({
-        start: { row, col },
-        end: { row, col },
-      });
-      setSelectedCell(data[row][col]);
-    }
-  };
+  const { onTabKeyDown } = useTab(cellInputRef);
+  const { onDirectionKeyDown } = useDirection();
   // 初始化 列宽度 行高度
   useEffect(() => {
     setHeaderColsWidth(() => {
@@ -254,15 +164,20 @@ const Spreadsheet: React.FC<{
     {
       onCellInputKey(content) {
         if (selectedCell) {
-          setEditingCell({ row: selectedCell.row, col: selectedCell.col });
+          let rowIndex = selectedCell.row;
+          let colIndex = selectedCell.col;
+          if (selectedCell?.mergeParent) {
+            const { row, col } = selectedCell.mergeParent;
+            colIndex = col;
+            rowIndex = row;
+          }
+          setEditingCell({ row: rowIndex, col: colIndex });
+          const currentCell = data[rowIndex][colIndex];
           if (currentCell) {
             cellInputRef.current?.setValue(currentCell.value + content);
             currentCell.value += content;
           }
-          cellInputRef.current?.setInputStyle(
-            selectedCell.row,
-            selectedCell.col,
-          );
+          cellInputRef.current?.setInputStyle(rowIndex, colIndex);
         }
       },
       onSelectAll: handleSelectAll,
