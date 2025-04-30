@@ -191,48 +191,38 @@ const Spreadsheet: React.FC<{
   };
   const onDirectionKeyDown = (key: ArrowDirectionType) => {
     if (selectedCell) {
-      const newSelection = {
-        start: {
-          row: selection.start?.row ?? selectedCell.row,
-          col: selection.start?.col ?? selectedCell.col,
-        },
-        end: {
-          row: selection.end?.row ?? selectedCell.row,
-          col: selection.end?.col ?? selectedCell.col,
-        },
-      };
+      const newSelectedCell = { ...selectedCell };
       if (key === "ArrowUp") {
-        if (newSelection.start.row === 1) {
+        if (newSelectedCell.row === 1) {
           return;
         }
-        newSelection.start.row--;
-        newSelection.end.row--;
+        newSelectedCell.row--;
       } else if (key === "ArrowDown") {
-        if (newSelection.start.row === data.length - 1) {
+        if (newSelectedCell.row === data.length - 1) {
           return;
         }
-        newSelection.start.row++;
-        newSelection.end.row++;
+        newSelectedCell.row++;
       } else if (key === "ArrowLeft") {
-        if (newSelection.start.col === 1) {
+        if (newSelectedCell.col === 1) {
           return;
         }
-        newSelection.start.col--;
-        newSelection.end.col--;
+        newSelectedCell.col--;
       } else if (key === "ArrowRight") {
-        if (newSelection.start.col === data[0].length - 1) {
+        if (newSelectedCell.col === data[0].length - 1) {
           return;
         }
-        newSelection.start.col++;
-        newSelection.end.col++;
+        newSelectedCell.col++;
       }
-      const row = newSelection.start.row;
-      const col = newSelection.start.col;
+      const row = newSelectedCell.row;
+      const col = newSelectedCell.col;
       const cell = getCurrentCell(row, col);
       if (cell) {
         fitCellViewPort(cell.row, cell.col);
       }
-      setSelection(newSelection);
+      setSelection({
+        start: { row, col },
+        end: { row, col },
+      });
       setSelectedCell(data[row][col]);
     }
   };
