@@ -32,7 +32,14 @@ export type ClickType =
 export const Header: FC<{
   onClick?: (type: ClickType) => void;
 }> = ({ onClick }) => {
-  const { selection, selectedCell, data, setUpdater } = useStore();
+  const {
+    selection,
+    selectedCell,
+    data,
+    sheetCellSettingsConfig,
+    setUpdater,
+    getCurrentCell,
+  } = useStore();
   const selectionCells = useMemo(() => {
     const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
     if (r1 === r2 && c1 === c2) {
@@ -130,22 +137,43 @@ export const Header: FC<{
         const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
         if (r1 === r2 && c1 === c2) return;
         const cell = data[selectedCell?.row || 0][selectedCell?.col || 0];
-        cell.mergeSpan = {
-          r1,
-          r2,
-          c1,
-          c2,
-        };
+        const isAnchorMergePoint = sheetCellSettingsConfig.isAnchorMergePoint;
+        if (isAnchorMergePoint) {
+          cell.mergeSpan = {
+            r1,
+            r2,
+            c1,
+            c2,
+          };
+        } else {
+          const currentCell = getCurrentCell(r1, c1);
+          if (currentCell) {
+            currentCell.mergeSpan = {
+              r1,
+              r2,
+              c1,
+              c2,
+            };
+          }
+        }
         for (let i = r1; i <= r2; i++) {
           for (let j = c1; j <= c2; j++) {
-            if (i === selectedCell?.row && j === selectedCell?.col) continue;
-            if (data[i][j].mergeSpan) {
-              data[i][j].mergeSpan = null;
+            if (isAnchorMergePoint) {
+              if (i === selectedCell?.row && j === selectedCell?.col) continue;
+              if (data[i][j].mergeSpan) {
+                data[i][j].mergeSpan = null;
+              }
+              data[i][j].mergeParent = {
+                row: selectedCell?.row || 0,
+                col: selectedCell?.col || 0,
+              };
+            } else {
+              if (i === r1 && j === c1) continue;
+              data[i][j].mergeParent = {
+                row: r1 || 0,
+                col: c1 || 0,
+              };
             }
-            data[i][j].mergeParent = {
-              row: selectedCell?.row || 0,
-              col: selectedCell?.col || 0,
-            };
           }
         }
         break;
