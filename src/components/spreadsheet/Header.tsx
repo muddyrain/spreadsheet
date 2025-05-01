@@ -2,10 +2,12 @@ import { FC, useMemo } from "react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
 import {
+  Baseline,
   Bold,
   Eraser,
   Italic,
   Merge,
+  PaintBucket,
   PaintRoller,
   Redo,
   Save,
@@ -277,6 +279,18 @@ export const Header: FC<{
           }}
         >
           <Underline />
+        </Toggle>
+      </Tooltip>
+      <Separator orientation="vertical" />
+      {/* TODO: 字体背景颜色 未完成  */}
+      <Tooltip content="字体颜色">
+        <Toggle pressed={false} className="text-lg">
+          <Baseline />
+        </Toggle>
+      </Tooltip>
+      <Tooltip content="背景颜色">
+        <Toggle pressed={false} className="text-lg">
+          <PaintBucket />
         </Toggle>
       </Tooltip>
       <Separator orientation="vertical" />
