@@ -175,8 +175,14 @@ export function useSheetSelection() {
         setIsSelection(false);
       };
 
+      // 添加事件监听
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
+      // 返回清理函数
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
     },
     [
       setSelection,
@@ -186,7 +192,6 @@ export function useSheetSelection() {
       findIndexByAccumulate,
     ],
   );
-
   return {
     selection,
     isSelection,

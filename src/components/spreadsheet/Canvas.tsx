@@ -68,6 +68,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   );
   // 选中 hooks
   const { selection, movedRef, handleCellMouseDown } = useSheetSelection();
+
   // 滚动 hooks
   const { scrollPosition, handleScrollbarDragStart, handleWheel } =
     useSheetScroll(scrollConfig);

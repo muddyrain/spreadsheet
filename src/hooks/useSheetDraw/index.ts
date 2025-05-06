@@ -25,7 +25,6 @@ export const useSheetDraw = (
       } = drawFunctions;
       ctx.clearRect(0, 0, drawConfig.wrapperWidth, drawConfig.wrapperHeight);
       ctx.translate(0.5, 0.5);
-
       // 绘制内容区（非冻结区）单元格
       drawCell(ctx);
       // 绘制当前选中单元格 且 没有输入框焦点
