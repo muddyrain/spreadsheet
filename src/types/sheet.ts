@@ -1,3 +1,46 @@
+export interface Sheet {
+  /**
+   * @description 表格唯一标识
+   */
+  id: string;
+  /**
+   * @description 表格名称
+   */
+  name: string;
+  /**
+   * @description 表格数据
+   */
+  data: TableData;
+  /**
+   * @description 表格选择框
+   */
+  selection: SelectionSheetType | null;
+  /**
+   * @description 表格当前单元格
+   */
+  currentCell: CellData | null;
+  /**
+   * @description 表格选中单元格
+   */
+  selectedCell: CellData | null;
+  /**
+   * @description 表格当前编辑单元格
+   */
+  editingCell: EditingCell;
+  /**
+   * @description 表格滚动位置
+   */
+  scrollPosition: PositionType;
+  /**
+   * @description 表格列宽
+   */
+  headerColsWidth: number[];
+  /**
+   * @description 表格行高
+   */
+  headerRowsHeight: number[];
+}
+
 export type CellStyle = {
   /**
    * @description 单元格颜色
@@ -165,18 +208,19 @@ export type SelectionSheetType = {
 };
 
 export type SpreadsheetType = {
-  data: TableData;
-  setData: React.Dispatch<React.SetStateAction<TableData>>;
-  config: Required<SpreadsheetConfig>;
+  currentSheet: Sheet | null;
   currentCell: CellData | null;
-  selectedCell: CellData | null;
-  setSelectedCell: React.Dispatch<React.SetStateAction<CellData | null>>;
-  editingCell: EditingCell;
-  setEditingCell: React.Dispatch<React.SetStateAction<EditingCell>>;
+  sheets: Sheet[];
+  setSheets: (sheets: Sheet[]) => void;
+  activeSheetId: string;
+  setActiveSheetId: (id: string) => void;
+  config: Required<SpreadsheetConfig>; // 全局配置
   updater: number;
+  createNewSheet: () => void;
   forceUpdate: () => void;
   clearSelection: () => void;
-  getCurrentCell: (row: number, col: number) => CellData;
+  getCurrentCell: (row: number, col: number) => CellData | null;
+  setCurrentSheet: <T extends keyof Sheet>(key: T, value: Sheet[T]) => void;
 };
 
 export type PositionType = {

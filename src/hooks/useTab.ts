@@ -61,7 +61,7 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
 
   // 处理多选的情况
   const handleMultipleSelection = useCallback(() => {
-    if (!selectedCell) return;
+    if (!selectedCell || !selection) return;
     const { start, end } = selection;
     let currentCell = selectedCell;
     let { row, col } = selectedCell;

@@ -5,7 +5,7 @@ import { useStore } from "../useStore";
 
 export const useSheetDraw = (
   drawConfig: DrawConfig & {
-    selection?: SelectionSheetType;
+    selection: SelectionSheetType | null;
     selectedCell: EditingCell;
   },
 ) => {

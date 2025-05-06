@@ -3,7 +3,6 @@ import {
   TableData,
   SpreadsheetConfig,
   SpreadsheetType,
-  SelectionSheetType,
   SheetCellSettingsConfig,
 } from "../../types/sheet";
 import _ from "lodash";
@@ -20,16 +19,16 @@ const RootSpreadsheet: React.FC<{
   const { config: _config, onChange } = props;
   const {
     config,
-    setEditingCell,
-    selectedCell,
-    setSelectedCell,
-    data,
-    setData,
-    editingCell,
-    currentCell,
+    currentSheet,
     updater,
+    currentCell,
+    sheets,
+    activeSheetId,
     forceUpdate,
+    setActiveSheetId,
     getCurrentCell,
+    setCurrentSheet,
+    createNewSheet,
     // eslint-disable-next-line react-hooks/rules-of-hooks
   } = props.spreadsheet ?? useSpreadsheet(_config);
   const [zoomSize, setZoomSize] = useState<number>(1);
@@ -37,16 +36,9 @@ const RootSpreadsheet: React.FC<{
     useState<SheetCellSettingsConfig>({
       isAnchorMergePoint: false,
     });
-  const [headerColsWidth, setHeaderColsWidth] = useState<number[]>([]);
-  const [headerRowsHeight, setHeaderRowsHeight] = useState<number[]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
-  const [selection, setSelection] = useState<SelectionSheetType>({
-    start: null,
-    end: null,
-  });
-  const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const [currentSideLineIndex, setCurrentSideLineIndex] = useState([-1, -1]);
   const [currentSideLinePosition, setCurrentSideLinePosition] = useState([
     -1, -1,
@@ -58,11 +50,13 @@ const RootSpreadsheet: React.FC<{
   return (
     <SpreadsheetContext.Provider
       value={{
-        data,
-        setData,
+        sheets,
+        activeSheetId,
+        setActiveSheetId,
         config,
         currentCell,
         updater,
+        createNewSheet,
         currentCtrlKey: isMac ? "⌘" : isWindows ? "Ctrl" : "Ctrl",
         setUpdater: forceUpdate,
         zoomSize,
@@ -82,22 +76,69 @@ const RootSpreadsheet: React.FC<{
         setIsFocused,
         isMouseDown,
         setIsMouseDown,
-        selection,
-        setSelection,
         containerWidth,
         setContainerWidth,
         containerHeight,
         setContainerHeight,
-        headerColsWidth,
-        setHeaderColsWidth,
-        headerRowsHeight,
-        setHeaderRowsHeight,
-        scrollPosition,
-        setScrollPosition,
-        selectedCell,
-        setSelectedCell,
-        editingCell,
-        setEditingCell,
+        data: currentSheet?.data || [],
+        setData: (data) => {
+          if (typeof data === "function") {
+            data = data(currentSheet?.data || []);
+          }
+          setCurrentSheet("data", data);
+        },
+        selection: currentSheet?.selection || null,
+        setSelection(selection) {
+          if (typeof selection === "function") {
+            selection = selection(currentSheet?.selection || null);
+          }
+          setCurrentSheet("selection", selection);
+        },
+        headerColsWidth: currentSheet?.headerColsWidth || [],
+        setHeaderColsWidth(headerColsWidth) {
+          if (typeof headerColsWidth === "function") {
+            headerColsWidth = headerColsWidth(
+              currentSheet?.headerColsWidth || [],
+            );
+          }
+          setCurrentSheet("headerColsWidth", headerColsWidth);
+        },
+        headerRowsHeight: currentSheet?.headerRowsHeight || [],
+        setHeaderRowsHeight(headerRowsHeight) {
+          if (typeof headerRowsHeight === "function") {
+            headerRowsHeight = headerRowsHeight(
+              currentSheet?.headerRowsHeight || [],
+            );
+          }
+          setCurrentSheet("headerRowsHeight", headerRowsHeight);
+        },
+        scrollPosition: currentSheet?.scrollPosition || {
+          x: 0,
+          y: 0,
+        },
+        setScrollPosition(scrollPosition) {
+          if (typeof scrollPosition === "function") {
+            scrollPosition = scrollPosition(
+              currentSheet?.scrollPosition || { x: 0, y: 0 },
+            );
+          }
+          if (!_.isEqual(scrollPosition, currentSheet?.scrollPosition))
+            setCurrentSheet("scrollPosition", scrollPosition);
+        },
+        selectedCell: currentSheet?.selectedCell || null,
+        setSelectedCell(selectedCell) {
+          if (typeof selectedCell === "function") {
+            selectedCell = selectedCell(currentSheet?.selectedCell || null);
+          }
+          setCurrentSheet("selectedCell", selectedCell);
+        },
+        editingCell: currentSheet?.editingCell || null,
+        setEditingCell(editingCell) {
+          if (typeof editingCell === "function") {
+            editingCell = editingCell(currentSheet?.editingCell || null);
+          }
+          setCurrentSheet("editingCell", editingCell);
+        },
         currentSideLineIndex,
         setCurrentSideLineIndex,
         currentSideLinePosition,

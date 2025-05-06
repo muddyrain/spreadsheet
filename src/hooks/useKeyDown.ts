@@ -50,7 +50,7 @@ export const useKeyDown = (
         return;
       }
       // 已经有选中单元格才会处理键盘事件
-      if (selection.start && selection.end) {
+      if (selection?.start && selection?.end) {
         const selectedCell: EditingCell = {
           row: selection.start.row,
           col: selection.start.col,

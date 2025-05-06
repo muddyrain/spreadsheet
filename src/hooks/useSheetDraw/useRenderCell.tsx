@@ -36,7 +36,7 @@ export const useRenderCell = () => {
         cell: CellData;
         isHeader?: boolean;
         isRow?: boolean;
-        selection?: SelectionSheetType;
+        selection?: SelectionSheetType | null;
       },
     ) => {
       const { rowIndex, colIndex, x, y, cell, isHeader, isRow } = options;

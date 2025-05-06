@@ -43,6 +43,9 @@ export const Header: FC<{
     getCurrentCell,
   } = useStore();
   const selectionCells = useMemo(() => {
+    if (!selection) {
+      return [];
+    }
     const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
     if (r1 === r2 && c1 === c2) {
       if (data[r1][c1]) {
@@ -62,16 +65,22 @@ export const Header: FC<{
   }, [selection, data]);
   const isStyle = useMemo(() => {
     return {
-      isBold: selectionCells.every((cell) => cell.style.fontWeight === "bold"),
-      isItalic: selectionCells.every(
-        (cell) => cell.style.fontStyle === "italic",
-      ),
-      isLineThrough: selectionCells.every((cell) =>
-        cell.style.textDecoration?.includes("line-through"),
-      ),
-      isUnderline: selectionCells.every((cell) =>
-        cell.style.textDecoration?.includes("underline"),
-      ),
+      isBold:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) => cell.style.fontWeight === "bold"),
+      isItalic:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) => cell.style.fontStyle === "italic"),
+      isLineThrough:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) =>
+          cell.style.textDecoration?.includes("line-through"),
+        ),
+      isUnderline:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) =>
+          cell.style.textDecoration?.includes("underline"),
+        ),
     };
   }, [selectionCells]);
   const handleClick = (type: ClickType) => {
@@ -136,6 +145,7 @@ export const Header: FC<{
         break;
       }
       case "merge": {
+        if (!selection) return;
         const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
         if (r1 === r2 && c1 === c2) return;
         const cell = data[selectedCell?.row || 0][selectedCell?.col || 0];

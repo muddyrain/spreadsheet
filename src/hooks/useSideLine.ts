@@ -177,7 +177,13 @@ export const useSideLine = (options: {
         stableTimeoutRef.current = setTimeout(() => {
           lastValidPosition.current = [x, y];
         }, 0);
-        setCurrentPosition([x, y]);
+        setCurrentPosition((_currentPosition) => {
+          if (_currentPosition?.[0] === x && _currentPosition?.[1] === y) {
+            return _currentPosition;
+          } else {
+            return [x, y];
+          }
+        });
         if (isMouseDown) {
           setCurrentSideLinePosition([x, y]);
         }

@@ -24,8 +24,6 @@ const Spreadsheet: React.FC<{
     currentCell,
     editingCell,
     setData,
-    setHeaderColsWidth,
-    setHeaderRowsHeight,
     setSelection,
     setEditingCell,
     setSelectedCell,
@@ -136,25 +134,6 @@ const Spreadsheet: React.FC<{
   };
   const { onTabKeyDown } = useTab(cellInputRef);
   const { onDirectionKeyDown } = useDirection();
-  // 初始化 列宽度 行高度
-  useEffect(() => {
-    setHeaderColsWidth(() => {
-      return [
-        config.fixedColWidth,
-        ...Array.from({ length: config.cols }).map((_) => {
-          return config.width;
-        }),
-      ];
-    });
-    setHeaderRowsHeight(() => {
-      return [
-        config.height,
-        ...Array.from({ length: config.rows }).map((_) => {
-          return config.height;
-        }),
-      ];
-    });
-  }, [config, setHeaderColsWidth, setHeaderRowsHeight]);
   // 键盘 hooks
   useKeyDown(
     {
