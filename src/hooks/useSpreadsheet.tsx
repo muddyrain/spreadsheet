@@ -36,7 +36,7 @@ export const useSpreadsheet = (
     const newSheet: Sheet = {
       data: createInitialData(config, config.rows, config.cols),
       id: generateUUID(),
-      name: `Sheet`,
+      name: `Sheet` + (sheets.length + 1),
       selection: null,
       currentCell: null,
       selectedCell: null,
@@ -65,7 +65,7 @@ export const useSpreadsheet = (
     });
     setActiveSheetId(newSheet.id);
     return newSheet;
-  }, [config]); // 只依赖 config
+  }, [config, sheets.length]); // 只依赖 config
   const [activeSheetId, setActiveSheetId] = useState("");
   const [updater, setUpdater] = useState(+new Date());
   const clearSelection = () => {

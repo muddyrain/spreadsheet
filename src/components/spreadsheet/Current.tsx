@@ -8,9 +8,9 @@ export const Current: FC = () => {
   return (
     <div className="h-8 border-t border-zinc-200 flex">
       <div
-        className="h-full flex justify-center items-center border-r border-zinc-200"
+        className="h-full flex justify-center items-center border-r text-sm border-zinc-200"
         style={{
-          width: (config.fixedColWidth + 1) * zoomSize,
+          width: config.fixedColWidth * zoomSize + 1,
           fontSize: config.fontSize * zoomSize,
         }}
       >

@@ -9,7 +9,7 @@ import { useKeyDown } from "@/hooks/useKeyDown";
 import { Current } from "./Current";
 import { useStore } from "@/hooks/useStore";
 import { useComputed } from "@/hooks/useComputed";
-import { Footer } from "./Footer";
+import { Footer } from "./Footer/index";
 import { useTab } from "@/hooks/useTab";
 import { useDirection } from "@/hooks/useDirection";
 
