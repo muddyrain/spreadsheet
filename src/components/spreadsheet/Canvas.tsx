@@ -1,4 +1,10 @@
-import React, { useMemo, useRef, useEffect, useState } from "react";
+import React, {
+  useMemo,
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { CellData, TableData } from "@/types/sheet";
 import { useSheetScroll } from "@/hooks/useSheetScroll";
 import { useSheetDraw } from "@/hooks/useSheetDraw";
@@ -7,6 +13,7 @@ import { useSheetSelection } from "@/hooks/useSheetSelection";
 import { useStore } from "@/hooks/useStore";
 import { useSideLine } from "@/hooks/useSideLine";
 import { useComputed } from "@/hooks/useComputed";
+import { debounce } from "lodash";
 
 interface CanvasProps {
   data: TableData;
@@ -135,71 +142,95 @@ export const Canvas: React.FC<CanvasProps> = ({
     };
   }, [wrapperRef, handleWheel]);
 
-  function handleGetClient<
-    T extends React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  >(
-    e: T,
-    _: "click" | "doubleClick" | "move",
-    callback: (
-      rowIndex: number,
-      colIndex: number,
-      x: number,
-      y: number,
-    ) => void,
-  ) {
-    const canvas = canvasRef.current;
-    const fixedColWidth = config.fixedColWidth * zoomSize;
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+  const handleGetClient = useCallback(
+    <T extends React.MouseEvent<HTMLCanvasElement, MouseEvent>>(
+      e: T,
+      _: "click" | "doubleClick" | "move",
+      callback: (
+        rowIndex: number,
+        colIndex: number,
+        x: number,
+        y: number,
+      ) => void,
+    ) => {
+      const canvas = canvasRef.current;
+      const fixedColWidth = config.fixedColWidth * zoomSize;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
 
-      let colIndex: number | null = null;
-      let rowIndex: number | null = null;
+        let colIndex: number | null = null;
+        let rowIndex: number | null = null;
 
-      // 判断是否在固定列和/或固定行
-      const inFixedCol = x < fixedColWidth;
-      const inFixedRow = y < config.height;
-      if (inFixedCol && inFixedRow) {
-        // 左上角交叉区
-        colIndex = 0;
-        rowIndex = 0;
-      } else if (inFixedCol) {
-        // 固定列
-        colIndex = 0;
-        rowIndex = findIndexByAccumulate(
-          headerRowsHeight,
-          y + scrollPosition.y,
-        );
-      } else if (inFixedRow) {
-        // 固定行
-        colIndex = findIndexByAccumulate(headerColsWidth, x + scrollPosition.x);
-        rowIndex = 0;
-      } else {
-        colIndex = findIndexByAccumulate(headerColsWidth, x + scrollPosition.x);
-        rowIndex = findIndexByAccumulate(
-          headerRowsHeight,
-          y + scrollPosition.y,
-        );
+        // 判断是否在固定列和/或固定行
+        const inFixedCol = x < fixedColWidth;
+        const inFixedRow = y < config.height;
+        if (inFixedCol && inFixedRow) {
+          // 左上角交叉区
+          colIndex = 0;
+          rowIndex = 0;
+        } else if (inFixedCol) {
+          // 固定列
+          colIndex = 0;
+          rowIndex = findIndexByAccumulate(
+            headerRowsHeight,
+            y + scrollPosition.y,
+          );
+        } else if (inFixedRow) {
+          // 固定行
+          colIndex = findIndexByAccumulate(
+            headerColsWidth,
+            x + scrollPosition.x,
+          );
+          rowIndex = 0;
+        } else {
+          colIndex = findIndexByAccumulate(
+            headerColsWidth,
+            x + scrollPosition.x,
+          );
+          rowIndex = findIndexByAccumulate(
+            headerRowsHeight,
+            y + scrollPosition.y,
+          );
+        }
+        // 判断是否越界
+        if (
+          rowIndex != null &&
+          colIndex != null &&
+          rowIndex >= 0 &&
+          rowIndex < data.length &&
+          colIndex >= 0 &&
+          colIndex < data[0].length
+        ) {
+          callback(
+            rowIndex,
+            colIndex,
+            x + scrollPosition.x,
+            y + scrollPosition.y,
+          );
+        }
       }
-      // 判断是否越界
-      if (
-        rowIndex != null &&
-        colIndex != null &&
-        rowIndex >= 0 &&
-        rowIndex < data.length &&
-        colIndex >= 0 &&
-        colIndex < data[0].length
-      ) {
-        callback(
-          rowIndex,
-          colIndex,
-          x + scrollPosition.x,
-          y + scrollPosition.y,
-        );
-      }
-    }
-  }
+    },
+    [
+      config.fixedColWidth,
+      config.height,
+      zoomSize,
+      headerRowsHeight,
+      headerColsWidth,
+      scrollPosition,
+      data,
+      findIndexByAccumulate,
+    ],
+  );
+  const throttledHandleMouseMove = useMemo(() => {
+    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      handleGetClient(e, "move", (rowIndex, colIndex) => {
+        setCurrentHoverCell([rowIndex, colIndex]);
+      });
+    };
+    return debounce(handleMouseMove, 16);
+  }, [handleGetClient]);
   return (
     <>
       <div
@@ -218,15 +249,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           }}
           tabIndex={0}
           ref={canvasRef}
-          onMouseMove={(e) => {
-            handleGetClient(e, "move", (rowIndex, colIndex) => {
-              setCurrentHoverCell((prev) => {
-                if (prev && prev[0] === rowIndex && prev[1] === colIndex)
-                  return prev;
-                return [rowIndex, colIndex];
-              });
-            });
-          }}
+          onMouseMove={throttledHandleMouseMove}
           onMouseUp={() => {
             handleMouseUp();
           }}
