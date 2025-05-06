@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "./useStore";
 import { PositionType } from "@/types/sheet";
 import { useComputed } from "./useComputed";
@@ -25,6 +25,8 @@ export const useSideLine = (options: {
     setCurrentSideLineIndex,
   } = useStore();
   const { getLeft, getTop } = useComputed();
+  const lastValidPosition = useRef<[number, number] | null>(null);
+  const stableTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [cursor, setCursor] = useState("cell");
   const [currentPosition, setCurrentPosition] = useState<
     [number, number] | null
@@ -39,27 +41,36 @@ export const useSideLine = (options: {
           return;
         }
         const [x, y] = currentPosition || [0, 0];
+        // 添加位置稳定性检查
+        const isPositionStable = () => {
+          if (!lastValidPosition.current) return false;
+          const [lastX, lastY] = lastValidPosition.current;
+          return Math.abs(x - lastX) < 3 && Math.abs(y - lastY) < 3;
+        };
+
         if (rowIndex === 0) {
           const cellWidth = headerColsWidth[colIndex];
           const left = getLeft(colIndex);
           const offset = x - left;
+
+          // 增加边缘检测的精确度
           if (offset <= 5 && colIndex > 1) {
-            if (!isMouseDown) {
+            if (!isMouseDown && isPositionStable()) {
               setCurrentSideLineIndex(() => [-1, colIndex - 1]);
+              setSideLineMode("col");
+              setCursor("col-resize");
             }
-            setSideLineMode("col");
-            setCursor("col-resize");
             return;
           }
-          if (offset >= cellWidth - 5) {
-            if (!isMouseDown) {
+          if (offset >= cellWidth - 5 && offset <= cellWidth) {
+            if (!isMouseDown && isPositionStable()) {
               setCurrentSideLineIndex(() => [-1, colIndex]);
+              setSideLineMode("col");
+              setCursor("col-resize");
             }
-            setSideLineMode("col");
-            setCursor("col-resize");
             return;
           }
-          setCursor("e-resize");
+          setCursor("default");
           return;
         }
         if (colIndex === 0) {
@@ -67,22 +78,22 @@ export const useSideLine = (options: {
           const top = getTop(rowIndex);
           const offset = y - top;
           if (offset <= 5 && rowIndex > 1) {
-            if (!isMouseDown) {
+            if (!isMouseDown && isPositionStable()) {
               setCurrentSideLineIndex(() => [rowIndex - 1, -1]);
+              setSideLineMode("row");
+              setCursor("row-resize");
             }
-            setSideLineMode("row");
-            setCursor("row-resize");
             return;
           }
-          if (offset >= cellHeight - 5) {
-            if (!isMouseDown) {
+          if (offset >= cellHeight - 5 && offset <= cellHeight) {
+            if (!isMouseDown && isPositionStable()) {
               setCurrentSideLineIndex(() => [rowIndex, -1]);
+              setSideLineMode("row");
+              setCursor("row-resize");
             }
-            setSideLineMode("row");
-            setCursor("row-resize");
             return;
           }
-          setCursor("s-resize");
+          setCursor("default");
           return;
         }
       }
@@ -159,16 +170,14 @@ export const useSideLine = (options: {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        setCurrentPosition((_currentPosition) => {
-          if (
-            _currentPosition &&
-            _currentPosition[0] === x &&
-            _currentPosition[1] === y
-          ) {
-            return _currentPosition;
-          }
-          return [x, y];
-        });
+
+        if (stableTimeoutRef.current) {
+          clearTimeout(stableTimeoutRef.current);
+        }
+        stableTimeoutRef.current = setTimeout(() => {
+          lastValidPosition.current = [x, y];
+        }, 0);
+        setCurrentPosition([x, y]);
         if (isMouseDown) {
           setCurrentSideLinePosition([x, y]);
         }

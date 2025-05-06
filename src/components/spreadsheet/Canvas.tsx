@@ -220,6 +220,37 @@ export const Canvas: React.FC<CanvasProps> = ({
       findIndexByAccumulate,
     ],
   );
+  const handleMouseDownResize = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+      // 添加最小移动距离判断
+      const minDistance = 5;
+      const startX = e.clientX;
+      const startY = e.clientY;
+
+      const handleInitialMove = (moveEvent: MouseEvent) => {
+        const deltaX = Math.abs(moveEvent.clientX - startX);
+        const deltaY = Math.abs(moveEvent.clientY - startY);
+
+        if (deltaX > minDistance || deltaY > minDistance) {
+          setIsMouseDown(true);
+          if (currentPosition) {
+            setCurrentSideLinePosition(currentPosition);
+          }
+          window.removeEventListener("mousemove", handleInitialMove);
+        }
+      };
+
+      window.addEventListener("mousemove", handleInitialMove);
+      window.addEventListener(
+        "mouseup",
+        () => {
+          window.removeEventListener("mousemove", handleInitialMove);
+        },
+        { once: true },
+      );
+    },
+    [currentPosition, setIsMouseDown, setCurrentSideLinePosition],
+  );
   const throttledHandleMouseMove = useMemo(() => {
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
       handleGetClient(e, "move", (rowIndex, colIndex) => {
@@ -252,10 +283,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           }}
           onMouseDown={(e) => {
             if (["col-resize", "row-resize"].includes(cursor)) {
-              setIsMouseDown(true);
-              if (currentPosition) {
-                setCurrentSideLinePosition(currentPosition);
-              }
+              handleMouseDownResize(e);
               return;
             }
             if (e.detail === 1) {
