@@ -53,49 +53,6 @@ export const useComputed = () => {
     [data, getCurrentCell, setSelection, setSelectedCell, setEditingCell],
   );
 
-  // 选中单元格适配视口
-  //  TODO:  合并单元格 未计算
-  const fitCellViewPort = (row: number, col: number) => {
-    const selectedCell = data?.[row]?.[col];
-    if (!selectedCell) return;
-    const viewPortWidth = containerWidth;
-    const viewPortHeight = containerHeight - 10;
-    const x = getLeft(col);
-    const y = getTop(row);
-    const cellWidth = getCellWidth(col);
-    const cellHeight = getCellHeight(row);
-    const fixedCellWidth = getCellHeight(0);
-    const fixedCellHeight = getCellHeight(0);
-    // X轴处理
-    if (x + cellWidth - fixedCellWidth < cellWidth) {
-      const _x = x + scrollPosition.x - cellWidth;
-      setScrollPosition((scrollPosition) => ({
-        x: _x > 0 ? _x : 0,
-        y: scrollPosition.y,
-      }));
-    } else if (x + cellWidth > viewPortWidth) {
-      const diff = x + cellWidth - viewPortWidth;
-      setScrollPosition((scrollPosition) => ({
-        x: scrollPosition.x + diff + fixedCellWidth,
-        y: scrollPosition.y,
-      }));
-    }
-    // Y轴处理
-    if (y + cellHeight - fixedCellHeight < cellHeight) {
-      const _y = y + scrollPosition.y - cellHeight;
-      setScrollPosition((scrollPosition) => ({
-        x: scrollPosition.x,
-        y: _y > 0 ? _y : 0,
-      }));
-    } else if (y + cellHeight > viewPortHeight) {
-      const diff = y + cellHeight - viewPortHeight;
-      setScrollPosition((scrollPosition) => ({
-        x: scrollPosition.x,
-        y: scrollPosition.y + diff + fixedCellHeight / 2,
-      }));
-    }
-  };
-
   const getCellWidth = useCallback(
     (col: number) => {
       const cellWidth = headerColsWidth[col] * zoomSize;
@@ -347,6 +304,63 @@ export const useComputed = () => {
       return { width: cellWidth * zoomSize, height: cellHeight * zoomSize };
     },
     [data, zoomSize, headerColsWidth, headerRowsHeight],
+  );
+
+  // 选中单元格适配视口
+  //  TODO:  合并单元格 未计算
+  const fitCellViewPort = useCallback(
+    (row: number, col: number) => {
+      const selectedCell = data?.[row]?.[col];
+      if (!selectedCell) return;
+      const viewPortWidth = containerWidth;
+      const viewPortHeight = containerHeight - 10;
+      const x = getLeft(col);
+      const y = getTop(row);
+      const cellWidth = getCellWidth(col);
+      const cellHeight = getCellHeight(row);
+      const fixedCellWidth = getCellHeight(0);
+      const fixedCellHeight = getCellHeight(0);
+      // X轴处理
+      if (x + cellWidth - fixedCellWidth < cellWidth) {
+        const _x = x + scrollPosition.x - cellWidth;
+        setScrollPosition((scrollPosition) => ({
+          x: _x > 0 ? _x : 0,
+          y: scrollPosition.y,
+        }));
+      } else if (x + cellWidth > viewPortWidth) {
+        const diff = x + cellWidth - viewPortWidth;
+        setScrollPosition((scrollPosition) => ({
+          x: scrollPosition.x + diff + fixedCellWidth,
+          y: scrollPosition.y,
+        }));
+      }
+      // Y轴处理
+      if (y + cellHeight - fixedCellHeight < cellHeight) {
+        const _y = y + scrollPosition.y - cellHeight;
+        setScrollPosition((scrollPosition) => ({
+          x: scrollPosition.x,
+          y: _y > 0 ? _y : 0,
+        }));
+      } else if (y + cellHeight > viewPortHeight) {
+        const diff = y + cellHeight - viewPortHeight;
+        setScrollPosition((scrollPosition) => ({
+          x: scrollPosition.x,
+          y: scrollPosition.y + diff + fixedCellHeight / 2,
+        }));
+      }
+    },
+    [
+      containerHeight,
+      containerWidth,
+      data,
+      getCellHeight,
+      getCellWidth,
+      getLeft,
+      getTop,
+      scrollPosition.x,
+      scrollPosition.y,
+      setScrollPosition,
+    ],
   );
   return {
     findIndexByAccumulate,

@@ -16,7 +16,6 @@ export const useDirection = () => {
       if (!nextCell) return;
       updateSelectionAndCell(nextCell.nextRow, nextCell.nextCol);
       fitCellViewPort(nextCell.nextRow, nextCell.nextCol);
-      // 更新视口和选择状态
     },
     [selectedCell, fitCellViewPort, getNextPosition, updateSelectionAndCell],
   );
