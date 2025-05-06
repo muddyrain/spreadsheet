@@ -103,12 +103,45 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     ) => {
       const key = `${startRow}-${endRow}-${startCol}-${endCol}`;
       if (!cache.has(key)) {
-        const cells = [];
+        const cells: Array<{
+          cell: CellData;
+          x: number;
+          y: number;
+          rowIndex: number;
+          colIndex: number;
+        }> = [];
         for (let rowIndex = startRow; rowIndex < endRow; rowIndex++) {
           for (let colIndex = startCol; colIndex < endCol; colIndex++) {
             if (colIndex === 0 || rowIndex === 0) continue;
             const cell = data[rowIndex]?.[colIndex];
             if (!cell) continue;
+
+            // 处理合并单元格的情况
+            if (cell.mergeParent) {
+              const parentCell =
+                data[cell.mergeParent.row]?.[cell.mergeParent.col];
+              if (parentCell) {
+                const { x, y } = getCellPosition(parentCell);
+                // 确保主单元格只被添加一次
+                if (
+                  !cells.some(
+                    (item) =>
+                      item.rowIndex === cell.mergeParent?.row &&
+                      item.colIndex === cell.mergeParent?.col,
+                  )
+                ) {
+                  cells.push({
+                    cell: parentCell,
+                    x,
+                    y,
+                    rowIndex: cell.mergeParent.row,
+                    colIndex: cell.mergeParent.col,
+                  });
+                }
+                continue;
+              }
+            }
+
             const { x, y } = getCellPosition(cell);
             cells.push({ cell, x, y, rowIndex, colIndex });
           }
@@ -122,7 +155,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   // 优化后的 drawCell 函数
   const drawCell = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      // 移除 console.log
       const { cells } = getRenderArea(startRow, endRow, startCol, endCol);
       // 批量渲染单元格
       ctx.save();

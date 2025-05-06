@@ -71,7 +71,6 @@ export const useRenderCell = () => {
           ctx.globalAlpha = 1;
         }
       }
-
       // 判断是否选中，绘制高亮背景
       if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
         ctx.save();

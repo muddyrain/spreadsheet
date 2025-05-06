@@ -198,9 +198,9 @@ export function useSheetSelection() {
       setSelection,
       headerColsWidth,
       headerRowsHeight,
-      scrollPosition,
       expandSelection,
       findIndexByAccumulate,
+      scrollPositionRef,
     ],
   );
   return {
