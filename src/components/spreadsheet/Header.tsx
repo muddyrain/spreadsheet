@@ -186,7 +186,7 @@ export const Header: FC<{
   };
   return (
     <div className="flex items-center gap-x-1 bg-zinc-50 px-4 py-1 h-10 z-[1]">
-      <Tooltip content="保存">
+      <Tooltip content="保存（未开发）">
         <Toggle
           className="text-lg"
           onClick={() => {
@@ -196,7 +196,7 @@ export const Header: FC<{
           <Save />
         </Toggle>
       </Tooltip>
-      <Tooltip content="撤销">
+      <Tooltip content="撤销（未开发）">
         <Toggle
           className="text-lg"
           onClick={() => {
@@ -206,7 +206,7 @@ export const Header: FC<{
           <Undo />
         </Toggle>
       </Tooltip>
-      <Tooltip content="重做">
+      <Tooltip content="重做（未开发）">
         <Toggle
           className="text-lg"
           onClick={() => {
@@ -216,7 +216,7 @@ export const Header: FC<{
           <Redo />
         </Toggle>
       </Tooltip>
-      <Tooltip content="格式刷">
+      <Tooltip content="格式刷（未开发）">
         <Toggle
           className="text-lg"
           onClick={() => {
@@ -226,7 +226,7 @@ export const Header: FC<{
           <PaintRoller />
         </Toggle>
       </Tooltip>
-      <Tooltip content="清除格式">
+      <Tooltip content="清除格式（未开发）">
         <Toggle
           pressed={false}
           className="text-lg"
@@ -282,13 +282,12 @@ export const Header: FC<{
         </Toggle>
       </Tooltip>
       <Separator orientation="vertical" />
-      {/* TODO: 字体背景颜色 未完成  */}
-      <Tooltip content="字体颜色">
+      <Tooltip content="字体颜色（未开发）">
         <Toggle pressed={false} className="text-lg">
           <Baseline />
         </Toggle>
       </Tooltip>
-      <Tooltip content="背景颜色">
+      <Tooltip content="背景颜色（未开发）">
         <Toggle pressed={false} className="text-lg">
           <PaintBucket />
         </Toggle>
