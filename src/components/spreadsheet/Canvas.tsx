@@ -264,12 +264,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 onCellClick?.(rowIndex, colIndex);
                 const currentCell = data[rowIndex][colIndex];
                 if (currentCell?.readOnly) return;
-                handleCellMouseDown(
-                  rowIndex,
-                  colIndex,
-                  wrapperRef,
-                  scrollPosition,
-                );
+                handleCellMouseDown(rowIndex, colIndex, wrapperRef);
               });
             }
             // 双击

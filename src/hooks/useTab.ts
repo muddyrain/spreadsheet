@@ -89,11 +89,13 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
           const nextRow = selectedCell.row;
           const nextCol = parentCell.mergeSpan.c2 + 1;
           updateSelectionAndCell(nextRow, nextCol);
+          fitCellViewPort(nextRow, nextCol);
         }
       } else if (selectedCell.mergeSpan) {
         const nextRow = selectedCell.row;
         const nextCol = selectedCell.mergeSpan.c2 + 1;
         updateSelectionAndCell(nextRow, nextCol);
+        fitCellViewPort(nextRow, nextCol);
       }
     } else {
       let nextCol = col + 1;
@@ -194,6 +196,7 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
     cellInputRef,
     alreadySelectedCell,
     isFindAlreadySelected,
+    fitCellViewPort,
   ]);
   useEffect(() => {
     setAlreadySelectedCell(() => []);
@@ -204,7 +207,6 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
     const isOneSelection =
       selection?.start?.row === selection?.end?.row &&
       selection?.start?.col === selection?.end?.col;
-
     if (isOneSelection) {
       handleSingleSelection();
     } else {

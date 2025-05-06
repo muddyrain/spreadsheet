@@ -33,7 +33,7 @@ export const createInitialData = (
   for (let i = 0; i < cols; i++) {
     colNames.push({
       ...defaultCellData,
-      value: generateColName(i),
+      value: generateColName(i) + (i + 1),
       readOnly: true,
       style: readOnlyStyle,
       row: 0,

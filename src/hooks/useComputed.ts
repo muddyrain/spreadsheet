@@ -307,7 +307,6 @@ export const useComputed = () => {
   );
 
   // 选中单元格适配视口
-  //  TODO:  合并单元格 未计算
   const fitCellViewPort = useCallback(
     (row: number, col: number) => {
       const selectedCell = data?.[row]?.[col];
@@ -316,8 +315,11 @@ export const useComputed = () => {
       const viewPortHeight = containerHeight - 10;
       const x = getLeft(col);
       const y = getTop(row);
-      const cellWidth = getCellWidth(col);
-      const cellHeight = getCellHeight(row);
+      const { width: cellWidth, height: cellHeight } = getMergeCellSize(
+        selectedCell,
+        headerColsWidth[col],
+        headerRowsHeight[row],
+      );
       const fixedCellWidth = getCellHeight(0);
       const fixedCellHeight = getCellHeight(0);
       // X轴处理
@@ -352,9 +354,11 @@ export const useComputed = () => {
     [
       containerHeight,
       containerWidth,
+      getMergeCellSize,
+      headerColsWidth,
+      headerRowsHeight,
       data,
       getCellHeight,
-      getCellWidth,
       getLeft,
       getTop,
       scrollPosition.x,

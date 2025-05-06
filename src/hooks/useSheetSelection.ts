@@ -1,12 +1,19 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useStore } from "./useStore";
 import { useComputed } from "./useComputed";
 
 export function useSheetSelection() {
-  const { data, selection, setSelection, headerColsWidth, headerRowsHeight } =
-    useStore();
+  const {
+    data,
+    selection,
+    scrollPosition,
+    setSelection,
+    headerColsWidth,
+    headerRowsHeight,
+  } = useStore();
   const [isSelection, setIsSelection] = useState(false);
   const movedRef = useRef(false);
+  const scrollPositionRef = useRef(scrollPosition);
   const { findIndexByAccumulate } = useComputed();
   const expandSelection = useCallback(
     (startRow: number, startCol: number, endRow: number, endCol: number) => {
@@ -131,28 +138,31 @@ export function useSheetSelection() {
     },
     [data],
   );
+  // 更新 ref
+  useEffect(() => {
+    scrollPositionRef.current = scrollPosition;
+  }, [scrollPosition]);
   const handleCellMouseDown = useCallback(
     (
       rowIndex: number,
       colIndex: number,
       wrapperRef: React.RefObject<HTMLDivElement | null>,
-      scrollPosition: { x: number; y: number },
     ) => {
       setIsSelection(false);
       movedRef.current = false;
 
       let lastRow = rowIndex;
       let lastCol = colIndex;
-
       const handleMouseMove = (e: MouseEvent) => {
         if (!wrapperRef.current) return;
         const rect = wrapperRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left + scrollPosition.x;
-        const y = e.clientY - rect.top + scrollPosition.y;
+        const x = e.clientX - rect.left + scrollPositionRef.current.x;
+        const y = e.clientY - rect.top + scrollPositionRef.current.y;
         // 列索引
         const col = findIndexByAccumulate(headerColsWidth, x);
         // 行索引
         const row = findIndexByAccumulate(headerRowsHeight, y);
+        if (col <= 0 || row <= 0) return;
         if (row !== lastRow || col !== lastCol) {
           setSelection(() => {
             const { newStartRow, newStartCol, newEndRow, newEndCol } =
@@ -188,6 +198,7 @@ export function useSheetSelection() {
       setSelection,
       headerColsWidth,
       headerRowsHeight,
+      scrollPosition,
       expandSelection,
       findIndexByAccumulate,
     ],
