@@ -3,6 +3,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+canvas {
+  will-change: transform;
+}
+
 /* 隐藏 WebKit 内核浏览器的滚动条 */
 textarea::-webkit-scrollbar {
   display: none;

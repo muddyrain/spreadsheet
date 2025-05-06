@@ -41,7 +41,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     setContainerHeight,
     setCurrentSideLinePosition,
   } = useStore();
-  const rafId = useRef<number | null>(null);
   const lastClickRowCol = useRef<[number, number] | null>(null);
   const [currentHoverCell, setCurrentHoverCell] = useState<
     [number, number] | null
@@ -91,7 +90,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
-    // 缩放后实际渲染尺寸
     const width = containerWidth * dpr;
     const height = containerHeight * dpr;
     canvas.width = width;
@@ -99,18 +97,28 @@ export const Canvas: React.FC<CanvasProps> = ({
     canvas.style.width = `${containerWidth}px`;
     canvas.style.height = `${containerHeight}px`;
     const ctx = canvas.getContext("2d");
-    if (ctx) {
-      // 重新渲染 Canvas
-      rafId.current = requestAnimationFrame(() => {
-        ctx.save(); // 确保在绘制前保存上下文状态
-        ctx.scale(dpr, dpr); // 应用设备像素比缩放
-        drawTable(ctx);
-        ctx.restore(); // 将 restore 移到这里，确保在绘制后恢复上下文状态
-      });
-    }
+    if (!ctx) return;
+
+    let animationFrameId: number | null = null;
+    let lastTimestamp = 0;
+    const targetFPS = 60;
+    const frameInterval = 1000 / targetFPS;
+
+    const render = (timestamp: number) => {
+      animationFrameId = requestAnimationFrame(render);
+      const deltaTime = timestamp - lastTimestamp;
+      if (deltaTime < frameInterval) return;
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, containerWidth, containerHeight);
+      drawTable(ctx);
+      ctx.restore();
+      lastTimestamp = timestamp;
+    };
+    animationFrameId = requestAnimationFrame(render);
     return () => {
-      if (rafId.current !== null) {
-        cancelAnimationFrame(rafId.current);
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [containerHeight, containerWidth, drawTable]);
