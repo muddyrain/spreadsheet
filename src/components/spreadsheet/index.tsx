@@ -31,7 +31,6 @@ const RootSpreadsheet: React.FC<{
     createNewSheet,
     // eslint-disable-next-line react-hooks/rules-of-hooks
   } = props.spreadsheet ?? useSpreadsheet(_config);
-  const [zoomSize, setZoomSize] = useState<number>(1);
   const [sheetCellSettingsConfig, setSheetCellSettingsConfig] =
     useState<SheetCellSettingsConfig>({
       isAnchorMergePoint: false,
@@ -59,18 +58,18 @@ const RootSpreadsheet: React.FC<{
         createNewSheet,
         currentCtrlKey: isMac ? "⌘" : isWindows ? "Ctrl" : "Ctrl",
         setUpdater: forceUpdate,
-        zoomSize,
+        zoomSize: currentSheet?.zoomSize || 1,
         setZoomSize: (_size) => {
           const size = Number(parseFloat(_size.toString()).toFixed(1));
           if (size >= 2) {
-            setZoomSize(2);
+            setCurrentSheet("zoomSize", 2);
             return;
           }
           if (size <= 0.5) {
-            setZoomSize(0.5);
+            setCurrentSheet("zoomSize", 0.5);
             return;
           }
-          setZoomSize(size);
+          setCurrentSheet("zoomSize", size);
         },
         isFocused,
         setIsFocused,

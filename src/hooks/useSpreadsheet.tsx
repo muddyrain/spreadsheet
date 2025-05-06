@@ -41,6 +41,7 @@ export const useSpreadsheet = (
       currentCell: null,
       selectedCell: null,
       editingCell: null,
+      zoomSize: 1,
       scrollPosition: { x: 0, y: 0 },
       headerColsWidth: [
         config.fixedColWidth,

@@ -12,6 +12,11 @@ export interface Sheet {
    */
   data: TableData;
   /**
+   * @description 比例缩放
+   * @default 1
+   */
+  zoomSize: number;
+  /**
    * @description 表格选择框
    */
   selection: SelectionSheetType | null;
