@@ -19,12 +19,12 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "../ui/drawer";
-import { Tooltip } from "../ui/tooltip";
+} from "@/components/ui/drawer";
+import { Tooltip } from "@/components/ui/tooltip";
 import { SettingsIcon } from "lucide-react";
-import { Toggle } from "../ui/toggle";
-import { Button } from "../ui/button";
-import { Switch } from "../ui/switch";
+import { Toggle } from "@/components/ui/toggle";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useStore } from "@/hooks/useStore";
 
 const FormSchema = z.object({

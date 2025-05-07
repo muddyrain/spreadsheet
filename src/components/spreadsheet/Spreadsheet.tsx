@@ -3,7 +3,7 @@ import { TableData } from "../../types/sheet";
 import { Canvas } from "./Canvas";
 import { filterData } from "../../utils/filterData";
 import _ from "lodash";
-import { Header } from "./Header";
+import { Header } from "./Header/index";
 import { CellInput, CellInputRef } from "./CellInput";
 import { useKeyDown } from "@/hooks/useKeyDown";
 import { Current } from "./Current";

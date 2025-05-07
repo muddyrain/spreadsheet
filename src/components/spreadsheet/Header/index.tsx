@@ -2,7 +2,6 @@ import { FC, useMemo } from "react";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
 import {
-  Baseline,
   Bold,
   Eraser,
   Italic,
@@ -16,10 +15,11 @@ import {
   Undo,
 } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
-import { Tooltip } from "../ui/tooltip";
+import { Tooltip } from "@/components/ui/tooltip";
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { CellData } from "@/types/sheet";
 import { Settings } from "./Settings";
+import { TextColorPicker } from "./TextColorPicker";
 export type ClickType =
   | "save"
   | "undo"
@@ -42,7 +42,7 @@ export const Header: FC<{
     setUpdater,
     getCurrentCell,
   } = useStore();
-  const selectionCells = useMemo(() => {
+  const selectionCells: CellData[] = useMemo(() => {
     if (!selection) {
       return [];
     }
@@ -292,11 +292,7 @@ export const Header: FC<{
         </Toggle>
       </Tooltip>
       <Separator orientation="vertical" />
-      <Tooltip content="字体颜色（未开发）">
-        <Toggle pressed={false} className="text-lg">
-          <Baseline />
-        </Toggle>
-      </Tooltip>
+      <TextColorPicker selectionCells={selectionCells || []} />
       <Tooltip content="背景颜色（未开发）">
         <Toggle pressed={false} className="text-lg">
           <PaintBucket />
