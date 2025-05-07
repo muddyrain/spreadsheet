@@ -8,9 +8,9 @@ import { SheetTabs } from "./SheetTabs";
 export const Footer: FC = () => {
   const { zoomSize, currentCtrlKey, setZoomSize } = useStore();
   return (
-    <div className="flex items-center gap-x-1 justify-center bg-zinc-50 px-6 h-8 z-[1]">
+    <div className="relative flex gap-x-1 bg-zinc-50 px-6 h-10 z-[1]">
       <SheetTabs />
-      <div className="flex items-center h-full">
+      <div className="flex items-center h-8">
         <Tooltip content={`缩小（${currentCtrlKey} + ⬇）`}>
           <Button
             variant={"ghost"}
@@ -44,6 +44,7 @@ export const Footer: FC = () => {
           </Button>
         </Tooltip>
       </div>
+      <div className="absolute bottom-0 left-0 w-full h-2 bg-zinc-100"></div>
     </div>
   );
 };

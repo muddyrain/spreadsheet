@@ -86,22 +86,16 @@ export const CellInput = forwardRef<
         minHeight: `${height + 2}px`,
         padding: `${3 * zoomSize}px ${5 * zoomSize}px`,
         fontSize: `${(cell.style.fontSize || config.fontSize || 14) * zoomSize}px`,
+        fontWeight: cell.style.fontWeight || "normal",
+        fontStyle: cell.style.fontStyle || "normal",
+        textDecoration: cell.style.textDecoration || "none",
       };
-
       // 应用到输入框
       Object.assign(inputEl.style, baseStyles, {
-        fontWeight: cell.style.fontWeight || "normal",
-        fontStyle: cell.style.fontStyle || "normal",
-        textDecoration: cell.style.textDecoration || "none",
         color: cell.style.color || config.color || "#000000",
       });
-
       // 应用到镜像元素
-      Object.assign(mirrorEl.style, baseStyles, {
-        fontWeight: cell.style.fontWeight || "normal",
-        fontStyle: cell.style.fontStyle || "normal",
-        textDecoration: cell.style.textDecoration || "none",
-      });
+      Object.assign(mirrorEl.style, baseStyles);
     },
     [config.color, config.fontSize, zoomSize],
   );
@@ -164,8 +158,16 @@ export const CellInput = forwardRef<
       const { x, y } = getCellPosition(cell);
       const { width, height } = getMergeCellSize(cell, cellWidth, cellHeight);
       // 设置位置
-      inputRef.current.style.left = `${x - 1}px`;
-      inputRef.current.style.top = `${y - 1}px`;
+      if (y <= 0) {
+        inputRef.current.style.top = `${0}px`;
+      } else {
+        inputRef.current.style.top = `${y - 1}px`;
+      }
+      if (x <= 0) {
+        inputRef.current.style.left = `${0}px`;
+      } else {
+        inputRef.current.style.left = `${x - 1}px`;
+      }
       applyCellStyles(
         inputRef.current,
         mirrorRef.current,
