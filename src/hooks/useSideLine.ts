@@ -17,6 +17,7 @@ export const useSideLine = (options: {
     currentSideLineIndex,
     currentSideLinePosition,
     isMouseDown,
+    zoomSize,
     setIsMouseDown,
     setHeaderColsWidth,
     setHeaderRowsHeight,
@@ -32,73 +33,74 @@ export const useSideLine = (options: {
     [number, number] | null
   >(null);
   useEffect(() => {
-    if (currentHoverCell) {
-      const [rowIndex, colIndex] = currentHoverCell;
-      const currentCell = data[rowIndex][colIndex];
-      if (currentCell?.readOnly) {
-        if (rowIndex === 0 && colIndex === 0) {
-          setCursor("se-resize");
-          return;
-        }
-        const [x, y] = currentPosition || [0, 0];
-        // 添加位置稳定性检查
-        const isPositionStable = () => {
-          if (!lastValidPosition.current) return false;
-          const [lastX, lastY] = lastValidPosition.current;
-          return Math.abs(x - lastX) < 3 && Math.abs(y - lastY) < 3;
-        };
+    const _setCursor = (cursor: string) => {
+      setCursor((_cursor) => {
+        if (_cursor === cursor) return _cursor;
+        return cursor;
+      });
+    };
+    if (!currentHoverCell) {
+      _setCursor("default");
+      return;
+    }
+    const range = Math.max(8, 8 * zoomSize); // 根据缩放
+    const [rowIndex, colIndex] = currentHoverCell;
+    const currentCell = data[rowIndex][colIndex];
+    if (!currentPosition) {
+      _setCursor("default");
+      return;
+    }
+    if (currentCell?.readOnly) {
+      if (rowIndex === 0 && colIndex === 0) {
+        _setCursor("se-resize");
+        return;
+      }
+      const [x, y] = currentPosition || [0, 0];
+      if (rowIndex === 0) {
+        const cellWidth = headerColsWidth[colIndex];
+        const left = getLeft(colIndex);
+        const offset = x - left;
 
-        if (rowIndex === 0) {
-          const cellWidth = headerColsWidth[colIndex];
-          const left = getLeft(colIndex);
-          const offset = x - left;
-
-          // 增加边缘检测的精确度
-          if (offset <= 5 && colIndex > 1) {
-            if (!isMouseDown && isPositionStable()) {
-              setCurrentSideLineIndex(() => [-1, colIndex - 1]);
-              setSideLineMode("col");
-              setCursor("col-resize");
-            }
-            return;
-          }
-          if (offset >= cellWidth - 5 && offset <= cellWidth) {
-            if (!isMouseDown && isPositionStable()) {
-              setCurrentSideLineIndex(() => [-1, colIndex]);
-              setSideLineMode("col");
-              setCursor("col-resize");
-            }
-            return;
-          }
-          setCursor("default");
+        // 增加边缘检测的精确度
+        if (offset <= range && colIndex > 1) {
+          setCurrentSideLineIndex(() => [-1, colIndex - 1]);
+          setSideLineMode("col");
+          _setCursor("col-resize");
           return;
         }
-        if (colIndex === 0) {
-          const cellHeight = headerRowsHeight[rowIndex];
-          const top = getTop(rowIndex);
-          const offset = y - top;
-          if (offset <= 5 && rowIndex > 1) {
-            if (!isMouseDown && isPositionStable()) {
-              setCurrentSideLineIndex(() => [rowIndex - 1, -1]);
-              setSideLineMode("row");
-              setCursor("row-resize");
-            }
-            return;
-          }
-          if (offset >= cellHeight - 5 && offset <= cellHeight) {
-            if (!isMouseDown && isPositionStable()) {
-              setCurrentSideLineIndex(() => [rowIndex, -1]);
-              setSideLineMode("row");
-              setCursor("row-resize");
-            }
-            return;
-          }
-          setCursor("default");
+        if (offset >= cellWidth - range && offset <= cellWidth) {
+          setCurrentSideLineIndex(() => [-1, colIndex]);
+          setSideLineMode("col");
+          _setCursor("col-resize");
           return;
         }
+        _setCursor("default");
+        return;
+      }
+      if (colIndex === 0) {
+        const cellHeight = headerRowsHeight[rowIndex];
+        const top = getTop(rowIndex);
+        const offset = y - top;
+        if (offset <= range && rowIndex > 1) {
+          setCurrentSideLineIndex(() => [rowIndex - 1, -1]);
+          setSideLineMode("row");
+          _setCursor("row-resize");
+          return;
+        }
+        if (offset >= cellHeight - range && offset <= cellHeight) {
+          setCurrentSideLineIndex(() => [rowIndex, -1]);
+          setSideLineMode("row");
+          _setCursor("row-resize");
+          return;
+        }
+        _setCursor("default");
+        return;
       }
     }
-    setCursor("cell");
+    _setCursor("cell");
+    return () => {
+      _setCursor("default"); // 清理时重置 cursor
+    };
   }, [
     currentHoverCell,
     currentPosition,
@@ -106,6 +108,7 @@ export const useSideLine = (options: {
     headerColsWidth,
     headerRowsHeight,
     data,
+    zoomSize,
     scrollPosition,
     getLeft,
     getTop,

@@ -156,6 +156,19 @@ export const Canvas: React.FC<CanvasProps> = ({
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
+        // 检查是否在表格区域内
+        const totalWidth =
+          headerColsWidth.reduce((sum, prev) => sum + prev, 0) * zoomSize;
+        const totalHeight =
+          headerRowsHeight.reduce((sum, prev) => sum + prev, 0) * zoomSize;
+
+        if (x > totalWidth || y > totalHeight || x < 0 || y < 0) {
+          if (_ === "move") {
+            setCurrentHoverCell(null);
+          }
+          return;
+        }
+
         let colIndex: number | null = null;
         let rowIndex: number | null = null;
 
@@ -258,6 +271,19 @@ export const Canvas: React.FC<CanvasProps> = ({
     };
     return debounce(handleMouseMove, 16);
   }, [handleGetClient]);
+  // 添加页面可见性监听
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setCurrentHoverCell(null);
+        setIsMouseDown(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [setIsMouseDown]);
   return (
     <>
       <div
