@@ -21,6 +21,9 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
   return (
     <div
       className="relative border border-zinc-200 bg-zinc-50"
+      onContextMenu={(e) => {
+        e.preventDefault();
+      }}
       style={{
         position: "absolute",
         ...(isHorizontal

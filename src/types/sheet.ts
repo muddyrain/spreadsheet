@@ -222,6 +222,8 @@ export type SpreadsheetType = {
   config: Required<SpreadsheetConfig>; // 全局配置
   updater: number;
   createNewSheet: () => void;
+  createCopySheet: (id: string) => void;
+  deleteSheet: (id: string) => void;
   forceUpdate: () => void;
   clearSelection: () => void;
   getCurrentCell: (row: number, col: number) => CellData | null;

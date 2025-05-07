@@ -10,6 +10,8 @@ import { useSpreadsheet } from "@/hooks/useSpreadsheet";
 import { SpreadsheetContext } from "./context";
 import Spreadsheet from "./Spreadsheet";
 import { getSystemInfo } from "@/utils";
+import { Toaster } from "sonner";
+import { InfoIcon } from "lucide-react";
 
 const RootSpreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -29,6 +31,8 @@ const RootSpreadsheet: React.FC<{
     getCurrentCell,
     setCurrentSheet,
     createNewSheet,
+    createCopySheet,
+    deleteSheet,
     // eslint-disable-next-line react-hooks/rules-of-hooks
   } = props.spreadsheet ?? useSpreadsheet(_config);
   const [sheetCellSettingsConfig, setSheetCellSettingsConfig] =
@@ -56,6 +60,8 @@ const RootSpreadsheet: React.FC<{
         currentCell,
         updater,
         createNewSheet,
+        createCopySheet,
+        deleteSheet,
         currentCtrlKey: isMac ? "⌘" : isWindows ? "Ctrl" : "Ctrl",
         setUpdater: forceUpdate,
         zoomSize: currentSheet?.zoomSize || 1,
@@ -149,6 +155,12 @@ const RootSpreadsheet: React.FC<{
         getCurrentCell,
       }}
     >
+      <Toaster
+        position="top-center"
+        icons={{
+          info: <InfoIcon size={18} />,
+        }}
+      />
       <Spreadsheet onChange={onChange} />
     </SpreadsheetContext.Provider>
   );

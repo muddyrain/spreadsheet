@@ -23,7 +23,6 @@ export const useKeyDown = (
   const { selection } = useStore();
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      e.preventDefault();
       const key = e.key;
       if (e.key === "Enter") {
         callback?.onEnterKey?.();

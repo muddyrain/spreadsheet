@@ -32,6 +32,8 @@ export const useSpreadsheet = (
     };
   }, [_config]);
   const [sheets, setSheets] = useState<Sheet[]>([]);
+  const [updater, setUpdater] = useState(+new Date());
+  const [activeSheetId, setActiveSheetId] = useState("");
   const createNewSheet = useCallback(() => {
     const newSheet: Sheet = {
       data: createInitialData(config, config.rows, config.cols),
@@ -65,9 +67,42 @@ export const useSpreadsheet = (
     });
     setActiveSheetId(newSheet.id);
     return newSheet;
-  }, [config, sheets.length]); // 只依赖 config
-  const [activeSheetId, setActiveSheetId] = useState("");
-  const [updater, setUpdater] = useState(+new Date());
+  }, [config, sheets.length]);
+  const deleteSheet = useCallback(
+    (sheetId: string) => {
+      const targetIndex = sheets.findIndex((sheet) => sheet.id === sheetId);
+      if (targetIndex === 0) {
+        setActiveSheetId(sheets[sheets.length - 1].id);
+      } else {
+        if (sheets[targetIndex + 1]?.id) {
+          setActiveSheetId(sheets[targetIndex + 1].id);
+        } else {
+          setActiveSheetId(sheets[targetIndex - 1].id);
+        }
+      }
+      setSheets((_sheets) => {
+        return _sheets.filter((sheet) => sheet.id !== sheetId);
+      });
+    },
+    [sheets],
+  );
+  const createCopySheet = useCallback(
+    (sheetId: string) => {
+      const targetSheet = sheets.find((sheet) => sheet.id === sheetId);
+      if (!targetSheet) return;
+      const newSheet: Sheet = {
+        ...JSON.parse(JSON.stringify(targetSheet)),
+        id: generateUUID(),
+        name: targetSheet.name + "副本",
+        editingCell: null,
+      };
+      setSheets((_sheets) => {
+        return [..._sheets, newSheet];
+      });
+      setActiveSheetId(newSheet.id);
+    },
+    [sheets],
+  );
   const clearSelection = () => {
     const targetSheet = sheets.find((sheet) => sheet.id === activeSheetId);
     if (targetSheet) {
@@ -139,6 +174,8 @@ export const useSpreadsheet = (
     setSheets,
     setActiveSheetId,
     createNewSheet,
+    deleteSheet,
+    createCopySheet,
     setCurrentSheet,
   };
   window.$sheet = $sheet;

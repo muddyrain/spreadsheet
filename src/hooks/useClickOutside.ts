@@ -3,18 +3,21 @@ import { RefObject, useEffect, useCallback } from "react";
 type Handler = () => void;
 
 export const useClickOutside = (
-  ref: RefObject<HTMLElement | null>,
+  refs: RefObject<HTMLElement | null>[] | RefObject<HTMLElement | null>,
   handler: Handler,
   enabled: boolean = true,
 ) => {
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
-      if (!ref.current || ref.current.contains(event.target as Node)) {
-        return;
+      const refsArray = Array.isArray(refs) ? refs : [refs];
+      const isOutside = refsArray.every(
+        (ref) => !ref.current || !ref.current.contains(event.target as Node),
+      );
+      if (isOutside) {
+        handler();
       }
-      handler();
     },
-    [ref, handler],
+    [refs, handler],
   );
 
   useEffect(() => {

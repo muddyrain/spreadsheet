@@ -24,6 +24,8 @@ export const SpreadsheetContext = React.createContext<
       currentCtrlKey: string;
       updater: number;
       createNewSheet: () => void;
+      deleteSheet: (id: string) => void;
+      createCopySheet: (id: string) => void;
       setUpdater: () => void;
       zoomSize: number;
       setZoomSize: React.Dispatch<React.SetStateAction<number>>;
