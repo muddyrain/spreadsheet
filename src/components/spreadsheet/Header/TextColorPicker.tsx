@@ -110,6 +110,9 @@ export const TextColorPicker: FC<{
                       setCustomColor(color);
                       onChange?.(color.hex);
                     }}
+                    onChangeComplete={(color) => {
+                      handleClick(color.hex);
+                    }}
                   />
                 </div>
               </PopoverContent>
