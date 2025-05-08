@@ -7,12 +7,21 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Separator } from "./separator";
+import { Tooltip } from "./tooltip";
 
 export const ButtonTrigger: FC<{
   children?: React.ReactNode;
   content?: React.ReactNode;
   onClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
-}> = ({ children = null, content = null, onClick }) => {
+  buttonTooltip?: string;
+  moreTooltip?: string;
+}> = ({
+  children = null,
+  content = null,
+  onClick,
+  buttonTooltip,
+  moreTooltip,
+}) => {
   const [open, setOpen] = useState(false);
   return (
     <Popover
@@ -28,15 +37,17 @@ export const ButtonTrigger: FC<{
             open && "bg-zinc-100 border-zinc-200",
           )}
         >
-          <div
-            className="h-full px-1 flex items-center hover:bg-zinc-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClick?.(e);
-            }}
-          >
-            {children}
-          </div>
+          <Tooltip className="h-full" content={buttonTooltip}>
+            <div
+              className="h-full px-1 flex items-center hover:bg-zinc-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick?.(e);
+              }}
+            >
+              {children}
+            </div>
+          </Tooltip>
           <Separator
             className={cn(
               "h-full duration-300 opacity-0 group-hover:opacity-100",
@@ -44,14 +55,16 @@ export const ButtonTrigger: FC<{
             )}
             orientation="vertical"
           />
-          <div
-            className="h-full px-1 flex items-center hover:bg-zinc-100"
-            onClick={() => {
-              setOpen(!open);
-            }}
-          >
-            <ChevronDownIcon size={14} />
-          </div>
+          <Tooltip className="h-full" content={moreTooltip}>
+            <div
+              className="h-full px-1 flex items-center hover:bg-zinc-100"
+              onClick={() => {
+                setOpen(!open);
+              }}
+            >
+              <ChevronDownIcon size={14} />
+            </div>
+          </Tooltip>
         </div>
       </PopoverTrigger>
       <PopoverContent align="start" className="p-0">

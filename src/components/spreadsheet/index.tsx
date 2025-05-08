@@ -12,6 +12,7 @@ import Spreadsheet from "./Spreadsheet";
 import { getSystemInfo } from "@/utils";
 import { Toaster } from "sonner";
 import { InfoIcon } from "lucide-react";
+import { TooltipProvider } from "../ui/tooltip/tooltip";
 
 const RootSpreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -161,7 +162,9 @@ const RootSpreadsheet: React.FC<{
           info: <InfoIcon size={18} />,
         }}
       />
-      <Spreadsheet onChange={onChange} />
+      <TooltipProvider>
+        <Spreadsheet onChange={onChange} />
+      </TooltipProvider>
     </SpreadsheetContext.Provider>
   );
 };
