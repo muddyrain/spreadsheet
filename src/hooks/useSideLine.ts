@@ -204,6 +204,7 @@ export const useSideLine = (options: {
     setCurrentPosition,
     setIsMouseDown,
     handleMouseUp,
+    currentPosition,
     cursor,
   };
 };
