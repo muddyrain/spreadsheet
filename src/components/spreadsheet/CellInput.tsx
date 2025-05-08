@@ -128,7 +128,11 @@ export const CellInput = forwardRef<
       updateInputSize();
       setIsFocused(true);
       setTimeout(() => {
-        inputRef.current?.focus();
+        if (inputRef.current) {
+          inputRef.current.focus();
+          const len = inputRef.current.value.length;
+          inputRef.current.setSelectionRange(len, len);
+        }
       }, 0);
     }
   };

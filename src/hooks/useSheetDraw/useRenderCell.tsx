@@ -137,7 +137,7 @@ export const useRenderCell = () => {
           const textY =
             y +
             (config.height / 2 - 2) * zoomSize +
-            (i * fontSize + i * 6 * zoomSize);
+            (i * fontSize + i * 7 * zoomSize);
           ctx.fillText(text, textX, textY);
           const textDecoration = cell.style.textDecoration || "none";
           // 计算文本装饰线的位置
