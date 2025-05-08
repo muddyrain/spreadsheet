@@ -13,6 +13,7 @@ import { useClickOutside } from "@/hooks/useClickOutside";
 import { measureTextWidth } from "@/utils/dom";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tooltip } from "@/components/ui/tooltip";
+import { createPortal } from "react-dom";
 
 export const SheetTabs: FC = () => {
   const [currentContextMenuId, setCurrentContextMenuId] = useState("");
@@ -20,6 +21,7 @@ export const SheetTabs: FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [clientRect, setClientRect] = useState<DOMRect | null>(null);
   const {
     config,
     activeSheetId,
@@ -80,20 +82,22 @@ export const SheetTabs: FC = () => {
           })}
         </PopoverContent>
       </Popover>
-      <ScrollArea className="max-w-3/4 h-10 whitespace-nowrap overflow-hidden">
+      <ScrollArea className="max-w-3/4 h-10 whitespace-nowrap">
         <div className="h-8 flex items-center">
           {sheets.map((item) => {
             return (
               <Fragment key={item.id}>
                 <Separator orientation="vertical" />
                 <div
-                  className="min-w-24 max-w-48 relative h-full text-sm px-4 cursor-pointer flex items-center justify-center hover:bg-zinc-100 duration-300"
+                  className="min-w-24 max-w-48 relative h-full text-sm px-4 cursor-pointer flex items-center justify-center hover:bg-zinc-100 duration-300 overflow-hidden"
                   onClick={() => {
                     setEditingCell(null);
                     setActiveSheetId(item.id);
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault();
+                    const clientRect = e.currentTarget.getBoundingClientRect();
+                    setClientRect(clientRect);
                     setCurrentContextMenuId(item.id);
                   }}
                 >
@@ -101,7 +105,7 @@ export const SheetTabs: FC = () => {
                     <input
                       ref={inputRef}
                       type="text"
-                      className="min-w-16 max-w-48 px-2 text-sm rounded-sm outline-0 border"
+                      className="min-w-16 w-0 max-w-48 duration-300 px-2 text-sm rounded-sm outline-0 border"
                       style={{
                         borderColor: config.selectionBorderColor,
                       }}
@@ -134,84 +138,90 @@ export const SheetTabs: FC = () => {
                       {item.name}
                     </span>
                   )}
-                  {currentContextMenuId === item.id && (
-                    <div
-                      ref={menuRef}
-                      className="absolute w-full py-1 bg-white bottom-[105%] shadow border rounded-sm"
-                    >
+                  {currentContextMenuId === item.id &&
+                    createPortal(
                       <div
-                        className="w-full py-2 px-3 text-sm cursor-pointer hover:bg-zinc-100 duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentContextMenuId("");
-                          if (sheets.length === 1) {
-                            toast.info("至少保留一个工作表");
-                            return;
-                          }
-                          toast.info(`确定删除工作表\n【${item.name}】?`, {
-                            action: (
-                              <div className="ml-auto flex items-center">
-                                <Button
-                                  size={"sm"}
-                                  variant="ghost"
-                                  onClick={() => {
-                                    toast.dismiss();
-                                  }}
-                                >
-                                  取消
-                                </Button>
-                                <Button
-                                  className="ml-2"
-                                  size={"sm"}
-                                  onClick={() => {
-                                    toast.dismiss();
-                                    deleteSheet(item.id);
-                                  }}
-                                >
-                                  确定
-                                </Button>
-                              </div>
-                            ),
-                          });
+                        ref={menuRef}
+                        style={{
+                          left: `${clientRect?.left}px`,
+                          top: `${(clientRect?.top || 0) - (menuRef.current?.clientHeight || 0) - 5}px`,
                         }}
+                        className="fixed w-24 py-1 bg-white shadow border rounded-sm"
                       >
-                        <span>删除</span>
-                      </div>
-                      <div
-                        className="w-full py-2 px-3 text-sm cursor-pointer hover:bg-zinc-100 duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const textWidth = measureTextWidth(
-                            item.name,
-                            textRef.current,
-                          );
-                          setCurrentReNameId(item.id);
-                          setCurrentContextMenuId("");
-                          setTimeout(() => {
-                            if (inputRef.current) {
-                              inputRef.current.value = item.name;
-                              inputRef.current.style.width = `${textWidth + 12}px`;
+                        <div
+                          className="w-full py-2 px-3 text-sm cursor-pointer hover:bg-zinc-100 duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentContextMenuId("");
+                            if (sheets.length === 1) {
+                              toast.info("至少保留一个工作表");
+                              return;
                             }
-                            inputRef.current?.focus();
-                            // 光标移到末尾
-                          }, 0);
-                        }}
-                      >
-                        <span>重命名</span>
-                      </div>
-                      <div
-                        className="w-full py-2 px-3 text-sm cursor-pointer hover:bg-zinc-100 duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentContextMenuId("");
-                          setEditingCell(null);
-                          createCopySheet(item.id);
-                        }}
-                      >
-                        <span>创建副本</span>
-                      </div>
-                    </div>
-                  )}
+                            toast.info(`确定删除工作表\n【${item.name}】?`, {
+                              action: (
+                                <div className="ml-auto flex items-center">
+                                  <Button
+                                    size={"sm"}
+                                    variant="ghost"
+                                    onClick={() => {
+                                      toast.dismiss();
+                                    }}
+                                  >
+                                    取消
+                                  </Button>
+                                  <Button
+                                    className="ml-2"
+                                    size={"sm"}
+                                    onClick={() => {
+                                      toast.dismiss();
+                                      deleteSheet(item.id);
+                                    }}
+                                  >
+                                    确定
+                                  </Button>
+                                </div>
+                              ),
+                            });
+                          }}
+                        >
+                          <span>删除</span>
+                        </div>
+                        <div
+                          className="w-full py-2 px-3 text-sm cursor-pointer hover:bg-zinc-100 duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const textWidth = measureTextWidth(
+                              item.name,
+                              textRef.current,
+                            );
+                            setCurrentReNameId(item.id);
+                            setTimeout(() => {
+                              if (inputRef.current) {
+                                inputRef.current.value = item.name;
+                                inputRef.current.style.width = `${textWidth + 12}px`;
+                              }
+                              inputRef.current?.focus();
+                              setCurrentContextMenuId("");
+                              // 光标移到末尾
+                            }, 0);
+                          }}
+                        >
+                          <span>重命名</span>
+                        </div>
+                        <div
+                          className="w-full py-2 px-3 text-sm cursor-pointer hover:bg-zinc-100 duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentContextMenuId("");
+                            setEditingCell(null);
+                            createCopySheet(item.id);
+                          }}
+                        >
+                          <span>创建副本</span>
+                        </div>
+                      </div>,
+                      document.body,
+                    )}
                 </div>
               </Fragment>
             );
