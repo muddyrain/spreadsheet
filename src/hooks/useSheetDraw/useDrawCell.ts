@@ -278,56 +278,49 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     (ctx: CanvasRenderingContext2D) => {
       if (selection?.start && selection?.end) {
         const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
-        // 只绘制在当前可视区域内的部分
-        if (r2 >= startRow && r1 < endRow && c2 >= startCol && c1 < endCol) {
-          // 列头高亮
-          for (let colIndex = c1; colIndex <= c2; colIndex++) {
-            const cell = data[r1]?.[colIndex];
-            if (!cell) continue;
-            const colWidth = headerColsWidth[colIndex] * zoomSize;
-            const cellHeight = headerRowsHeight[0] * zoomSize;
-            const { x } = getCellPosition(cell);
-            const y = 0;
-            ctx.save();
-            ctx.beginPath();
-            ctx.lineWidth = 1.5;
-            ctx.moveTo(x, y + cellHeight - 0.5);
-            ctx.lineTo(x + colWidth, y + cellHeight - 0.5);
-            ctx.strokeStyle = config.selectionBorderColor;
-            ctx.stroke();
-            ctx.restore();
-          }
-          // 行头高亮
-          for (let rowIndex = r1; rowIndex <= r2; rowIndex++) {
-            const cell = data[rowIndex]?.[c1];
-            if (!cell) continue;
-            const colWidth = headerColsWidth[0] * zoomSize;
-            const cellHeight = headerRowsHeight[rowIndex] * zoomSize;
-            const { y } = getCellPosition(cell);
-            const x = 0;
-            ctx.save();
-            ctx.beginPath();
-            ctx.lineWidth = 1.5;
-            ctx.moveTo(x + colWidth - 0.5, y);
-            ctx.lineTo(x + colWidth - 0.5, y + cellHeight);
-            ctx.strokeStyle = config.selectionBorderColor;
-            ctx.stroke();
-            ctx.restore();
-          }
+        // 列头高亮
+        for (let colIndex = c1; colIndex <= c2; colIndex++) {
+          const cell = data[r1]?.[colIndex];
+          if (!cell) continue;
+          const colWidth = headerColsWidth[colIndex] * zoomSize;
+          const cellHeight = headerRowsHeight[0] * zoomSize;
+          const { x } = getCellPosition(cell);
+          const y = 0;
+          ctx.save();
+          ctx.beginPath();
+          ctx.lineWidth = 1.5;
+          ctx.moveTo(x, y + cellHeight - 0.5);
+          ctx.lineTo(x + colWidth, y + cellHeight - 0.5);
+          ctx.strokeStyle = config.selectionBorderColor;
+          ctx.stroke();
+          ctx.restore();
+        }
+        // 行头高亮
+        for (let rowIndex = r1; rowIndex <= r2; rowIndex++) {
+          const cell = data[rowIndex]?.[c1];
+          if (!cell) continue;
+          const colWidth = headerColsWidth[0] * zoomSize;
+          const cellHeight = headerRowsHeight[rowIndex] * zoomSize;
+          const { y } = getCellPosition(cell);
+          const x = 0;
+          ctx.save();
+          ctx.beginPath();
+          ctx.lineWidth = 1.5;
+          ctx.moveTo(x + colWidth - 0.5, y);
+          ctx.lineTo(x + colWidth - 0.5, y + cellHeight);
+          ctx.strokeStyle = config.selectionBorderColor;
+          ctx.stroke();
+          ctx.restore();
         }
       }
     },
     [
       config.selectionBorderColor,
       data,
-      endCol,
-      endRow,
       getCellPosition,
       headerColsWidth,
       headerRowsHeight,
       selection,
-      startCol,
-      startRow,
       zoomSize,
     ],
   );

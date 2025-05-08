@@ -88,7 +88,6 @@ export const useRenderCell = () => {
           ctx.globalAlpha = 1;
         }
       }
-
       // 如果是被动合并单元格，不绘制文本
       if (cell.mergeParent) {
         return;

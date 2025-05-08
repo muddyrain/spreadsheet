@@ -73,11 +73,21 @@ const Spreadsheet: React.FC<{
     }
     // 点击固定行时
     if (colIndex === 0) {
-      setSelection({
-        start: { row: rowIndex, col: 1 },
-        end: { row: rowIndex, col: data[0].length - 1 },
-      });
-      setSelectedCell(data[rowIndex][1]);
+      if (e.shiftKey) {
+        setSelection((_selection) => {
+          setSelectedCell(data[_selection?.start?.row || 1][1]);
+          return {
+            start: { row: _selection?.start?.row || 1, col: 1 },
+            end: { row: rowIndex, col: data[0].length - 1 },
+          };
+        });
+      } else {
+        setSelection({
+          start: { row: rowIndex, col: 1 },
+          end: { row: rowIndex, col: data[0].length - 1 },
+        });
+        setSelectedCell(data[rowIndex][1]);
+      }
       setEditingCell(null);
       return;
     }
