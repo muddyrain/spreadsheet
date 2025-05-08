@@ -252,6 +252,7 @@ const Spreadsheet: React.FC<{
             fontWeight: `${currentCell?.style.fontWeight || "normal"}`,
             fontStyle: `${currentCell?.style.fontStyle || "normal"}`,
             textDecoration: `${currentCell?.style.textDecoration || "none"}`,
+            color: `${currentCell?.style.color || "#000000"}`,
           }}
         />
       </div>

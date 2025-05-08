@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { CellData } from "@/types/sheet";
+import { useStore } from "@/hooks/useStore";
 
 export const TextColorPicker: FC<{
   color?: string;
@@ -20,10 +21,12 @@ export const TextColorPicker: FC<{
 }> = ({ color: _color = "#000000", onChange, selectionCells = [] }) => {
   const [color, setColor] = useState(_color);
   const [customColor, setCustomColor] = useColor(_color);
+  const { setUpdater } = useStore();
   const handleClick = (color: string) => {
     selectionCells.forEach((item) => {
       item.style.color = color;
     });
+    setUpdater();
   };
   return (
     <Tooltip content="字体颜色（未开发）">
