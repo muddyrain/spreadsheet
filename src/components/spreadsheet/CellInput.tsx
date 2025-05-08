@@ -5,6 +5,7 @@ import {
   useImperativeHandle,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
@@ -27,6 +28,10 @@ export const CellInput = forwardRef<
   }
 >(({ style, onChange, onTabKeyDown, onEnterKeyDown }, ref) => {
   const { getMergeCellSize, getCellPosition } = useComputed();
+  const [currentEditingCell, setCurrentEditingCell] = useState<CellData | null>(
+    null,
+  );
+  const [inputHeight, setInputHeight] = useState(0);
   const {
     data,
     config,
@@ -37,6 +42,7 @@ export const CellInput = forwardRef<
     setEditingCell,
     headerColsWidth,
     headerRowsHeight,
+    setHeaderRowsHeight,
   } = useStore();
   const cellWidth = useMemo(() => {
     if (selectedCell) {
@@ -68,6 +74,7 @@ export const CellInput = forwardRef<
           const mirrorRect = mirrorRef.current.getBoundingClientRect();
           inputRef.current!.style.width = `${mirrorRect.width}px`;
           inputRef.current!.style.height = `${mirrorRect.height}px`;
+          setInputHeight(mirrorRect.height - 2);
         }
       });
     }
@@ -204,7 +211,6 @@ export const CellInput = forwardRef<
         }}
         onKeyDown={(e) => {
           e.stopPropagation();
-
           if (e.key === "Tab") {
             // 监听 Tab 键
             e.preventDefault();
@@ -216,13 +222,10 @@ export const CellInput = forwardRef<
             const start = textarea.selectionStart;
             const end = textarea.selectionEnd;
             const value = textarea.value;
-
             // 在光标位置插入换行符
             textarea.value = value.slice(0, start) + "\n" + value.slice(end);
-
             // 设置新的光标位置
             textarea.selectionStart = textarea.selectionEnd = start + 1;
-
             updateInputSize();
             onChange?.(textarea.value);
           } else if (e.key === "Enter") {
@@ -235,6 +238,19 @@ export const CellInput = forwardRef<
             setEditingCell(null);
             inputRef.current?.blur();
             setIsFocused(false);
+          }
+        }}
+        onFocus={() => {
+          setCurrentEditingCell(currentCell);
+          setInputHeight(inputRef.current?.clientHeight || 0);
+        }}
+        onBlur={() => {
+          if (currentEditingCell) {
+            const currentRowHeight = headerRowsHeight[currentEditingCell?.row];
+            if (inputHeight > currentRowHeight) {
+              headerRowsHeight[currentEditingCell?.row] = inputHeight;
+              setHeaderRowsHeight([...headerRowsHeight]);
+            }
           }
         }}
         style={{
