@@ -25,16 +25,19 @@ export const useKeyDown = (
     (e: KeyboardEvent) => {
       const key = e.key;
       if (e.key === "Enter") {
+        e.preventDefault();
         callback?.onEnterKey?.();
         return;
       }
       // 处理 ctrl/cmd + r
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r") {
+        e.preventDefault();
         window.location.reload();
         return;
       }
       // 处理 ctrl/cmd + a
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+        e.preventDefault();
         callback.onSelectAll?.();
         return;
       }
@@ -45,6 +48,7 @@ export const useKeyDown = (
         key === "ArrowLeft" ||
         key === "ArrowRight"
       ) {
+        e.preventDefault();
         callback?.onDirectionKey?.(key);
         return;
       }
@@ -60,10 +64,12 @@ export const useKeyDown = (
         const endCol = Math.max(selection.start.col, selection.end.col);
         // 处理 tab 键
         if (key === "Tab") {
+          e.preventDefault();
           callback?.onTabKey?.();
         }
         // 处理粘贴
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
+          e.preventDefault();
           navigator.clipboard.readText().then((text) => {
             const rows = text.split("\n");
             const cols = rows[0].split("\t");
@@ -90,6 +96,7 @@ export const useKeyDown = (
             callback?.onCellPasteKey?.();
           });
         } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+          e.preventDefault();
           // 处理复制
           if (selection.start && selection.end) {
             let text = "";
@@ -105,6 +112,7 @@ export const useKeyDown = (
             callback?.onCellCopyKey?.();
           }
         } else if (key === "Delete") {
+          e.preventDefault();
           // 处理删除
           setData((data) => {
             if (selection.start && selection.end) {
@@ -122,6 +130,7 @@ export const useKeyDown = (
           (/[a-zA-Z0-9]/.test(key) || // 字母数字
             /[~!@#$%^&*()_+\-=[\]{};':"|,.<>\\/?`]/.test(key)) // 常见符号
         ) {
+          e.preventDefault();
           // 处理输入的字母数字和常见符号
           callback?.onCellInputKey?.(key);
         }

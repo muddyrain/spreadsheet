@@ -44,6 +44,7 @@ const RootSpreadsheet: React.FC<{
   const [containerHeight, setContainerHeight] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [currentSideLineIndex, setCurrentSideLineIndex] = useState([-1, -1]);
+  const [cursor, setCursor] = useState("default");
   const [currentSideLinePosition, setCurrentSideLinePosition] = useState([
     -1, -1,
   ]);
@@ -63,6 +64,8 @@ const RootSpreadsheet: React.FC<{
         createNewSheet,
         createCopySheet,
         deleteSheet,
+        cursor,
+        setCursor,
         currentCtrlKey: isMac ? "⌘" : isWindows ? "Ctrl" : "Ctrl",
         setUpdater: forceUpdate,
         zoomSize: currentSheet?.zoomSize || 1,

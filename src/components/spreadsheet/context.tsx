@@ -27,6 +27,8 @@ export const SpreadsheetContext = React.createContext<
       deleteSheet: (id: string) => void;
       createCopySheet: (id: string) => void;
       setUpdater: () => void;
+      cursor: string;
+      setCursor: React.Dispatch<React.SetStateAction<string>>;
       zoomSize: number;
       setZoomSize: React.Dispatch<React.SetStateAction<number>>;
       isFocused: boolean;

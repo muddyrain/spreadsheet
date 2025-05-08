@@ -119,6 +119,23 @@ export function useSheetSelection() {
       let c1 = Math.min(startCol, endCol);
       let c2 = Math.max(startCol, endCol);
 
+      // 固定列
+      if (startRow === 0) {
+        return {
+          newStartRow: 1,
+          newStartCol: c1,
+          newEndRow: data.length - 1,
+          newEndCol: c2,
+        };
+      }
+      if (startCol === 0) {
+        return {
+          newStartRow: r1,
+          newStartCol: 1,
+          newEndRow: r2,
+          newEndCol: data[0].length - 1,
+        };
+      }
       // 循环检查，直到没有新的合并单元格被包含
       let result;
       do {
@@ -150,7 +167,6 @@ export function useSheetSelection() {
     ) => {
       setIsSelection(false);
       movedRef.current = false;
-
       let lastRow = rowIndex;
       let lastCol = colIndex;
       const handleMouseMove = (e: MouseEvent) => {
@@ -162,7 +178,6 @@ export function useSheetSelection() {
         const col = findIndexByAccumulate(headerColsWidth, x);
         // 行索引
         const row = findIndexByAccumulate(headerRowsHeight, y);
-        if (col <= 0 || row <= 0) return;
         if (row !== lastRow || col !== lastCol) {
           setSelection(() => {
             const { newStartRow, newStartCol, newEndRow, newEndCol } =

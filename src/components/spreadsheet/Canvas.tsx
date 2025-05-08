@@ -32,6 +32,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 }) => {
   const {
     config,
+    cursor,
     zoomSize,
     headerColsWidth,
     headerRowsHeight,
@@ -74,12 +75,11 @@ export const Canvas: React.FC<CanvasProps> = ({
     useSheetScroll(scrollConfig);
 
   // 单元格侧边栏 hooks - 拖拽侧边
-  const { cursor, currentPosition, setIsMouseDown, handleMouseUp } =
-    useSideLine({
-      currentHoverCell,
-      canvasRef,
-      scrollPosition,
-    });
+  const { currentPosition, setIsMouseDown, handleMouseUp } = useSideLine({
+    currentHoverCell,
+    canvasRef,
+    scrollPosition,
+  });
   // 绘制 hooks
   const { drawTable } = useSheetDraw({
     wrapperWidth: containerWidth,
@@ -315,8 +315,6 @@ export const Canvas: React.FC<CanvasProps> = ({
               handleGetClient(e, "click", (rowIndex, colIndex) => {
                 lastClickRowCol.current = [rowIndex, colIndex];
                 onCellClick?.(rowIndex, colIndex);
-                const currentCell = data[rowIndex][colIndex];
-                if (currentCell?.readOnly) return;
                 handleCellMouseDown(rowIndex, colIndex, wrapperRef);
               });
             }
