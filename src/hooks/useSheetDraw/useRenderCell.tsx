@@ -51,13 +51,6 @@ export const useRenderCell = () => {
       // 合并状态保存，减少 save/restore 调用
       ctx.save();
 
-      // 如果是非合并单元格
-      if (!cell.mergeParent) {
-        // 设置背景颜色
-        ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
-        ctx.fillRect(x + 1, y + 1, cellWidth - 1, cellHeight - 1);
-      }
-
       // 如果是表头，并且当前列在选中范围内
       if ((isHeader || isRow) && selection?.start && selection?.end) {
         const { c1, c2, r1, r2 } = getAbsoluteSelection(selection);
@@ -71,14 +64,7 @@ export const useRenderCell = () => {
           ctx.globalAlpha = 1;
         }
       }
-      // 判断是否选中，绘制高亮背景
-      if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
-        ctx.save();
-        ctx.fillStyle = config.selectionBackgroundColor;
-        ctx.fillRect(x, y, cellWidth, cellHeight);
-        ctx.restore();
-      }
-
+      // 绘制边框
       if (cell.mergeSpan) {
         const { c1, r1 } = cell.mergeSpan;
         const x = getLeft(c1);
@@ -88,6 +74,19 @@ export const useRenderCell = () => {
       } else if (!cell.mergeParent) {
         ctx.strokeStyle = cell.style.borderColor || config.borderColor;
         ctx.strokeRect(x, y, cellWidth, cellHeight);
+      }
+
+      // 如果是非合并单元格
+      if (!cell.mergeParent) {
+        // 设置背景颜色
+        ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
+        ctx.fillRect(x, y, cellWidth, cellHeight);
+      }
+
+      // 判断是否选中，绘制高亮背景
+      if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
+        ctx.fillStyle = config.selectionBackgroundColor;
+        ctx.fillRect(x, y, cellWidth, cellHeight);
       }
       // 如果是被动合并单元格，不绘制文本
       if (cell.mergeParent) {

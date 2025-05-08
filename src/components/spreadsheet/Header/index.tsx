@@ -6,7 +6,6 @@ import {
   Eraser,
   Italic,
   Merge,
-  PaintBucket,
   PaintRoller,
   Redo,
   Save,
@@ -19,7 +18,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { CellData } from "@/types/sheet";
 import { Settings } from "./Settings";
-import { TextColorPicker } from "./TextColorPicker";
+import { ColorPicker } from "./ColorPicker";
 export type ClickType =
   | "save"
   | "undo"
@@ -292,12 +291,8 @@ export const Header: FC<{
         </Toggle>
       </Tooltip>
       <Separator orientation="vertical" />
-      <TextColorPicker selectionCells={selectionCells || []} />
-      <Tooltip content="背景颜色（未开发）">
-        <Toggle pressed={false} className="text-lg">
-          <PaintBucket />
-        </Toggle>
-      </Tooltip>
+      <ColorPicker type="text" selectionCells={selectionCells || []} />
+      <ColorPicker type="background" selectionCells={selectionCells || []} />
       <Separator orientation="vertical" />
       <Tooltip content="合并单元格">
         <Toggle

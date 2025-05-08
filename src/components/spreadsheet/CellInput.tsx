@@ -93,11 +93,13 @@ export const CellInput = forwardRef<
       // 应用到输入框
       Object.assign(inputEl.style, baseStyles, {
         color: cell.style.color || config.color || "#000000",
+        backgroundColor:
+          cell.style.backgroundColor || config.backgroundColor || "#ffffff",
       });
       // 应用到镜像元素
       Object.assign(mirrorEl.style, baseStyles);
     },
-    [config.color, config.fontSize, zoomSize],
+    [config.color, config.backgroundColor, config.fontSize, zoomSize],
   );
   const setInputStyle = (rowIndex: number, colIndex: number) => {
     if (inputRef.current && mirrorRef.current) {

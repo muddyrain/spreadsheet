@@ -61,6 +61,7 @@ export const createInitialData = (
         value: ``,
         style: {
           color: config.color,
+          backgroundColor: config.backgroundColor,
         },
         row: i,
         col: j + 1,

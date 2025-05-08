@@ -13,12 +13,14 @@ export const ButtonTrigger: FC<{
   children?: React.ReactNode;
   content?: React.ReactNode;
   onClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+  onClickMore?: () => void;
   buttonTooltip?: string;
   moreTooltip?: string;
 }> = ({
   children = null,
   content = null,
   onClick,
+  onClickMore,
   buttonTooltip,
   moreTooltip,
 }) => {
@@ -60,6 +62,7 @@ export const ButtonTrigger: FC<{
               className="h-full px-1 flex items-center hover:bg-zinc-100"
               onClick={() => {
                 setOpen(!open);
+                onClickMore?.();
               }}
             >
               <ChevronDownIcon size={14} />
