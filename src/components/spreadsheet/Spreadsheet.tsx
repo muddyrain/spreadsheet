@@ -42,18 +42,32 @@ const Spreadsheet: React.FC<{
     setEditingCell(null);
   };
   // 监听点击事件
-  const onCellClick = (rowIndex: number, colIndex: number) => {
+  const onCellClick = (
+    e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
+    options: { col: number; row: number },
+  ) => {
+    const { row: rowIndex, col: colIndex } = options;
     if (rowIndex === 0 && colIndex === 0) {
       handleSelectAll();
       return;
     }
     // 点击固定列时
     if (rowIndex === 0) {
-      setSelection({
-        start: { row: 1, col: colIndex },
-        end: { row: data.length - 1, col: colIndex },
-      });
-      setSelectedCell(data[1][colIndex]);
+      if (e.shiftKey) {
+        setSelection((_selection) => {
+          setSelectedCell(data[1][_selection?.start?.col || 1]);
+          return {
+            start: { row: 1, col: _selection?.start?.col || 1 },
+            end: { row: data.length - 1, col: colIndex },
+          };
+        });
+      } else {
+        setSelection({
+          start: { row: 1, col: colIndex },
+          end: { row: data.length - 1, col: colIndex },
+        });
+        setSelectedCell(data[1][colIndex]);
+      }
       setEditingCell(null);
       return;
     }

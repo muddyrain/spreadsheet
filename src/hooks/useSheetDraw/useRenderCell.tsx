@@ -50,20 +50,6 @@ export const useRenderCell = () => {
 
       // 合并状态保存，减少 save/restore 调用
       ctx.save();
-
-      // 如果是表头，并且当前列在选中范围内
-      if ((isHeader || isRow) && selection?.start && selection?.end) {
-        const { c1, c2, r1, r2 } = getAbsoluteSelection(selection);
-        if (
-          (c1 <= colIndex && colIndex <= c2) ||
-          (r1 <= rowIndex && rowIndex <= r2)
-        ) {
-          ctx.globalAlpha = 0.85;
-          ctx.fillStyle = config.selectionBackgroundColor;
-          ctx.fillRect(x + 1, y + 1, cellWidth - 1, cellHeight - 1);
-          ctx.globalAlpha = 1;
-        }
-      }
       // 绘制边框
       if (cell.mergeSpan) {
         const { c1, r1 } = cell.mergeSpan;
@@ -88,6 +74,21 @@ export const useRenderCell = () => {
         ctx.fillStyle = config.selectionBackgroundColor;
         ctx.fillRect(x, y, cellWidth, cellHeight);
       }
+
+      // 如果是表头，并且当前列在选中范围内
+      if ((isHeader || isRow) && selection?.start && selection?.end) {
+        const { c1, c2, r1, r2 } = getAbsoluteSelection(selection);
+        if (
+          (c1 <= colIndex && colIndex <= c2) ||
+          (r1 <= rowIndex && rowIndex <= r2)
+        ) {
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = config.selectionBackgroundColor;
+          ctx.fillRect(x + 1, y + 1, cellWidth - 1, cellHeight - 1);
+          ctx.globalAlpha = 1;
+        }
+      }
+
       // 如果是被动合并单元格，不绘制文本
       if (cell.mergeParent) {
         return;

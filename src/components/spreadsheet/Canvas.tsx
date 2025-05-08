@@ -19,7 +19,10 @@ interface CanvasProps {
   data: TableData;
   wrapperRef: React.RefObject<HTMLDivElement | null>;
   selectedCell: CellData | null;
-  onCellClick?: (row: number, col: number) => void;
+  onCellClick?: (
+    e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
+    options: { row: number; col: number },
+  ) => void;
   onCellDoubleClick?: (row: number, col: number) => void;
 }
 
@@ -314,7 +317,7 @@ export const Canvas: React.FC<CanvasProps> = ({
             if (e.detail === 1) {
               handleGetClient(e, "click", (rowIndex, colIndex) => {
                 lastClickRowCol.current = [rowIndex, colIndex];
-                onCellClick?.(rowIndex, colIndex);
+                onCellClick?.(e, { row: rowIndex, col: colIndex });
                 handleCellMouseDown(rowIndex, colIndex, wrapperRef);
               });
             }
