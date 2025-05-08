@@ -201,7 +201,6 @@ export const useSideLine = (options: {
   }, [canvasRef, handleMouseUp, isMouseDown, setCurrentSideLinePosition]);
 
   return {
-    currentPosition,
     setCurrentPosition,
     setIsMouseDown,
     handleMouseUp,

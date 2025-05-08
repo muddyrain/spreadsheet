@@ -15,6 +15,7 @@ export const createInitialData = (
     backgroundColor: config?.readOnlyBackgroundColor,
     textAlign: "center",
     borderColor: config.readOnlyBorderColor,
+    color: config.color,
   };
   const defaultCellData = {
     mergeSpan: null,
@@ -58,7 +59,9 @@ export const createInitialData = (
       rowData.push({
         ...defaultCellData,
         value: ``,
-        style: {},
+        style: {
+          color: config.color,
+        },
         row: i,
         col: j + 1,
       });
