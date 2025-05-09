@@ -216,7 +216,16 @@ export const useSideLine = (options: {
       window.removeEventListener("mouseup", handleMouseUp);
       window.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [canvasRef, handleMouseUp, isMouseDown, setCurrentSideLinePosition]);
+  }, [
+    canvasRef,
+    currentSideLineIndex,
+    sideLineMode,
+    isMouseDown,
+    getLeft,
+    getTop,
+    handleMouseUp,
+    setCurrentSideLinePosition,
+  ]);
 
   return {
     setCurrentPosition,
