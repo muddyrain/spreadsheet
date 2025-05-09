@@ -25,7 +25,7 @@ export const useSpreadsheet = (
       readOnlyBackgroundColor: "#F2F2F2",
       readOnlyBorderColor: "#CCCCCC",
       readOnlyColor: "#000000",
-      borderColor: "#DFDFDF",
+      borderColor: "#CFCFCF",
       backgroundColor: "#FFFFFF",
       color: "#000000",
       ..._config,

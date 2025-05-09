@@ -63,24 +63,25 @@ export const useRenderCell = () => {
       // 设置文本对齐
       ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
       ctx.textBaseline = "middle";
-      // 如果是非合并单元格
-      if (!cell.mergeParent) {
-        // 设置背景颜色
-        ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
-        ctx.fillRect(x + 0.5, y + 0.5, cellWidth - 0.5, cellHeight - 0.5);
-      }
+
       // 绘制边框
+      const borderColor = cell.style.borderColor || config.borderColor;
       if (cell.mergeSpan) {
         const { c1, r1 } = cell.mergeSpan;
         const x = getLeft(c1);
         const y = getTop(r1);
-        ctx.strokeStyle = cell.style.borderColor || config.borderColor;
+        ctx.strokeStyle = borderColor;
         ctx.strokeRect(x, y, cellWidth, cellHeight);
       } else if (!cell.mergeParent) {
-        ctx.strokeStyle = cell.style.borderColor || config.borderColor;
+        ctx.strokeStyle = borderColor;
         ctx.strokeRect(x, y, cellWidth, cellHeight);
       }
-
+      // 如果是非合并单元格
+      if (!cell.mergeParent) {
+        // 设置背景颜色
+        ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
+        ctx.fillRect(x, y, cellWidth, cellHeight);
+      }
       // 判断是否选中，绘制高亮背景
       if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
         ctx.fillStyle = config.selectionBackgroundColor;
@@ -96,7 +97,7 @@ export const useRenderCell = () => {
         ) {
           ctx.globalAlpha = 0.85;
           ctx.fillStyle = config.selectionBackgroundColor;
-          ctx.fillRect(x + 1, y + 1, cellWidth - 1, cellHeight - 1);
+          ctx.fillRect(x, y, cellWidth, cellHeight);
           ctx.globalAlpha = 1;
         }
       }
