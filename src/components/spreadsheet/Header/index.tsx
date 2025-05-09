@@ -34,8 +34,10 @@ export const Header: FC<{
   onClick?: (type: ClickType) => void;
 }> = ({ onClick }) => {
   const {
+    updater,
     selection,
     selectedCell,
+    currentCell,
     data,
     sheetCellSettingsConfig,
     setUpdater,
@@ -80,8 +82,14 @@ export const Header: FC<{
         selectionCells.every((cell) =>
           cell.style.textDecoration?.includes("underline"),
         ),
+      isMergeCell: !!(
+        currentCell &&
+        (currentCell.mergeSpan || currentCell.mergeParent)
+      ),
     };
-  }, [selectionCells]);
+    // 通过updater来判断是否需要更新isStyle
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionCells, currentCell, updater]);
   const handleClick = (type: ClickType) => {
     if (!selectionCells?.length) return;
     switch (type) {
@@ -145,45 +153,57 @@ export const Header: FC<{
       }
       case "merge": {
         if (!selection) return;
-        const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
-        if (r1 === r2 && c1 === c2) return;
-        const cell = data[selectedCell?.row || 0][selectedCell?.col || 0];
-        const isAnchorMergePoint = sheetCellSettingsConfig.isAnchorMergePoint;
-        if (isAnchorMergePoint) {
-          cell.mergeSpan = {
-            r1,
-            r2,
-            c1,
-            c2,
-          };
+        if (isStyle.isMergeCell) {
+          // 取消合并
+          const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
+          for (let i = r1; i <= r2; i++) {
+            for (let j = c1; j <= c2; j++) {
+              data[i][j].mergeSpan = null;
+              data[i][j].mergeParent = null;
+            }
+          }
         } else {
-          const currentCell = getCurrentCell(r1, c1);
-          if (currentCell) {
-            currentCell.mergeSpan = {
+          const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
+          if (r1 === r2 && c1 === c2) return;
+          const cell = data[selectedCell?.row || 0][selectedCell?.col || 0];
+          const isAnchorMergePoint = sheetCellSettingsConfig.isAnchorMergePoint;
+          if (isAnchorMergePoint) {
+            cell.mergeSpan = {
               r1,
               r2,
               c1,
               c2,
             };
+          } else {
+            const currentCell = getCurrentCell(r1, c1);
+            if (currentCell) {
+              currentCell.mergeSpan = {
+                r1,
+                r2,
+                c1,
+                c2,
+              };
+            }
           }
-        }
-        for (let i = r1; i <= r2; i++) {
-          for (let j = c1; j <= c2; j++) {
-            if (isAnchorMergePoint) {
-              if (i === selectedCell?.row && j === selectedCell?.col) continue;
-              if (data[i][j].mergeSpan) {
-                data[i][j].mergeSpan = null;
+          for (let i = r1; i <= r2; i++) {
+            for (let j = c1; j <= c2; j++) {
+              if (isAnchorMergePoint) {
+                if (i === selectedCell?.row && j === selectedCell?.col)
+                  continue;
+                if (data[i][j].mergeSpan) {
+                  data[i][j].mergeSpan = null;
+                }
+                data[i][j].mergeParent = {
+                  row: selectedCell?.row || 0,
+                  col: selectedCell?.col || 0,
+                };
+              } else {
+                if (i === r1 && j === c1) continue;
+                data[i][j].mergeParent = {
+                  row: r1 || 0,
+                  col: c1 || 0,
+                };
               }
-              data[i][j].mergeParent = {
-                row: selectedCell?.row || 0,
-                col: selectedCell?.col || 0,
-              };
-            } else {
-              if (i === r1 && j === c1) continue;
-              data[i][j].mergeParent = {
-                row: r1 || 0,
-                col: c1 || 0,
-              };
             }
           }
         }
@@ -194,7 +214,12 @@ export const Header: FC<{
     onClick?.(type);
   };
   return (
-    <div className="flex items-center gap-x-1 bg-zinc-50 px-4 py-1 h-10 z-[1]">
+    <div
+      className="flex items-center gap-x-1 bg-zinc-50 px-4 py-1 h-10 z-[1]"
+      onKeyDown={(e) => {
+        e.preventDefault();
+      }}
+    >
       <Tooltip content="保存（未开发）">
         <Toggle
           className="text-lg"
@@ -294,15 +319,18 @@ export const Header: FC<{
       <ColorPicker type="text" selectionCells={selectionCells || []} />
       <ColorPicker type="background" selectionCells={selectionCells || []} />
       <Separator orientation="vertical" />
-      <Tooltip content="合并单元格">
+      <Tooltip content={(isStyle.isMergeCell ? "拆分" : "合并") + "单元格"}>
         <Toggle
-          disabled={!selectionCells?.length || selectionCells.length === 1}
-          className="text-lg"
+          pressed={isStyle.isMergeCell}
+          className="text-lg outline-0"
           onClick={() => {
             handleClick("merge");
           }}
         >
           <Merge />
+          <span className="text-xs">
+            {(isStyle.isMergeCell ? "拆分" : "合并") + "单元格"}
+          </span>
         </Toggle>
       </Tooltip>
       <div className="ml-auto">

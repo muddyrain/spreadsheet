@@ -129,10 +129,14 @@ export const useSpreadsheet = (
     },
     [sheets, activeSheetId],
   );
-
+  const currentSheet = useMemo(() => {
+    if (!sheets?.length) return null;
+    const sheet = sheets.find((sheet) => sheet.id === activeSheetId);
+    return sheet || null;
+  }, [sheets, activeSheetId]);
   const currentCell: CellData | null = useMemo(() => {
     if (!sheets?.length) return null;
-    const targetSheet = sheets.find((sheet) => sheet.id === activeSheetId);
+    const targetSheet = currentSheet;
     const data = targetSheet?.data;
     if (!data?.length) return null;
     const selectedCell = targetSheet?.selectedCell;
@@ -144,12 +148,7 @@ export const useSpreadsheet = (
     );
     if (cell?.readOnly) return null;
     return cell;
-  }, [sheets, activeSheetId, getCurrentCell]);
-  const currentSheet = useMemo(() => {
-    if (!sheets?.length) return null;
-    const sheet = sheets.find((sheet) => sheet.id === activeSheetId);
-    return sheet || null;
-  }, [sheets, activeSheetId]);
+  }, [sheets, currentSheet, getCurrentCell]);
   const setCurrentSheet = useCallback(
     <T extends keyof Sheet>(key: T, value: Sheet[T]) => {
       if (!currentSheet) return;
