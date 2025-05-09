@@ -3,6 +3,7 @@ import {
   Sheet,
   SpreadsheetConfig,
   SpreadsheetType,
+  TableData,
 } from "@/types/sheet";
 import { generateUUID } from "@/utils";
 import { createInitialData } from "@/utils/sheet";
@@ -34,40 +35,42 @@ export const useSpreadsheet = (
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [updater, setUpdater] = useState(+new Date());
   const [activeSheetId, setActiveSheetId] = useState("");
-  const createNewSheet = useCallback(() => {
-    const newSheet: Sheet = {
-      data: createInitialData(config, config.rows, config.cols),
-      id: generateUUID(),
-      name: `Sheet` + (sheets.length + 1),
-      selection: null,
-      currentCell: null,
-      selectedCell: null,
-      editingCell: null,
-      zoomSize: 1,
-      scrollPosition: { x: 0, y: 0 },
-      headerColsWidth: [
-        config.fixedColWidth,
-        ...Array.from({ length: config.cols }).map((_) => {
-          return config.width;
-        }),
-      ],
-      headerRowsHeight: [
-        config.height,
-        ...Array.from({ length: config.rows }).map((_) => {
-          return config.height;
-        }),
-      ],
-    };
-    setSheets((_sheets) => {
-      if (_sheets.length === 0) {
-        return [newSheet];
-      } else {
-        return [..._sheets, newSheet];
-      }
-    });
-    setActiveSheetId(newSheet.id);
-    return newSheet;
-  }, [config, sheets.length]);
+  const createNewSheet = useCallback(
+    (data?: TableData) => {
+      const newSheet: Sheet = {
+        data: createInitialData(config, config.rows, config.cols, data),
+        id: generateUUID(),
+        name: `Sheet` + (sheets.length + 1),
+        selection: null,
+        currentCell: null,
+        selectedCell: null,
+        editingCell: null,
+        zoomSize: 1,
+        scrollPosition: { x: 0, y: 0 },
+        headerColsWidth: [
+          config.fixedColWidth,
+          ...Array.from({ length: config.cols }).map((_) => {
+            return config.width;
+          }),
+        ],
+        headerRowsHeight: [
+          config.height,
+          ...Array.from({ length: config.rows }).map((_) => {
+            return config.height;
+          }),
+        ],
+      };
+      setSheets((_sheets) => {
+        if (_sheets.length === 0) {
+          return [newSheet];
+        } else {
+          return [..._sheets, newSheet];
+        }
+      });
+      return newSheet;
+    },
+    [config, sheets.length],
+  );
   const deleteSheet = useCallback(
     (sheetId: string) => {
       const targetIndex = sheets.findIndex((sheet) => sheet.id === sheetId);
@@ -114,7 +117,8 @@ export const useSpreadsheet = (
   useEffect(() => {
     if (isInitialized.current) return;
     if (!sheets?.length) {
-      createNewSheet();
+      const sheet = createNewSheet();
+      setActiveSheetId(sheet.id);
       isInitialized.current = true;
     }
   }, [config, createNewSheet, sheets]);

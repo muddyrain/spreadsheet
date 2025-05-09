@@ -96,6 +96,11 @@ export type CellData = {
    */
   value: string;
   /**
+   * @description 单元格的地址
+   * @default ''
+   */
+  address: string;
+  /**
    * @description 单元格样式
    * @default {}
    */
@@ -221,7 +226,7 @@ export type SpreadsheetType = {
   setActiveSheetId: (id: string) => void;
   config: Required<SpreadsheetConfig>; // 全局配置
   updater: number;
-  createNewSheet: () => void;
+  createNewSheet: (data?: TableData) => Sheet;
   createCopySheet: (id: string) => void;
   deleteSheet: (id: string) => void;
   forceUpdate: () => void;

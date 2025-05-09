@@ -235,7 +235,8 @@ export const SheetTabs: FC = () => {
           <div
             className="h-full px-4 cursor-pointer flex items-center justify-center hover:bg-zinc-100 duration-300"
             onClick={() => {
-              createNewSheet();
+              const sheet = createNewSheet();
+              setActiveSheetId(sheet.id);
             }}
           >
             <PlusIcon size={20} />

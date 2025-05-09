@@ -21,6 +21,7 @@ import { CellData } from "@/types/sheet";
 import { Settings } from "./Settings";
 import { ColorPicker } from "./ColorPicker";
 import { useExportExcel } from "@/hooks/useExportExcel";
+import { Import } from "./import";
 export type ClickType =
   | "save"
   | "undo"
@@ -340,7 +341,7 @@ export const Header: FC<{
           </span>
         </Toggle>
       </Tooltip>
-      <Tooltip content={"导出单元格"}>
+      <Tooltip content={"导出表格"}>
         <Toggle
           pressed={false}
           className="text-lg outline-0"
@@ -349,9 +350,10 @@ export const Header: FC<{
           }}
         >
           <Share />
-          <span className="text-xs">导出单元格</span>
+          <span className="text-xs">导出表格</span>
         </Toggle>
       </Tooltip>
+      <Import />
       <div className="ml-auto">
         <Settings />
       </div>
