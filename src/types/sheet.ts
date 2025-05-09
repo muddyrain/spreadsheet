@@ -171,7 +171,7 @@ export type SpreadsheetConfig = {
   readOnlyBorderColor?: string;
   /**
    * @description 单元格边框颜色
-   * @default '#CFCFCF'
+   * @default '#DFDFDF'
    */
   borderColor?: string;
   /**

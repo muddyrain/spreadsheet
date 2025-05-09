@@ -258,7 +258,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
         ctx.strokeStyle = config.selectionBorderColor;
         ctx.lineWidth = 1.5;
         // 防止边框被其他元素遮挡
-        ctx.strokeRect(x - 0.5, y - 0.5, cellWidth, cellHeight);
+        ctx.strokeRect(x - 0.5, y - 0.5, cellWidth + 1, cellHeight + 1);
         ctx.restore();
       }
     },

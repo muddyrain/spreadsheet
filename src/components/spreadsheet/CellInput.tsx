@@ -74,7 +74,7 @@ export const CellInput = forwardRef<
           const mirrorRect = mirrorRef.current.getBoundingClientRect();
           inputRef.current!.style.width = `${mirrorRect.width}px`;
           inputRef.current!.style.height = `${mirrorRect.height}px`;
-          setInputHeight(mirrorRect.height - 2);
+          setInputHeight(mirrorRect.height - 3);
         }
       });
     }
@@ -89,8 +89,8 @@ export const CellInput = forwardRef<
     ) => {
       // 设置尺寸
       const baseStyles = {
-        minWidth: `${width + 2}px`,
-        minHeight: `${height + 2}px`,
+        minWidth: `${width + 3}px`,
+        minHeight: `${height + 3}px`,
         padding: `${3 * zoomSize}px ${5 * zoomSize}px`,
         fontSize: `${(cell.style.fontSize || config.fontSize || 14) * zoomSize}px`,
         fontWeight: cell.style.fontWeight || "normal",

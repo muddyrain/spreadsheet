@@ -3,6 +3,7 @@ import { useStore } from "../useStore";
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "../useComputed";
 import { useCallback, useMemo } from "react";
+import { getSmartBorderColor } from "@/utils/color";
 
 export const useRenderCell = () => {
   const { selection, zoomSize, config, headerColsWidth, headerRowsHeight } =
@@ -64,8 +65,24 @@ export const useRenderCell = () => {
       ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
       ctx.textBaseline = "middle";
 
+      // 如果是非合并单元格
+      const backgroundColor =
+        cell.style.backgroundColor || config.backgroundColor;
+      if (!cell.mergeParent) {
+        // 设置背景颜色
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(x, y, cellWidth, cellHeight);
+      }
+      // 判断是否选中，绘制高亮背景
+      if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
+        ctx.fillStyle = config.selectionBackgroundColor;
+        ctx.fillRect(x + 0.5, y + 0.5, cellWidth - 0.5, cellHeight - 0.5);
+      }
       // 绘制边框
-      const borderColor = cell.style.borderColor || config.borderColor;
+      const borderColor = getSmartBorderColor(
+        backgroundColor,
+        cell.style.borderColor || config.borderColor,
+      );
       if (cell.mergeSpan) {
         const { c1, r1 } = cell.mergeSpan;
         const x = getLeft(c1);
@@ -75,17 +92,6 @@ export const useRenderCell = () => {
       } else if (!cell.mergeParent) {
         ctx.strokeStyle = borderColor;
         ctx.strokeRect(x, y, cellWidth, cellHeight);
-      }
-      // 如果是非合并单元格
-      if (!cell.mergeParent) {
-        // 设置背景颜色
-        ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
-        ctx.fillRect(x, y, cellWidth, cellHeight);
-      }
-      // 判断是否选中，绘制高亮背景
-      if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
-        ctx.fillStyle = config.selectionBackgroundColor;
-        ctx.fillRect(x, y, cellWidth, cellHeight);
       }
 
       // 如果是表头，并且当前列在选中范围内
