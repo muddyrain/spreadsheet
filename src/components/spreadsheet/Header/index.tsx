@@ -9,6 +9,7 @@ import {
   PaintRoller,
   Redo,
   Save,
+  Share,
   Strikethrough,
   Underline,
   Undo,
@@ -29,7 +30,8 @@ export type ClickType =
   | "italic"
   | "strikethrough"
   | "underline"
-  | "merge";
+  | "merge"
+  | "export";
 export const Header: FC<{
   onClick?: (type: ClickType) => void;
 }> = ({ onClick }) => {
@@ -91,7 +93,6 @@ export const Header: FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionCells, currentCell, updater]);
   const handleClick = (type: ClickType) => {
-    if (!selectionCells?.length) return;
     switch (type) {
       case "eraser": {
         selectionCells.forEach((cell) => {
@@ -207,6 +208,9 @@ export const Header: FC<{
             }
           }
         }
+        break;
+      }
+      case "export": {
         break;
       }
     }
@@ -331,6 +335,18 @@ export const Header: FC<{
           <span className="text-xs">
             {(isStyle.isMergeCell ? "拆分" : "合并") + "单元格"}
           </span>
+        </Toggle>
+      </Tooltip>
+      <Tooltip content={"导出单元格"}>
+        <Toggle
+          pressed={false}
+          className="text-lg outline-0"
+          onClick={() => {
+            handleClick("export");
+          }}
+        >
+          <Share />
+          <span className="text-xs">导出单元格</span>
         </Toggle>
       </Tooltip>
       <div className="ml-auto">
