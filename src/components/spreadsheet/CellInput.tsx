@@ -249,7 +249,11 @@ export const CellInput = forwardRef<
           setInputHeight(inputRef.current?.clientHeight || 0);
         }}
         onBlur={() => {
-          if (currentEditingCell) {
+          if (
+            currentEditingCell &&
+            !currentEditingCell.mergeSpan &&
+            !currentEditingCell?.mergeParent
+          ) {
             const currentRowHeight = headerRowsHeight[currentEditingCell?.row];
             if (inputHeight > currentRowHeight) {
               headerRowsHeight[currentEditingCell?.row] = inputHeight;
