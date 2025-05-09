@@ -3,7 +3,6 @@ import { useStore } from "../useStore";
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "../useComputed";
 import { useCallback, useMemo } from "react";
-import { getSmartBorderColor } from "@/utils/color";
 
 export const useRenderCell = () => {
   const { selection, zoomSize, config, headerColsWidth, headerRowsHeight } =
@@ -79,10 +78,7 @@ export const useRenderCell = () => {
         ctx.fillRect(x + 0.5, y + 0.5, cellWidth - 0.5, cellHeight - 0.5);
       }
       // 绘制边框
-      const borderColor = getSmartBorderColor(
-        backgroundColor,
-        cell.style.borderColor || config.borderColor,
-      );
+      const borderColor = cell.style.borderColor || config.borderColor;
       if (cell.mergeSpan) {
         const { c1, r1 } = cell.mergeSpan;
         const x = getLeft(c1);

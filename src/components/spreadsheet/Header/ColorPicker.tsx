@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { CheckIcon, ChevronRightIcon, PaletteIcon } from "lucide-react";
 import { CellData } from "@/types/sheet";
 import { useStore } from "@/hooks/useStore";
+import { getSmartBorderColor } from "@/utils/color";
 
 type ColorItemType = (typeof DEFAULT_COLOR_CONFIG)[0];
 const RECENT_COLORS_KEY = "recent_text_colors";
@@ -95,6 +96,10 @@ const ColorPickerInner: FC<{
     selectionCells.forEach((cItem) => {
       if (backgroundType) {
         cItem.style.backgroundColor = item.value || "";
+        cItem.style.borderColor = getSmartBorderColor(
+          item.value || "",
+          cItem.style.borderColor || config.borderColor,
+        );
       } else {
         cItem.style.color = item.value;
       }

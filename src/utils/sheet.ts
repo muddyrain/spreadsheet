@@ -62,6 +62,12 @@ export const createInitialData = (
         style: {
           color: config.color,
           backgroundColor: config.backgroundColor,
+          borderColor: config.borderColor,
+          fontSize: config.fontSize,
+          textAlign: "left",
+          fontWeight: "normal",
+          fontStyle: "normal",
+          textDecoration: "none",
         },
         row: i,
         col: j + 1,

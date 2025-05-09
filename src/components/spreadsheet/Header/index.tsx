@@ -20,6 +20,7 @@ import { getAbsoluteSelection } from "@/utils/sheet";
 import { CellData } from "@/types/sheet";
 import { Settings } from "./Settings";
 import { ColorPicker } from "./ColorPicker";
+import { useExportExcel } from "@/hooks/useExportExcel";
 export type ClickType =
   | "save"
   | "undo"
@@ -45,6 +46,7 @@ export const Header: FC<{
     setUpdater,
     getCurrentCell,
   } = useStore();
+  const exportExcel = useExportExcel();
   const selectionCells: CellData[] = useMemo(() => {
     if (!selection) {
       return [];
@@ -211,6 +213,7 @@ export const Header: FC<{
         break;
       }
       case "export": {
+        exportExcel();
         break;
       }
     }
