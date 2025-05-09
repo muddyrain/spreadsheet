@@ -98,7 +98,7 @@ export const useRenderCell = () => {
       const fontSize =
         (cell.style.fontSize || config.fontSize || 14) * zoomSize;
       // 最低宽度尺寸
-      const minWidth = 30 * zoomSize;
+      const minWidth = 25 * zoomSize;
       let color = cell.style.color || config.color || "#000000";
       if (cell.readOnly)
         color =

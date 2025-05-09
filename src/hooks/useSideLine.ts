@@ -175,8 +175,8 @@ export const useSideLine = (options: {
       const canvas = canvasRef.current;
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
 
         if (stableTimeoutRef.current) {
           clearTimeout(stableTimeoutRef.current);
@@ -192,6 +192,20 @@ export const useSideLine = (options: {
           }
         });
         if (isMouseDown) {
+          if (sideLineMode === "col") {
+            const left = getLeft(currentSideLineIndex[1]);
+            // x 最小只能大于 left + 30
+            if (x < left + 30) {
+              x = left + 30;
+            }
+          }
+          if (sideLineMode === "row") {
+            const top = getTop(currentSideLineIndex[0]);
+            // y 最小只能大于 top + 20
+            if (y < top + 20) {
+              y = top + 20;
+            }
+          }
           setCurrentSideLinePosition([x, y]);
         }
       }
