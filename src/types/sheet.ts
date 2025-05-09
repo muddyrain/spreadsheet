@@ -151,7 +151,7 @@ export type SpreadsheetConfig = {
   height?: number;
   /**
    * @description 选择框背景颜色
-   * @default 'rgba(60, 112, 255, 0.05)'
+   * @default 'rgba(60, 112, 255, 0.15)'
    */
   selectionBackgroundColor?: string;
   /**
@@ -171,7 +171,7 @@ export type SpreadsheetConfig = {
   readOnlyBorderColor?: string;
   /**
    * @description 单元格边框颜色
-   * @default '#CFCFCF'
+   * @default '#DFDFDF'
    */
   borderColor?: string;
   /**

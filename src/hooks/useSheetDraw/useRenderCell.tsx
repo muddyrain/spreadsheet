@@ -50,6 +50,25 @@ export const useRenderCell = () => {
 
       // 合并状态保存，减少 save/restore 调用
       ctx.save();
+      // 设置字体样式
+      const fontWeight = cell.style.fontWeight || "normal";
+      const fontStyle = cell.style.fontStyle || "normal";
+      const fontSize =
+        (cell.style.fontSize || config.fontSize || 14) * zoomSize;
+      // 最低宽度尺寸
+      const minWidth = 25 * zoomSize;
+      let color = cell.style.color || config.color || "#000000";
+      // 获取 CSS 变量定义的字体
+      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+      // 设置文本对齐
+      ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
+      ctx.textBaseline = "middle";
+      // 如果是非合并单元格
+      if (!cell.mergeParent) {
+        // 设置背景颜色
+        ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
+        ctx.fillRect(x + 0.5, y + 0.5, cellWidth - 0.5, cellHeight - 0.5);
+      }
       // 绘制边框
       if (cell.mergeSpan) {
         const { c1, r1 } = cell.mergeSpan;
@@ -60,13 +79,6 @@ export const useRenderCell = () => {
       } else if (!cell.mergeParent) {
         ctx.strokeStyle = cell.style.borderColor || config.borderColor;
         ctx.strokeRect(x, y, cellWidth, cellHeight);
-      }
-
-      // 如果是非合并单元格
-      if (!cell.mergeParent) {
-        // 设置背景颜色
-        ctx.fillStyle = cell.style.backgroundColor || config.backgroundColor;
-        ctx.fillRect(x, y, cellWidth, cellHeight);
       }
 
       // 判断是否选中，绘制高亮背景
@@ -92,19 +104,9 @@ export const useRenderCell = () => {
       if (cell.mergeParent) {
         return;
       }
-      // 设置字体样式
-      const fontWeight = cell.style.fontWeight || "normal";
-      const fontStyle = cell.style.fontStyle || "normal";
-      const fontSize =
-        (cell.style.fontSize || config.fontSize || 14) * zoomSize;
-      // 最低宽度尺寸
-      const minWidth = 25 * zoomSize;
-      let color = cell.style.color || config.color || "#000000";
       if (cell.readOnly)
         color =
           config.readOnlyColor || cell.style.color || config.color || "#000000";
-      // 获取 CSS 变量定义的字体
-      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
       ctx.fillStyle = color;
       // 大于最小宽度时才 设置裁剪
       if (cellWidth > minWidth) {
@@ -114,9 +116,6 @@ export const useRenderCell = () => {
         ctx.rect(x - 8 * zoomSize, y, cellWidth, cellHeight);
         ctx.clip();
       }
-      // 设置文本对齐
-      ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
-      ctx.textBaseline = "middle";
       // 计算文本位置
       const textX = (() => {
         if (cellWidth <= minWidth) return x;
@@ -138,6 +137,7 @@ export const useRenderCell = () => {
             (config.height / 2 - 2) * zoomSize +
             (i * fontSize + i * 7 * zoomSize);
           ctx.fillText(text, textX, textY);
+
           const textDecoration = cell.style.textDecoration || "none";
           // 计算文本装饰线的位置
           const calculateLinePosition = (

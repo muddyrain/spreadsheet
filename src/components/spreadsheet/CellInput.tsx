@@ -101,7 +101,7 @@ export const CellInput = forwardRef<
       Object.assign(inputEl.style, baseStyles, {
         color: cell.style.color || config.color || "#000000",
         backgroundColor:
-          cell.style.backgroundColor || config.backgroundColor || "#ffffff",
+          cell.style.backgroundColor || config.backgroundColor || "#FFFFFF",
       });
       // 应用到镜像元素
       Object.assign(mirrorEl.style, baseStyles);
