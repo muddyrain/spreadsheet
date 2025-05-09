@@ -17,14 +17,15 @@ export function getSmartBorderColor(
   const g = parseInt(bgColor.slice(3, 5), 16);
   const b = parseInt(bgColor.slice(5, 7), 16);
   const L = 0.299 * r + 0.587 * g + 0.114 * b;
-  // 亮色背景，边框加深 20%
+  // 亮色背景，边框加深 5%
   if (L > 180) {
-    return blendColor(bgColor, 0.2);
+    console.log(bgColor);
+    return blendColor(bgColor, 0.05);
   }
   // 中等亮度，边框加深 10%
   if (L > 80) {
     return blendColor(bgColor, 0.1);
   }
-  // 很深色，边框只加深 5%，保持低对比度
-  return blendColor(bgColor, 0.05);
+  // 很深色，边框加深 20%
+  return blendColor(bgColor, 0.2);
 }
