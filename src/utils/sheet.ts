@@ -33,6 +33,7 @@ export const createInitialData = (
       address: "0",
     },
   ];
+
   for (let i = 0; i < (isInitialData ? cols : initialData[0].length); i++) {
     colNames.push({
       ...defaultCellData,
@@ -82,15 +83,17 @@ export const createInitialData = (
   } else {
     initialData.unshift(colNames);
     initialData.forEach((row, rowIndex) => {
-      row.unshift({
-        ...defaultCellData,
-        value: `${rowIndex}`,
-        readOnly: true,
-        style: readOnlyStyle,
-        row: rowIndex,
-        col: 0,
-        address: "",
-      });
+      if (rowIndex > 0) {
+        row.unshift({
+          ...defaultCellData,
+          value: `${rowIndex}`,
+          readOnly: true,
+          style: readOnlyStyle,
+          row: rowIndex,
+          col: 0,
+          address: "",
+        });
+      }
     });
   }
   return initialData;
