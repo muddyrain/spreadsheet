@@ -29,16 +29,18 @@ export function generateUUID() {
  * 限制表格大小，防止表格过大导致渲染性能问题
  */
 export function limitSheetSize(rows: number, cols: number, maxCells = 2000000) {
-  const total = rows * cols;
-  if (total <= maxCells) return { rows, cols };
-  if (rows >= cols) {
-    rows = Math.floor(maxCells / cols);
-  } else {
-    cols = Math.floor(maxCells / rows);
-  }
-  // 若仍超限，继续递归调整
-  if (rows * cols > maxCells) {
-    return limitSheetSize(rows, cols, maxCells);
+  // 计算总单元格数量
+  const totalCells = rows * cols;
+
+  // 如果总单元格数量超过200万，则按比例缩小
+  if (totalCells > maxCells) {
+    const scaleFactor = Math.sqrt(maxCells / totalCells);
+    rows = Math.floor(rows * scaleFactor);
+    cols = Math.floor(cols * scaleFactor);
+
+    // 确保至少有一行和一列
+    rows = Math.max(1, rows);
+    cols = Math.max(1, cols);
   }
   return { rows, cols };
 }
