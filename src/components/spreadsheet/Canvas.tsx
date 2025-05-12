@@ -55,9 +55,11 @@ export const Canvas: React.FC<CanvasProps> = ({
   const scrollConfig = useMemo(
     () => ({
       totalWidth:
-        headerColsWidth.reduce((sum, prev) => sum + prev, 0) * zoomSize + 50,
+        headerColsWidth.reduce((sum, prev) => sum + prev, 0) * zoomSize +
+        config.scrollAreaPadding,
       totalHeight:
-        headerRowsHeight.reduce((sum, prev) => sum + prev, 0) * zoomSize + 50,
+        headerRowsHeight.reduce((sum, prev) => sum + prev, 0) * zoomSize +
+        config.scrollAreaPadding,
       viewportWidth: containerWidth,
       viewportHeight: containerHeight,
     }),
@@ -66,6 +68,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       containerHeight,
       headerColsWidth,
       headerRowsHeight,
+      config.scrollAreaPadding,
       zoomSize,
     ],
   );

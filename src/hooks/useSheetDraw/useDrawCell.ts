@@ -115,7 +115,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
             if (colIndex === 0 || rowIndex === 0) continue;
             const cell = data[rowIndex]?.[colIndex];
             if (!cell) continue;
-
             // 处理合并单元格的情况
             if (cell.mergeParent) {
               const parentCell =
@@ -141,7 +140,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
                 continue;
               }
             }
-
             const { x, y } = getCellPosition(cell);
             cells.push({ cell, x, y, rowIndex, colIndex });
           }
@@ -157,11 +155,9 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     (ctx: CanvasRenderingContext2D) => {
       const { cells } = getRenderArea(startRow, endRow, startCol, endCol);
       // 批量渲染单元格
-      ctx.save();
       for (const { cell, x, y, rowIndex, colIndex } of cells) {
         renderCell(ctx, { rowIndex, colIndex, x, y, cell });
       }
-      ctx.restore();
     },
     [endCol, endRow, getRenderArea, renderCell, startCol, startRow],
   );
@@ -290,12 +286,10 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
         const { x, y } = getCellPosition(cell);
         const cellWidth = width;
         const cellHeight = height;
-        ctx.save();
         ctx.strokeStyle = config.selectionBorderColor;
         ctx.lineWidth = 1.5;
         // 防止边框被其他元素遮挡
         ctx.strokeRect(x - 0.5, y - 0.5, cellWidth + 1, cellHeight + 1);
-        ctx.restore();
       }
     },
     [
@@ -322,14 +316,12 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           const cellHeight = headerRowsHeight[0] * zoomSize;
           const { x } = getCellPosition(cell);
           const y = 0;
-          ctx.save();
           ctx.beginPath();
           ctx.lineWidth = 1.5;
           ctx.moveTo(x, y + cellHeight - 0.5);
           ctx.lineTo(x + colWidth, y + cellHeight - 0.5);
           ctx.strokeStyle = config.selectionBorderColor;
           ctx.stroke();
-          ctx.restore();
         }
         // 行头高亮
         for (let rowIndex = r1; rowIndex <= r2; rowIndex++) {
@@ -339,14 +331,12 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           const cellHeight = headerRowsHeight[rowIndex] * zoomSize;
           const { y } = getCellPosition(cell);
           const x = 0;
-          ctx.save();
           ctx.beginPath();
           ctx.lineWidth = 1.5;
           ctx.moveTo(x + colWidth - 0.5, y);
           ctx.lineTo(x + colWidth - 0.5, y + cellHeight);
           ctx.strokeStyle = config.selectionBorderColor;
           ctx.stroke();
-          ctx.restore();
         }
       }
     },
@@ -377,11 +367,9 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           const path = new Path2D();
           path.rect(x, y, width, height);
 
-          ctx.save();
           ctx.strokeStyle = config.selectionBorderColor;
           ctx.lineWidth = 1;
           ctx.stroke(path);
-          ctx.restore();
         }
       }
     },
@@ -410,7 +398,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           currentColSideLineIndex !== undefined &&
           currentColSideLinePosition !== undefined
         ) {
-          ctx.save();
           ctx.strokeStyle = config.selectionBorderColor;
           ctx.lineWidth = 1;
           ctx.setLineDash([5, 5]);
@@ -418,10 +405,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           ctx.moveTo(currentColSideLinePosition, 0);
           ctx.lineTo(currentColSideLinePosition, drawConfig.wrapperHeight);
           ctx.stroke();
-          ctx.restore();
         }
         if (colFixedSideLinePosition) {
-          ctx.save();
           ctx.strokeStyle = config.selectionBorderColor;
           ctx.lineWidth = 1;
           ctx.setLineDash([5, 5]);
@@ -429,7 +414,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           ctx.moveTo(colFixedSideLinePosition, 0);
           ctx.lineTo(colFixedSideLinePosition, drawConfig.wrapperHeight);
           ctx.stroke();
-          ctx.restore();
         }
       }
       if (isMouseDown && sideLineMode === "row") {
@@ -440,7 +424,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           currentRowSideLineIndex !== undefined &&
           currentRowSideLinePosition !== undefined
         ) {
-          ctx.save();
           ctx.strokeStyle = config.selectionBorderColor;
           ctx.lineWidth = 1;
           ctx.setLineDash([5, 5]);
@@ -448,10 +431,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           ctx.moveTo(0, currentRowSideLinePosition);
           ctx.lineTo(drawConfig.wrapperWidth, currentRowSideLinePosition);
           ctx.stroke();
-          ctx.restore();
         }
         if (rowFixedSideLinePosition) {
-          ctx.save();
           ctx.strokeStyle = config.selectionBorderColor;
           ctx.lineWidth = 1;
           ctx.setLineDash([5, 5]);
@@ -459,7 +440,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           ctx.moveTo(0, rowFixedSideLinePosition);
           ctx.lineTo(drawConfig.wrapperWidth, rowFixedSideLinePosition);
           ctx.stroke();
-          ctx.restore();
         }
       }
     },

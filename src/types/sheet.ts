@@ -140,6 +140,11 @@ export type SpreadsheetConfig = {
    */
   cols?: number;
   /**
+   * 滚动区域画布整体增加的额外空间
+   * @default 50
+   */
+  scrollAreaPadding?: number;
+  /**
    * @description 单元格宽度，用于计算单元格的宽度
    * @default 100
    */

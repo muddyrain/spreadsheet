@@ -24,3 +24,21 @@ export function getSystemInfo() {
 export function generateUUID() {
   return crypto.randomUUID();
 }
+
+/**
+ * 限制表格大小，防止表格过大导致渲染性能问题
+ */
+export function limitSheetSize(rows: number, cols: number, maxCells = 2000000) {
+  const total = rows * cols;
+  if (total <= maxCells) return { rows, cols };
+  if (rows >= cols) {
+    rows = Math.floor(maxCells / cols);
+  } else {
+    cols = Math.floor(maxCells / rows);
+  }
+  // 若仍超限，继续递归调整
+  if (rows * cols > maxCells) {
+    return limitSheetSize(rows, cols, maxCells);
+  }
+  return { rows, cols };
+}

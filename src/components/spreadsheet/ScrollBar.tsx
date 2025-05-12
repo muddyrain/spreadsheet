@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 interface ScrollBarProps {
   type: "horizontal" | "vertical";
@@ -16,8 +16,22 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
   onDragStart,
 }) => {
   const isHorizontal = type === "horizontal";
-  const scrollBarSize = Math.max((viewportSize / contentSize) * 100, 5);
-  const scrollBarPosition = (scrollPosition / contentSize) * 100;
+  const scrollBarSize = useMemo(() => {
+    return Math.max((viewportSize / contentSize) * viewportSize, 30);
+  }, [viewportSize, contentSize]);
+  const maxScroll = contentSize - viewportSize;
+  const scrollBarPosition = useMemo(() => {
+    if (isHorizontal) {
+      return Math.max(
+        (scrollPosition / maxScroll) * (viewportSize - scrollBarSize - 20),
+        10,
+      );
+    }
+    return Math.max(
+      (scrollPosition / maxScroll) * (viewportSize - scrollBarSize),
+      10,
+    );
+  }, [maxScroll, scrollPosition, viewportSize, scrollBarSize, isHorizontal]);
   return (
     <div
       className="relative border border-zinc-200 bg-zinc-50"
@@ -48,14 +62,14 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
           ...(isHorizontal
             ? {
                 height: "8px",
-                width: `${scrollBarSize}%`,
-                left: `${scrollBarPosition}%`,
+                width: `${scrollBarSize}px`,
+                left: `${scrollBarPosition}px`,
                 top: "4px",
               }
             : {
                 width: "8px",
-                height: `${scrollBarSize}%`,
-                top: `${scrollBarPosition}%`,
+                height: `${scrollBarSize}px`,
+                top: `${scrollBarPosition}px`,
                 left: "4px",
               }),
           borderRadius: "4px",

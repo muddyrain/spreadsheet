@@ -100,13 +100,19 @@ export const useComputed = () => {
       let visibleHeight = 0;
       for (let i = startRow; i < headerRowsHeight.length; i++) {
         visibleHeight += headerRowsHeight[i] * zoomSize;
+        endRow = i + 1;
         if (visibleHeight > wrapperHeight) {
-          endRow = i + 1;
           break;
         }
       }
-      endRow = Math.max(endRow, headerRowsHeight.length);
-
+      // 多加一行预加载
+      endRow = endRow + 1;
+      if (endRow > headerRowsHeight.length) {
+        endRow = headerRowsHeight.length;
+      }
+      if (startRow === endRow) {
+        endRow = headerRowsHeight.length;
+      }
       return {
         startRow,
         endRow,
@@ -121,26 +127,32 @@ export const useComputed = () => {
       let startCol = 0;
       for (let i = 0; i < headerColsWidth.length; i++) {
         acc += headerColsWidth[i] * zoomSize;
+        startCol = i;
         if (acc > scrollPosition.x) {
-          startCol = i;
           break;
         }
       }
       // 计算 endCol
       let endCol = startCol;
       let visibleWidth = 0;
-      for (let i = startCol; i < headerColsWidth.length; i++) {
+      for (let i = startCol; i <= headerColsWidth.length; i++) {
         visibleWidth += headerColsWidth[i] * zoomSize;
-        if (visibleWidth > wrapperWidth) {
-          endCol = i + 1;
+        endCol = i + 1;
+        if (visibleWidth >= wrapperWidth) {
           break;
         }
       }
-      endCol = Math.max(endCol, headerColsWidth.length);
-
+      // 多加一列预加载
+      endCol = endCol + 1;
+      if (endCol > headerColsWidth.length) {
+        endCol = headerColsWidth.length;
+      }
+      if (startCol === endCol) {
+        endCol = headerColsWidth.length;
+      }
       return {
         startCol,
-        endCol,
+        endCol: endCol + 1,
       };
     },
     [zoomSize, scrollPosition, headerColsWidth],

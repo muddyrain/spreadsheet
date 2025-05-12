@@ -5,7 +5,7 @@ import {
   SpreadsheetType,
   TableData,
 } from "@/types/sheet";
-import { generateUUID } from "@/utils";
+import { generateUUID, limitSheetSize } from "@/utils";
 import { createInitialData } from "@/utils/sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -14,11 +14,14 @@ export const useSpreadsheet = (
 ): SpreadsheetType => {
   const isInitialized = useRef(false);
   const config: Required<SpreadsheetConfig> = useMemo(() => {
+    const { rows, cols } = limitSheetSize(
+      _config?.rows || 200,
+      _config?.cols || 26,
+    );
     return {
-      rows: 200,
-      cols: 26,
       fontSize: 14,
       fixedColWidth: 50,
+      scrollAreaPadding: 50,
       width: 100,
       height: 30,
       selectionBorderColor: "rgba(60, 112, 255, 1)",
@@ -30,6 +33,8 @@ export const useSpreadsheet = (
       backgroundColor: "#FFFFFF",
       color: "#000000",
       ..._config,
+      rows,
+      cols,
     };
   }, [_config]);
   const [sheets, setSheets] = useState<Sheet[]>([]);

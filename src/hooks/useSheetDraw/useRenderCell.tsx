@@ -77,11 +77,6 @@ export const useRenderCell = () => {
         ctx.fillStyle = config.selectionBackgroundColor;
         ctx.fillRect(x + 0.5, y + 0.5, cellWidth - 0.5, cellHeight - 0.5);
       }
-      // 绘制边框
-      const borderColor = cell.style.borderColor || config.borderColor;
-      ctx.strokeStyle = borderColor;
-      ctx.strokeRect(x, y, cellWidth, cellHeight);
-
       // 如果是表头，并且当前列在选中范围内
       if ((isHeader || isRow) && selection?.start && selection?.end) {
         const { c1, c2, r1, r2 } = getAbsoluteSelection(selection);
@@ -95,6 +90,11 @@ export const useRenderCell = () => {
           ctx.globalAlpha = 1;
         }
       }
+      // 绘制边框
+      const borderColor = cell.style.borderColor || config.borderColor;
+      ctx.lineWidth = 1 * zoomSize;
+      ctx.strokeStyle = borderColor;
+      ctx.strokeRect(x, y, cellWidth, cellHeight);
       // 如果是被动合并单元格，不绘制文本
       if (cell.mergeParent) {
         return;
