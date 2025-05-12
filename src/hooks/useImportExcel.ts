@@ -3,9 +3,10 @@ import ExcelJS from "exceljs";
 import { CellData, Sheet } from "@/types/sheet";
 import { useStore } from "./useStore";
 import { addressToPosition, generateColName } from "@/utils/sheet";
+import { getSmartBorderColor } from "@/utils/color";
 
 export function useImportExcel() {
-  const { createNewSheet } = useStore();
+  const { config, createNewSheet } = useStore();
   const importExcel = useCallback(
     (file: File, options?: { onProgress?: (progress: number) => void }) => {
       return new Promise<Sheet[]>((resolve, reject) => {
@@ -22,45 +23,96 @@ export function useImportExcel() {
             for (let i = 0; i < totalSheets; i++) {
               const worksheet = workbook.worksheets[i];
               const data: CellData[][] = [];
-              const totalRows = worksheet.rowCount;
-              worksheet.eachRow((row, rowIndex) => {
-                const rowData: CellData[] = [];
-                row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-                  const master = cell.model?.master;
-                  const address = generateColName(colNumber - 1) + row.number;
-                  rowData.push({
-                    value: master ? "" : (cell.value?.toString() ?? ""),
-                    style: {
-                      fontWeight: cell.font?.bold ? "bold" : undefined,
-                      fontStyle: cell.font?.italic ? "italic" : undefined,
-                      textDecoration: cell.font?.underline
-                        ? "underline"
-                        : undefined,
-                      color: cell.font?.color?.argb
-                        ? `#${cell.font.color.argb.slice(2)}`
-                        : undefined,
-                      backgroundColor:
-                        cell.fill?.type === "pattern" && cell.fill.fgColor?.argb
-                          ? `#${cell.fill.fgColor.argb.slice(2)}`
-                          : undefined,
-                    },
-                    mergeParent: master ? addressToPosition(master) : null,
-                    mergeSpan: null,
-                    row: row.number,
-                    col: colNumber,
-                    address,
+              const rowsTotal = Math.max(config.rows, worksheet.rowCount);
+              const colsTotal = Math.max(config.cols, worksheet.columnCount);
+              const rows = (worksheet as unknown as { _rows: ExcelJS.Row[] })
+                ._rows;
+              for (let i = 0; i < rowsTotal; i++) {
+                const row = rows[i];
+                const rowIndex = i;
+                if (!row) {
+                  const emptyRow: CellData[] = [];
+                  for (let c = 1; c <= colsTotal; c++) {
+                    const address = generateColName(c - 1) + (rowIndex + 1);
+                    emptyRow.push({
+                      value: "",
+                      style: {
+                        color: config.color,
+                        backgroundColor: config.backgroundColor,
+                        borderColor: config.borderColor,
+                      },
+                      mergeParent: null,
+                      mergeSpan: null,
+                      row: rowIndex + 1,
+                      col: c,
+                      address,
+                    });
+                  }
+                  data.push(emptyRow);
+                } else {
+                  const rowData: CellData[] = [];
+                  let indexNumber = 0;
+                  row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                    const master = cell.model?.master;
+                    const address = generateColName(colNumber - 1) + rowIndex;
+                    const backgroundColor =
+                      cell.fill?.type === "pattern" && cell.fill.fgColor?.argb
+                        ? `#${cell.fill.fgColor.argb.slice(2)}`
+                        : config.backgroundColor;
+                    rowData.push({
+                      value: master ? "" : (cell.value?.toString() ?? ""),
+                      style: {
+                        fontWeight: cell.font?.bold ? "bold" : undefined,
+                        fontStyle: cell.font?.italic ? "italic" : undefined,
+                        textDecoration: cell.font?.underline
+                          ? "underline"
+                          : "normal",
+                        color: cell.font?.color?.argb
+                          ? `#${cell.font.color.argb.slice(2)}`
+                          : config.color,
+                        backgroundColor,
+                        borderColor: getSmartBorderColor(
+                          backgroundColor,
+                          config.borderColor,
+                        ),
+                      },
+                      mergeParent: master ? addressToPosition(master) : null,
+                      mergeSpan: null,
+                      row: row.number,
+                      col: colNumber,
+                      address,
+                    });
+                    indexNumber += 1;
                   });
-                });
-                data.push(rowData);
-                if (totalRows > 0) {
-                  // 多 sheet 进度分配
-                  const sheetBase = 0.3 + 0.6 * (i / totalSheets);
-                  const sheetStep = 0.6 / totalSheets;
-                  options?.onProgress?.(
-                    sheetBase + sheetStep * (rowIndex / totalRows),
-                  );
+                  // 后列 补充空白单元格
+                  while (indexNumber < colsTotal) {
+                    const address = generateColName(indexNumber) + rowIndex;
+                    rowData.push({
+                      value: "",
+                      style: {
+                        color: config.color,
+                        backgroundColor: config.backgroundColor,
+                        borderColor: config.borderColor,
+                      },
+                      mergeParent: null,
+                      mergeSpan: null,
+                      row: rowIndex + 1,
+                      col: indexNumber + 1,
+                      address,
+                    });
+                    indexNumber += 1;
+                  }
+                  data.push(rowData);
+                  if (rowsTotal > 0) {
+                    // 多 sheet 进度分配
+                    const sheetBase = 0.3 + 0.6 * (i / totalSheets);
+                    const sheetStep = 0.6 / totalSheets;
+                    options?.onProgress?.(
+                      sheetBase + sheetStep * (rowIndex / rowsTotal),
+                    );
+                  }
                 }
-              });
+              }
               // 统计并设置 mergeSpan
               const mergeMap = new Map<
                 string,
@@ -113,7 +165,7 @@ export function useImportExcel() {
         return handler();
       });
     },
-    [createNewSheet],
+    [config, createNewSheet],
   );
   return importExcel;
 }

@@ -268,10 +268,17 @@ export const Canvas: React.FC<CanvasProps> = ({
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       handleGetClient(e, "move", (rowIndex, colIndex) => {
+        if (
+          currentHoverCell &&
+          currentHoverCell[0] === rowIndex &&
+          currentHoverCell[1] === colIndex
+        ) {
+          return;
+        }
         setCurrentHoverCell([rowIndex, colIndex]);
       });
     },
-    [handleGetClient],
+    [handleGetClient, currentHoverCell],
   );
   // 添加页面可见性监听
   useEffect(() => {

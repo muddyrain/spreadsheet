@@ -37,8 +37,10 @@ export const useSpreadsheet = (
   const [activeSheetId, setActiveSheetId] = useState("");
   const createNewSheet = useCallback(
     (data?: TableData) => {
+      const colsTotal = Math.max(config.cols, data?.[0].length ?? 0);
+      const rowsTotal = Math.max(config.rows, data?.length ?? 0);
       const newSheet: Sheet = {
-        data: createInitialData(config, config.rows, config.cols, data),
+        data: createInitialData(config, rowsTotal, colsTotal, data),
         id: generateUUID(),
         name: `Sheet` + (sheets.length + 1),
         selection: null,
@@ -49,13 +51,13 @@ export const useSpreadsheet = (
         scrollPosition: { x: 0, y: 0 },
         headerColsWidth: [
           config.fixedColWidth,
-          ...Array.from({ length: config.cols }).map((_) => {
+          ...Array.from({ length: colsTotal }).map((_) => {
             return config.width;
           }),
         ],
         headerRowsHeight: [
           config.height,
-          ...Array.from({ length: config.rows }).map((_) => {
+          ...Array.from({ length: rowsTotal }).map((_) => {
             return config.height;
           }),
         ],

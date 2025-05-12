@@ -19,7 +19,6 @@ export function getSmartBorderColor(
   const L = 0.299 * r + 0.587 * g + 0.114 * b;
   // 亮色背景，边框加深 5%
   if (L > 180) {
-    console.log(bgColor);
     return blendColor(bgColor, 0.05);
   }
   // 中等亮度，边框加深 10%

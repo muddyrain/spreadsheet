@@ -42,7 +42,7 @@ export const useSideLine = (options: {
     if (currentHoverCell) {
       const range = 5 * zoomSize;
       const [rowIndex, colIndex] = currentHoverCell;
-      const currentCell = data[rowIndex][colIndex];
+      const currentCell = data?.[rowIndex]?.[colIndex];
       if (!currentPosition) {
         _setCursor("default");
         return;
