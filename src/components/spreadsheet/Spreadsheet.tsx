@@ -209,7 +209,7 @@ const Spreadsheet: React.FC<{
   // 防抖更新
   const debouncedChange = useMemo(() => {
     const handleChange = (data: TableData) => {
-      onChange?.(filterData(data));
+      onChange?.(filterData(data) as TableData);
     };
     return _.debounce(handleChange, 500);
   }, [onChange]);

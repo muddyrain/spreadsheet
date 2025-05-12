@@ -2,7 +2,7 @@ import Spreadsheet from "./components/spreadsheet";
 function App() {
   return (
     <>
-      <Spreadsheet config={{}} />
+      <Spreadsheet config={{ rows: 1000, cols: 100 }} />
     </>
   );
 }
