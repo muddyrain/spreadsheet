@@ -74,7 +74,7 @@ export const CellInput = forwardRef<
           const mirrorRect = mirrorRef.current.getBoundingClientRect();
           inputRef.current!.style.width = `${mirrorRect.width}px`;
           inputRef.current!.style.height = `${mirrorRect.height}px`;
-          setInputHeight(mirrorRect.height - 3);
+          setInputHeight(mirrorRect.height - 4);
         }
       });
     }
@@ -246,7 +246,8 @@ export const CellInput = forwardRef<
         }}
         onFocus={() => {
           setCurrentEditingCell(currentCell);
-          setInputHeight(inputRef.current?.clientHeight || 0);
+          // const clientHeight = inputRef.current?.clientHeight;
+          // setInputHeight(clientHeight && clientHeight > 0 ? clientHeight : 0);
         }}
         onBlur={() => {
           if (
@@ -254,9 +255,12 @@ export const CellInput = forwardRef<
             !currentEditingCell.mergeSpan &&
             !currentEditingCell?.mergeParent
           ) {
-            const currentRowHeight = headerRowsHeight[currentEditingCell?.row];
+            const currentRowHeight =
+              headerRowsHeight[currentEditingCell?.row] * zoomSize;
             if (inputHeight > currentRowHeight) {
-              headerRowsHeight[currentEditingCell?.row] = inputHeight;
+              headerRowsHeight[currentEditingCell?.row] = parseInt(
+                (inputHeight / zoomSize).toString(),
+              );
               setHeaderRowsHeight([...headerRowsHeight]);
             }
           }
@@ -275,7 +279,7 @@ export const CellInput = forwardRef<
           ...style,
           fontFamily: "PingFangSC sans-serif",
           border: `2px solid ${config.selectionBorderColor}`,
-          visibility: "hidden",
+          // visibility: "hidden",
         }}
       />
     </>
