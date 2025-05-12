@@ -226,7 +226,10 @@ export type SpreadsheetType = {
   setActiveSheetId: (id: string) => void;
   config: Required<SpreadsheetConfig>; // 全局配置
   updater: number;
-  createNewSheet: (data?: TableData) => Sheet;
+  createNewSheet: (
+    data?: TableData,
+    options?: Partial<Exclude<Sheet, "data">>,
+  ) => Sheet;
   createCopySheet: (id: string) => void;
   deleteSheet: (id: string) => void;
   forceUpdate: () => void;

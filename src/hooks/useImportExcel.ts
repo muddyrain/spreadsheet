@@ -22,14 +22,27 @@ export function useImportExcel() {
             const sheets: Sheet[] = [];
             for (let i = 0; i < totalSheets; i++) {
               const worksheet = workbook.worksheets[i];
+              console.log(worksheet);
               const data: CellData[][] = [];
               const rowsTotal = Math.max(config.rows, worksheet.rowCount);
               const colsTotal = Math.max(config.cols, worksheet.columnCount);
+              const headerRowsHeight = [config.height];
+              const headerColsWidth = [config.fixedColWidth];
               const rows = (worksheet as unknown as { _rows: ExcelJS.Row[] })
                 ._rows;
+              const cols = (
+                worksheet as unknown as { _columns: ExcelJS.Column[] }
+              )._columns;
+              for (let c = 0; c < colsTotal; c++) {
+                const col = cols[c];
+                const excelWidth = col?.width || config.width;
+                const pixelWidth = Math.floor(excelWidth * 7 + 5);
+                headerColsWidth.push(col?.width ? pixelWidth : config.width);
+              }
               for (let i = 0; i < rowsTotal; i++) {
                 const row = rows[i];
                 const rowIndex = i;
+                headerRowsHeight.push(row?.height || config.height);
                 if (!row) {
                   const emptyRow: CellData[] = [];
                   for (let c = 1; c <= colsTotal; c++) {
@@ -150,7 +163,10 @@ export function useImportExcel() {
                   c2: span.c2,
                 };
               }
-              const sheet = createNewSheet(data);
+              const sheet = createNewSheet(data, {
+                headerColsWidth,
+                headerRowsHeight,
+              });
               sheets.push({
                 ...sheet,
                 name: worksheet.name,

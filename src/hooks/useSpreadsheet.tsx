@@ -36,8 +36,8 @@ export const useSpreadsheet = (
   const [updater, setUpdater] = useState(+new Date());
   const [activeSheetId, setActiveSheetId] = useState("");
   const createNewSheet = useCallback(
-    (data?: TableData) => {
-      const colsTotal = Math.max(config.cols, data?.[0].length ?? 0);
+    (data?: TableData, options: Partial<Exclude<Sheet, "data">> = {}) => {
+      const colsTotal = Math.max(config.cols, data?.[0]?.length ?? 0);
       const rowsTotal = Math.max(config.rows, data?.length ?? 0);
       const newSheet: Sheet = {
         data: createInitialData(config, rowsTotal, colsTotal, data),
@@ -61,6 +61,7 @@ export const useSpreadsheet = (
             return config.height;
           }),
         ],
+        ...options,
       };
       setSheets((_sheets) => {
         if (_sheets.length === 0) {
@@ -119,7 +120,7 @@ export const useSpreadsheet = (
   useEffect(() => {
     if (isInitialized.current) return;
     if (!sheets?.length) {
-      const sheet = createNewSheet();
+      const sheet = createNewSheet([]);
       setActiveSheetId(sheet.id);
       isInitialized.current = true;
     }

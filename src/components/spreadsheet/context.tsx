@@ -23,7 +23,10 @@ export const SpreadsheetContext = React.createContext<
       currentCell: CellData | null;
       currentCtrlKey: string;
       updater: number;
-      createNewSheet: (data?: TableData) => Sheet;
+      createNewSheet: (
+        data?: TableData,
+        options?: Partial<Exclude<Sheet, "data">>,
+      ) => Sheet;
       deleteSheet: (id: string) => void;
       createCopySheet: (id: string) => void;
       setUpdater: () => void;
