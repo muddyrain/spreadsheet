@@ -1,3 +1,13 @@
+import JSZip from "jszip";
+export async function getAppName(file: ArrayBuffer) {
+  const zip = await JSZip.loadAsync(file);
+  const appXml = await zip.file("docProps/app.xml")?.async("string");
+  if (appXml) {
+    const match = appXml.match(/<Application>(.*?)<\/Application>/);
+    if (match) return match[1];
+  }
+  return null;
+}
 /**
  * 获取浏览器当前系统信息
  */

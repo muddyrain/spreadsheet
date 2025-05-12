@@ -3,7 +3,10 @@ import ExcelJS from "exceljs";
 import { CellData, Sheet } from "@/types/sheet";
 import { useStore } from "./useStore";
 import { addressToPosition, generateColName } from "@/utils/sheet";
-import { getSmartBorderColor } from "@/utils/color";
+import { applyTint, getSmartBorderColor } from "@/utils/color";
+import { getAppName } from "@/utils";
+import { WPS_THEME_COLOR_CONFIG } from "@/constant/wps_colors";
+import { MICRO_THEME_COLOR_CONFIG } from "@/constant/micro_colors";
 
 export function useImportExcel() {
   const { config, createNewSheet } = useStore();
@@ -16,13 +19,13 @@ export function useImportExcel() {
             const buffer = await file.arrayBuffer();
             options?.onProgress?.(0.15); // 文件读取完成
             const workbook = new ExcelJS.Workbook();
+            const appName = await getAppName(buffer);
             await workbook.xlsx.load(buffer);
             options?.onProgress?.(0.3); // workbook 加载完成
             const totalSheets = workbook.worksheets.length;
             const sheets: Sheet[] = [];
             for (let i = 0; i < totalSheets; i++) {
               const worksheet = workbook.worksheets[i];
-              console.log(worksheet);
               const data: CellData[][] = [];
               const rowsTotal = Math.max(config.rows, worksheet.rowCount);
               const colsTotal = Math.max(config.cols, worksheet.columnCount);
@@ -68,10 +71,36 @@ export function useImportExcel() {
                   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
                     const master = cell.model?.master;
                     const address = generateColName(colNumber - 1) + rowIndex;
-                    const backgroundColor =
+                    let backgroundColor =
                       cell.fill?.type === "pattern" && cell.fill.fgColor?.argb
                         ? `#${cell.fill.fgColor.argb.slice(2)}`
-                        : config.backgroundColor;
+                        : "";
+                    let color_config = [] as { theme: number; color: string }[];
+                    if (appName?.includes("WPS")) {
+                      color_config = WPS_THEME_COLOR_CONFIG;
+                    } else if (appName?.includes("Excel")) {
+                      color_config = MICRO_THEME_COLOR_CONFIG;
+                    }
+                    const theme =
+                      cell.fill?.type === "pattern" && cell.fill.fgColor?.theme;
+                    const tint =
+                      cell.fill?.type === "pattern" &&
+                      (cell.fill.fgColor as { tint: number })?.tint;
+                    if (theme) {
+                      const color = color_config.find(
+                        (item) => item.theme === theme,
+                      );
+                      if (color) {
+                        if (tint) {
+                          backgroundColor = applyTint(color.color, tint);
+                        } else {
+                          backgroundColor = color.color;
+                        }
+                      }
+                    }
+                    if (!backgroundColor) {
+                      backgroundColor = config.backgroundColor;
+                    }
                     rowData.push({
                       value: master ? "" : (cell.value?.toString() ?? ""),
                       style: {

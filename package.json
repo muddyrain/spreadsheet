@@ -58,6 +58,7 @@
     "file-saver": "^2.0.5",
     "globals": "^16.0.0",
     "husky": "^9.1.7",
+    "jszip": "^3.10.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.488.0",
     "motion": "^12.10.4",
