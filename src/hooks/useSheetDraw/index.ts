@@ -21,12 +21,15 @@ export const useSheetDraw = (
         drawHighLightCell,
         drawSelectedCell,
         drawDragLine,
+        drawMergeCellBorder,
         drawSelectedAreaBorder,
       } = drawFunctions;
       ctx.clearRect(0, 0, drawConfig.wrapperWidth, drawConfig.wrapperHeight);
       ctx.translate(0.5, 0.5);
       // 绘制内容区（非冻结区）单元格
       drawCell(ctx);
+      // 绘制所有合并单元格边框
+      drawMergeCellBorder(ctx);
       // 绘制当前选中单元格 且 没有输入框焦点
       drawHighLightCell(ctx);
       // 绘制 当前选中区域列头行头高亮

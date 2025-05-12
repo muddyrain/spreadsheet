@@ -10,6 +10,54 @@ import { MICRO_THEME_COLOR_CONFIG } from "@/constant/micro_colors";
 
 export function useImportExcel() {
   const { config, createNewSheet } = useStore();
+
+  const getColor = useCallback(
+    (
+      colorType: "background" | "text",
+      appName: string | null,
+      cell: ExcelJS.Cell,
+    ): string => {
+      let color_config = [] as { theme: number; color: string }[];
+      if (appName?.includes("WPS")) {
+        color_config = WPS_THEME_COLOR_CONFIG;
+      } else if (appName?.includes("Excel")) {
+        color_config = MICRO_THEME_COLOR_CONFIG;
+      }
+
+      let returnColor = "";
+      if (cell.fill?.type === "pattern" && colorType === "background") {
+        returnColor = cell.fill.fgColor?.argb || "";
+      }
+      if (cell.font?.color?.argb && colorType === "text") {
+        returnColor = cell.font?.color?.argb || "";
+      }
+      let theme = -1;
+      let tint = 1;
+      if (colorType === "background" && cell.fill?.type === "pattern") {
+        theme = cell.fill.fgColor?.theme as number;
+        tint = (cell.fill.fgColor as { tint: number })?.tint;
+      }
+      if (colorType === "text") {
+        theme = cell.font?.color?.theme as number;
+        tint = (cell.font?.color as { tint: number })?.tint;
+      }
+      if (theme >= 0) {
+        const color = color_config.find((item) => item.theme === theme);
+        if (color) {
+          if (tint) {
+            returnColor = applyTint(color.color, tint);
+          } else {
+            returnColor = color.color;
+          }
+        }
+      }
+      if (!returnColor)
+        returnColor =
+          colorType === "background" ? config.backgroundColor : config.color;
+      return returnColor;
+    },
+    [config],
+  );
   const importExcel = useCallback(
     (file: File, options?: { onProgress?: (progress: number) => void }) => {
       return new Promise<Sheet[]>((resolve, reject) => {
@@ -71,36 +119,12 @@ export function useImportExcel() {
                   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
                     const master = cell.model?.master;
                     const address = generateColName(colNumber - 1) + rowIndex;
-                    let backgroundColor =
-                      cell.fill?.type === "pattern" && cell.fill.fgColor?.argb
-                        ? `#${cell.fill.fgColor.argb.slice(2)}`
-                        : "";
-                    let color_config = [] as { theme: number; color: string }[];
-                    if (appName?.includes("WPS")) {
-                      color_config = WPS_THEME_COLOR_CONFIG;
-                    } else if (appName?.includes("Excel")) {
-                      color_config = MICRO_THEME_COLOR_CONFIG;
-                    }
-                    const theme =
-                      cell.fill?.type === "pattern" && cell.fill.fgColor?.theme;
-                    const tint =
-                      cell.fill?.type === "pattern" &&
-                      (cell.fill.fgColor as { tint: number })?.tint;
-                    if (theme) {
-                      const color = color_config.find(
-                        (item) => item.theme === theme,
-                      );
-                      if (color) {
-                        if (tint) {
-                          backgroundColor = applyTint(color.color, tint);
-                        } else {
-                          backgroundColor = color.color;
-                        }
-                      }
-                    }
-                    if (!backgroundColor) {
-                      backgroundColor = config.backgroundColor;
-                    }
+                    const backgroundColor = getColor(
+                      "background",
+                      appName,
+                      cell,
+                    );
+                    const textColor = getColor("text", appName, cell);
                     rowData.push({
                       value: master ? "" : (cell.value?.toString() ?? ""),
                       style: {
@@ -109,9 +133,7 @@ export function useImportExcel() {
                         textDecoration: cell.font?.underline
                           ? "underline"
                           : "normal",
-                        color: cell.font?.color?.argb
-                          ? `#${cell.font.color.argb.slice(2)}`
-                          : config.color,
+                        color: textColor,
                         backgroundColor,
                         borderColor: getSmartBorderColor(
                           backgroundColor,
@@ -210,7 +232,7 @@ export function useImportExcel() {
         return handler();
       });
     },
-    [config, createNewSheet],
+    [config, createNewSheet, getColor],
   );
   return importExcel;
 }

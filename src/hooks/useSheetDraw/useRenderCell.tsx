@@ -7,7 +7,7 @@ import { useCallback, useMemo } from "react";
 export const useRenderCell = () => {
   const { selection, zoomSize, config, headerColsWidth, headerRowsHeight } =
     useStore();
-  const { getMergeCellSize, getLeft, getTop } = useComputed();
+  const { getMergeCellSize } = useComputed();
   // 缓存字体样式
   const fontFamily = useMemo(() => {
     return getComputedStyle(document.documentElement)
@@ -70,7 +70,7 @@ export const useRenderCell = () => {
       if (!cell.mergeParent) {
         // 设置背景颜色
         ctx.fillStyle = backgroundColor;
-        ctx.fillRect(x, y, cellWidth, cellHeight);
+        ctx.fillRect(x - 0.5, y - 0.5, cellWidth + 0.5, cellHeight + 0.5);
       }
       // 判断是否选中，绘制高亮背景
       if (isCellSelected && isCellSelected(cell) && !cell.mergeParent) {
@@ -79,16 +79,8 @@ export const useRenderCell = () => {
       }
       // 绘制边框
       const borderColor = cell.style.borderColor || config.borderColor;
-      if (cell.mergeSpan) {
-        const { c1, r1 } = cell.mergeSpan;
-        const x = getLeft(c1);
-        const y = getTop(r1);
-        ctx.strokeStyle = borderColor;
-        ctx.strokeRect(x, y, cellWidth, cellHeight);
-      } else if (!cell.mergeParent) {
-        ctx.strokeStyle = borderColor;
-        ctx.strokeRect(x, y, cellWidth, cellHeight);
-      }
+      ctx.strokeStyle = borderColor;
+      ctx.strokeRect(x, y, cellWidth, cellHeight);
 
       // 如果是表头，并且当前列在选中范围内
       if ((isHeader || isRow) && selection?.start && selection?.end) {
@@ -195,9 +187,7 @@ export const useRenderCell = () => {
       config.height,
       config.readOnlyColor,
       config.selectionBackgroundColor,
-      getLeft,
       getMergeCellSize,
-      getTop,
       headerColsWidth,
       headerRowsHeight,
       isCellSelected,

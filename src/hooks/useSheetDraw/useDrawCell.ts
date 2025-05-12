@@ -165,6 +165,42 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     },
     [endCol, endRow, getRenderArea, renderCell, startCol, startRow],
   );
+  // 绘制所有合并单元格边框
+  const drawMergeCellBorder = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const { cells } = getRenderArea(startRow, endRow, startCol, endCol);
+      for (const { cell } of cells) {
+        if (cell.mergeSpan) {
+          const borderColor = cell.style.borderColor || config.borderColor;
+          const { c1, r1, c2, r2 } = cell.mergeSpan;
+          const x = getLeft(c1);
+          const y = getTop(r1);
+          ctx.strokeStyle = borderColor;
+          let mergeWidth = 0;
+          let mergeHeight = 0;
+          for (let i = c1; i <= c2; i++) {
+            mergeWidth += headerColsWidth[i];
+          }
+          for (let i = r1; i <= r2; i++) {
+            mergeHeight += headerRowsHeight[i];
+          }
+          ctx.strokeRect(x, y, mergeWidth, mergeHeight);
+        }
+      }
+    },
+    [
+      config.borderColor,
+      endCol,
+      endRow,
+      getLeft,
+      getRenderArea,
+      getTop,
+      headerColsWidth,
+      headerRowsHeight,
+      startCol,
+      startRow,
+    ],
+  );
   // 绘制冻结首列（除左上角交叉单元格）
   const drawFrozenCols = useCallback(
     (ctx: CanvasRenderingContext2D) => {
@@ -447,6 +483,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     drawHighLightCell,
     drawSelectedCell,
     drawDragLine,
+    drawMergeCellBorder,
     drawSelectedAreaBorder,
   };
 };
