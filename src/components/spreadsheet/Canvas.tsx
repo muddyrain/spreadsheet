@@ -13,7 +13,6 @@ import { useSheetSelection } from "@/hooks/useSheetSelection";
 import { useStore } from "@/hooks/useStore";
 import { useSideLine } from "@/hooks/useSideLine";
 import { useComputed } from "@/hooks/useComputed";
-import { debounce } from "lodash";
 
 interface CanvasProps {
   data: TableData;
@@ -266,14 +265,14 @@ export const Canvas: React.FC<CanvasProps> = ({
     },
     [currentPosition, setIsMouseDown, setCurrentSideLinePosition],
   );
-  const throttledHandleMouseMove = useMemo(() => {
-    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
       handleGetClient(e, "move", (rowIndex, colIndex) => {
         setCurrentHoverCell([rowIndex, colIndex]);
       });
-    };
-    return debounce(handleMouseMove, 16);
-  }, [handleGetClient]);
+    },
+    [handleGetClient],
+  );
   // 添加页面可见性监听
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -305,7 +304,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           }}
           tabIndex={0}
           ref={canvasRef}
-          onMouseMove={throttledHandleMouseMove}
+          onMouseMove={handleMouseMove}
           onMouseUp={() => {
             handleMouseUp();
           }}
