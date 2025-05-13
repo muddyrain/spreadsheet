@@ -4,6 +4,7 @@ import { useCallback } from "react";
 
 export const useComputed = () => {
   const {
+    config,
     data,
     zoomSize,
     selectedCell,
@@ -18,7 +19,19 @@ export const useComputed = () => {
     setEditingCell,
     setScrollPosition,
   } = useStore();
-
+  // 获取默认样式
+  const getDefaultCellStyle = useCallback(() => {
+    return {
+      color: config.color,
+      backgroundColor: config.backgroundColor,
+      borderColor: config.borderColor,
+      fontSize: config.fontSize,
+      textAlign: config.textAlign,
+      fontWeight: "normal",
+      fontStyle: "normal",
+      textDecoration: "none",
+    };
+  }, [config]);
   // 更新选择和单元格状态
   const updateSelectionAndCell = useCallback(
     (row: number, col: number) => {
@@ -390,6 +403,7 @@ export const useComputed = () => {
     getCellHeight,
     fitCellViewPort,
     updateSelectionAndCell,
+    getDefaultCellStyle,
     getLeft,
     getTop,
   };

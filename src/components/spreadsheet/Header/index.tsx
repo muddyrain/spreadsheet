@@ -22,6 +22,7 @@ import { Settings } from "./Settings";
 import { ColorPicker } from "./ColorPicker";
 import { useExportExcel } from "@/hooks/useExportExcel";
 import { Import } from "./import";
+import { Align } from "./Align";
 export type ClickType =
   | "save"
   | "undo"
@@ -32,6 +33,9 @@ export type ClickType =
   | "italic"
   | "strikethrough"
   | "underline"
+  | "alignLeft"
+  | "alignCenter"
+  | "alignRight"
   | "merge"
   | "export";
 export const Header: FC<{
@@ -91,6 +95,15 @@ export const Header: FC<{
         currentCell &&
         (currentCell.mergeSpan || currentCell.mergeParent)
       ),
+      isAlignLeft:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) => cell.style.textAlign === "left"),
+      isALignCenter:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) => cell.style.textAlign === "center"),
+      isALignRight:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) => cell.style.textAlign === "right"),
     };
     // 通过updater来判断是否需要更新isStyle
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,6 +165,24 @@ export const Header: FC<{
           } else {
             cell.style.textDecoration = `underline ${cell.style.textDecoration || ""}`;
           }
+        });
+        break;
+      }
+      case "alignLeft": {
+        selectionCells.forEach((cell) => {
+          cell.style.textAlign = "left";
+        });
+        break;
+      }
+      case "alignCenter": {
+        selectionCells.forEach((cell) => {
+          cell.style.textAlign = "center";
+        });
+        break;
+      }
+      case "alignRight": {
+        selectionCells.forEach((cell) => {
+          cell.style.textAlign = "right";
         });
         break;
       }
@@ -354,8 +385,16 @@ export const Header: FC<{
         </Toggle>
       </Tooltip>
       <Import />
+      <Separator orientation="vertical" />
+      <Align
+        isAlignLeft={isStyle.isAlignLeft}
+        isAlignCenter={isStyle.isALignCenter}
+        isAlignRight={isStyle.isALignRight}
+        onClick={handleClick}
+      />
       <div className="ml-auto">
         <Settings />
+        Align
       </div>
     </div>
   );

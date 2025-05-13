@@ -7,10 +7,11 @@ import { applyTint, getSmartBorderColor } from "@/utils/color";
 import { getAppName } from "@/utils";
 import { WPS_THEME_COLOR_CONFIG } from "@/constant/wps_colors";
 import { MICRO_THEME_COLOR_CONFIG } from "@/constant/micro_colors";
+import { useComputed } from "./useComputed";
 
 export function useImportExcel() {
   const { config, createNewSheet } = useStore();
-
+  const { getDefaultCellStyle } = useComputed();
   const getColor = useCallback(
     (
       colorType: "background" | "text",
@@ -101,9 +102,7 @@ export function useImportExcel() {
                     emptyRow.push({
                       value: "",
                       style: {
-                        color: config.color,
-                        backgroundColor: config.backgroundColor,
-                        borderColor: config.borderColor,
+                        ...getDefaultCellStyle(),
                       },
                       mergeParent: null,
                       mergeSpan: null,
@@ -128,11 +127,16 @@ export function useImportExcel() {
                     rowData.push({
                       value: master ? "" : (cell.value?.toString() ?? ""),
                       style: {
+                        ...getDefaultCellStyle(),
+                        fontSize: cell.font?.size,
                         fontWeight: cell.font?.bold ? "bold" : undefined,
                         fontStyle: cell.font?.italic ? "italic" : undefined,
                         textDecoration: cell.font?.underline
                           ? "underline"
                           : "normal",
+                        textAlign: cell.alignment?.horizontal
+                          ? cell.alignment.horizontal
+                          : undefined,
                         color: textColor,
                         backgroundColor,
                         borderColor: getSmartBorderColor(
@@ -154,9 +158,7 @@ export function useImportExcel() {
                     rowData.push({
                       value: "",
                       style: {
-                        color: config.color,
-                        backgroundColor: config.backgroundColor,
-                        borderColor: config.borderColor,
+                        ...getDefaultCellStyle(),
                       },
                       mergeParent: null,
                       mergeSpan: null,
@@ -232,7 +234,7 @@ export function useImportExcel() {
         return handler();
       });
     },
-    [config, createNewSheet, getColor],
+    [config, createNewSheet, getColor, getDefaultCellStyle],
   );
   return importExcel;
 }

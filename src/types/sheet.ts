@@ -160,6 +160,11 @@ export type SpreadsheetConfig = {
    */
   height?: number;
   /**
+   * @description 默认文本对齐方式
+   * @default 'left'
+   */
+  textAlign?: "left" | "center" | "right";
+  /**
    * @description 选择框背景颜色
    * @default 'rgba(60, 112, 255, 0.15)'
    */

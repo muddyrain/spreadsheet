@@ -68,7 +68,7 @@ export const createInitialData = (
             backgroundColor: config.backgroundColor,
             borderColor: config.borderColor,
             fontSize: config.fontSize,
-            textAlign: "left",
+            textAlign: config.textAlign,
             fontWeight: "normal",
             fontStyle: "normal",
             textDecoration: "none",

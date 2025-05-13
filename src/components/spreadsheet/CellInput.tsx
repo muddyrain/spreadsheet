@@ -96,6 +96,7 @@ export const CellInput = forwardRef<
         fontWeight: cell.style.fontWeight || "normal",
         fontStyle: cell.style.fontStyle || "normal",
         textDecoration: cell.style.textDecoration || "none",
+        textAlign: cell.style.textAlign || config.textAlign,
       };
       // 应用到输入框
       Object.assign(inputEl.style, baseStyles, {
@@ -106,7 +107,13 @@ export const CellInput = forwardRef<
       // 应用到镜像元素
       Object.assign(mirrorEl.style, baseStyles);
     },
-    [config.color, config.backgroundColor, config.fontSize, zoomSize],
+    [
+      config.color,
+      config.backgroundColor,
+      config.fontSize,
+      config.textAlign,
+      zoomSize,
+    ],
   );
   const setInputStyle = (rowIndex: number, colIndex: number) => {
     if (inputRef.current && mirrorRef.current) {
@@ -279,7 +286,7 @@ export const CellInput = forwardRef<
           ...style,
           fontFamily: "PingFangSC sans-serif",
           border: `2px solid ${config.selectionBorderColor}`,
-          // visibility: "hidden",
+          visibility: "hidden",
         }}
       />
     </>
