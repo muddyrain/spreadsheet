@@ -22,7 +22,7 @@ export const CellInput = forwardRef<
   CellInputRef,
   {
     style?: React.CSSProperties;
-    onChange: (value: string) => void;
+    onChange: (value: string, editingCell?: CellData | null) => void;
     onTabKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
     onEnterKeyDown?: () => void;
   }
@@ -36,6 +36,7 @@ export const CellInput = forwardRef<
     data,
     config,
     zoomSize,
+    updater,
     currentCell,
     selectedCell,
     setIsFocused,
@@ -175,7 +176,7 @@ export const CellInput = forwardRef<
         const col = cell.mergeParent.col;
         cell = data[row]?.[col];
       }
-      const { x, y } = getCellPosition(cell);
+      const { x, y, right } = getCellPosition(cell);
       const { width, height } = getMergeCellSize(cell, cellWidth, cellHeight);
       // 设置位置
       if (y <= 0) {
@@ -183,11 +184,18 @@ export const CellInput = forwardRef<
       } else {
         inputRef.current.style.top = `${y - 1}px`;
       }
-      if (x <= 0) {
-        inputRef.current.style.left = `${0}px`;
-      } else {
-        inputRef.current.style.left = `${x - 1}px`;
+      const textAlign = cell.style.textAlign || config.textAlign || "left";
+      if (textAlign === "left") {
+        if (x <= 0) {
+          inputRef.current.style.left = `${0}px`;
+        } else {
+          inputRef.current.style.left = `${x - 1}px`;
+        }
+      } else if (textAlign === "right") {
+        inputRef.current.style.left = "auto";
+        inputRef.current.style.right = `${right + 8}px`;
       }
+
       applyCellStyles(
         inputRef.current,
         mirrorRef.current,
@@ -207,6 +215,7 @@ export const CellInput = forwardRef<
     headerColsWidth,
     headerRowsHeight,
     selectedCell,
+    updater,
     getCellPosition,
     getMergeCellSize,
     applyCellStyles,
@@ -216,8 +225,7 @@ export const CellInput = forwardRef<
       <textarea
         ref={inputRef}
         className="absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
-        onChange={(e) => {
-          onChange(e.target.value);
+        onChange={() => {
           updateInputSize();
         }}
         onKeyDown={(e) => {
@@ -253,10 +261,9 @@ export const CellInput = forwardRef<
         }}
         onFocus={() => {
           setCurrentEditingCell(currentCell);
-          // const clientHeight = inputRef.current?.clientHeight;
-          // setInputHeight(clientHeight && clientHeight > 0 ? clientHeight : 0);
         }}
-        onBlur={() => {
+        onBlur={(e) => {
+          onChange?.(e.target.value, currentEditingCell);
           if (
             currentEditingCell &&
             !currentEditingCell.mergeSpan &&

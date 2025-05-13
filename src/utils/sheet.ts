@@ -75,7 +75,7 @@ export const createInitialData = (
           },
           row: i,
           col: j + 1,
-          address: generateColName(j + 1) + i,
+          address: generateColName(j) + i,
         });
       }
       initialData.push(rowData);

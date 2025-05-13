@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { TableData } from "../../types/sheet";
+import { CellData, TableData } from "../../types/sheet";
 import { Canvas } from "./Canvas";
 import { filterData } from "../../utils/filterData";
 import _ from "lodash";
@@ -195,15 +195,19 @@ const Spreadsheet: React.FC<{
     },
   );
   // 监听输入更新事件
-  const handleInputChange = (value: string) => {
-    if (editingCell) {
-      const newData = [...data];
-      const targetCell = newData[editingCell.row][editingCell.col];
-      if (targetCell) {
-        targetCell.value = value;
+  const handleInputChange = (value: string, _editingCell?: CellData | null) => {
+    if (_editingCell || editingCell) {
+      const row = _editingCell?.row || editingCell?.row;
+      const col = _editingCell?.col || editingCell?.col;
+      if (row && col) {
+        const newData = [...data];
+        const targetCell = newData[row][col];
+        if (targetCell) {
+          targetCell.value = value;
+        }
+        setData(newData);
+        debouncedChange(newData);
       }
-      setData(newData);
-      debouncedChange(newData);
     }
   };
   // 防抖更新

@@ -188,6 +188,14 @@ export const useComputed = () => {
     },
     [scrollPosition, getRealLeft],
   );
+  // 获取 x - right
+  const getRight = useCallback(
+    (col: number) => {
+      const cellWidth = getCellWidth(col);
+      return containerWidth - getLeft(col) - cellWidth;
+    },
+    [containerWidth, getLeft, getCellWidth],
+  );
   // 任意两列之间的像素距离
   const getLeftAndTargetIndex = useCallback(
     (col: number, targetIndex: number) => {
@@ -307,9 +315,10 @@ export const useComputed = () => {
       }
       const x = getLeft(col);
       const y = getTop(row);
-      return { x, y };
+      const right = getRight(col);
+      return { x, y, right };
     },
-    [getLeft, getTop],
+    [getLeft, getTop, getRight],
   );
 
   // 获取合并单元格大小
@@ -420,5 +429,6 @@ export const useComputed = () => {
     getLeftAndTargetIndex,
     getLeft,
     getTop,
+    getRight,
   };
 };
