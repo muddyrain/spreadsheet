@@ -65,7 +65,6 @@ export const useComputed = () => {
     },
     [data, getCurrentCell, setSelection, setSelectedCell, setEditingCell],
   );
-
   const getCellWidth = useCallback(
     (col: number) => {
       const cellWidth = headerColsWidth[col] * zoomSize;
@@ -95,7 +94,7 @@ export const useComputed = () => {
     },
     [zoomSize],
   );
-
+  //   获取 startRow 和 endRow
   const getStartEndRow = useCallback(
     (wrapperHeight: number) => {
       // 计算 startRow
@@ -133,6 +132,7 @@ export const useComputed = () => {
     },
     [zoomSize, scrollPosition, headerRowsHeight],
   );
+  // 获取 startCol 和 endCol
   const getStartEndCol = useCallback(
     (wrapperWidth: number) => {
       // 计算 startCol
@@ -188,6 +188,17 @@ export const useComputed = () => {
     },
     [scrollPosition, getRealLeft],
   );
+  // 任意两列之间的像素距离
+  const getLeftAndTargetIndex = useCallback(
+    (col: number, targetIndex: number) => {
+      const left1 = getRealLeft(col);
+      const left2 = getRealLeft(targetIndex);
+      // 返回两者的差值
+      return left2 - left1;
+    },
+    [getRealLeft],
+  );
+  // 获取真实 Y
   const getRealTop = useCallback(
     (row: number) => {
       const beforeAllHeight =
@@ -284,6 +295,7 @@ export const useComputed = () => {
     [selectedCell, data, getCurrentCell],
   );
 
+  // 获取单元格位置
   const getCellPosition = useCallback(
     (cell: CellData) => {
       let col = cell.col;
@@ -300,6 +312,7 @@ export const useComputed = () => {
     [getLeft, getTop],
   );
 
+  // 获取合并单元格大小
   const getMergeCellSize = useCallback(
     (cell: CellData, cellWidth: number, cellHeight: number) => {
       let width = 0;
@@ -404,6 +417,7 @@ export const useComputed = () => {
     fitCellViewPort,
     updateSelectionAndCell,
     getDefaultCellStyle,
+    getLeftAndTargetIndex,
     getLeft,
     getTop,
   };

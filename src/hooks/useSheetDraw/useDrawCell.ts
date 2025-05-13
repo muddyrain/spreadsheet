@@ -25,7 +25,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     selection,
   } = useStore();
 
-  const { renderCell } = useRenderCell();
+  const { renderCell, renderText, renderBorder, renderSelectedCell } =
+    useRenderCell();
   const {
     getMergeCellSize,
     getCellPosition,
@@ -36,6 +37,27 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   } = useComputed();
   const { startRow, endRow } = getStartEndRow(drawConfig.wrapperHeight);
   const { startCol, endCol } = getStartEndCol(drawConfig.wrapperWidth);
+  const selectionCells: CellData[] = useMemo(() => {
+    if (!selection) {
+      return [];
+    }
+    const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
+    if (r1 === r2 && c1 === c2) {
+      if (data[r1][c1]) {
+        return [data[r1][c1]];
+      } else {
+        return [];
+      }
+    }
+    const cells: CellData[] = [];
+    for (let i = r1; i <= r2; i++) {
+      for (let j = c1; j <= c2; j++) {
+        if (!data[i][j]) continue;
+        cells.push(data[i][j]);
+      }
+    }
+    return cells;
+  }, [selection, data]);
   // 当前是否为单个单元格的选区
   const isOneSelection = useMemo(() => {
     if (selectedCell) {
@@ -154,12 +176,59 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   const drawCell = useCallback(
     (ctx: CanvasRenderingContext2D) => {
       const { cells } = getRenderArea(startRow, endRow, startCol, endCol);
+      const sortedCells = cells.slice().sort((a, b) => {
+        // 没有内容的最最前面
+        if (!a.cell.value && b.cell.value) return -1;
+        if (a.cell.value && !b.cell.value) return 1;
+        if (!a.cell.value && !b.cell.value) return 0;
+        // 都有内容，按对齐方式排序
+        const alignOrder = (align: string) => {
+          if (align === "right") return 1; // 右对齐优先
+          if (align === "center") return 2; // 居中其次
+          return 3; // 左对齐最后
+        };
+        const aAlign = a.cell.style?.textAlign || "left";
+        const bAlign = b.cell.style?.textAlign || "left";
+        return alignOrder(aAlign) - alignOrder(bAlign);
+      });
+
       // 批量渲染单元格
       for (const { cell, x, y, rowIndex, colIndex } of cells) {
         renderCell(ctx, { rowIndex, colIndex, x, y, cell });
       }
+      // 绘制边框
+      for (const { cell, x, y, rowIndex, colIndex } of cells) {
+        renderBorder(ctx, {
+          x,
+          y,
+          cell,
+          rowIndex,
+          colIndex,
+        });
+      }
+      // 再绘制文本（无内容的先，有内容的后）
+      for (const cell of sortedCells) {
+        renderText(ctx, cell);
+      }
+      // 渲染选中单元格
+      for (const cell of selectionCells) {
+        const { x, y } = getCellPosition(cell);
+        renderSelectedCell(ctx, { x, y, cell });
+      }
     },
-    [endCol, endRow, getRenderArea, renderCell, startCol, startRow],
+    [
+      getRenderArea,
+      startRow,
+      endRow,
+      startCol,
+      endCol,
+      renderCell,
+      renderText,
+      renderBorder,
+      selectionCells,
+      getCellPosition,
+      renderSelectedCell,
+    ],
   );
   // 绘制所有合并单元格边框
   const drawMergeCellBorder = useCallback(
@@ -207,10 +276,20 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           const { y } = getCellPosition(cell);
           const x = 0;
           renderCell(ctx, { rowIndex, colIndex, x, y, cell, isRow: true });
+          renderBorder(ctx, { rowIndex, colIndex, x, y, cell });
+          renderText(ctx, { rowIndex, colIndex, x, y, cell });
         }
       }
     },
-    [data, endRow, getCellPosition, renderCell, startRow],
+    [
+      data,
+      endRow,
+      getCellPosition,
+      renderBorder,
+      renderCell,
+      renderText,
+      startRow,
+    ],
   );
   // 绘制冻结首行（除左上角交叉单元格）
   const drawFrozenRows = useCallback(
@@ -231,9 +310,28 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
             isHeader: true,
           });
         }
+        for (let rowIndex = 0; rowIndex < FROZEN_ROW_COUNT; rowIndex++) {
+          for (let colIndex = startCol; colIndex < endCol; colIndex++) {
+            const cell = data[rowIndex]?.[colIndex];
+            if (!cell) continue;
+            const { x } = getCellPosition(cell);
+            const y = 0;
+            renderBorder(ctx, { rowIndex, colIndex, x, y, cell });
+            renderText(ctx, { rowIndex, colIndex, x, y, cell });
+          }
+        }
       }
     },
-    [data, endCol, getCellPosition, renderCell, selection, startCol],
+    [
+      data,
+      endCol,
+      getCellPosition,
+      renderBorder,
+      renderCell,
+      renderText,
+      selection,
+      startCol,
+    ],
   );
   // 绘制左上角交叉单元格
   const drawFrozenCrossCell = useCallback(
@@ -254,6 +352,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           ctx.lineTo(x + colWidth / 2 + 5 + 0.5, y + colHeight / 2 - 5 + 0.5);
           ctx.closePath();
           ctx.fill();
+          renderBorder(ctx, { rowIndex, colIndex, x, y, cell });
         }
       }
     },
@@ -263,6 +362,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       getCellPosition,
       headerColsWidth,
       headerRowsHeight,
+      renderBorder,
       renderCell,
     ],
   );
