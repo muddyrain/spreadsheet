@@ -1,16 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useStore } from "../useStore";
 import { useTools } from "./useTools";
 
 export const useDynamicRenderBorder = () => {
   const { updater, data, config, headerColsWidth, zoomSize } = useStore();
-  const [tempMap, setTempMap] = useState<
-    ({
-      row: number;
-      col: number;
-      isDraw: boolean;
-    } | null)[][]
-  >([]);
+
   const { getFontStyle } = useTools();
   // 1. 计算 MeasureMap
   const getMeasureMap = useCallback(
@@ -60,45 +54,30 @@ export const useDynamicRenderBorder = () => {
     if (!ctx) return [];
     return getMeasureMap(ctx);
   }, [getMeasureMap]);
-  useEffect(() => {
-    const renderMap: ({
+
+  const drawMap = useMemo(() => {
+    // 1. 初始化所有单元格边框为显示
+    const tempMap: ({
       row: number;
       col: number;
       isDraw: boolean;
     } | null)[][] = [];
     for (let row = 0; row < data.length; row++) {
-      renderMap[row] = [];
+      tempMap[row] = [];
       for (let col = 0; col < data[row].length; col++) {
         const cell = data[row][col];
-        renderMap[row].push({
+        tempMap[row].push({
           row: cell.row,
           col: cell.col,
           isDraw: true,
         });
       }
     }
-    setTempMap([...renderMap]);
-  }, [data]);
-  const updateTargetIsDraw = useCallback(
-    (row: number, col: number, isDraw: boolean) => {
-      const temp = tempMap[row][col];
-      if (temp && temp?.isDraw !== isDraw) {
-        temp.isDraw = isDraw;
-        setTempMap([...tempMap]);
-      }
-    },
-    [tempMap],
-  );
-  useEffect(() => {
-    if (tempMap?.length !== data.length) {
-      return;
-    }
     for (let row = 0; row < data.length; row++) {
       for (let col = 0; col < data[row].length; col++) {
         const cell = data[row][col];
         const temp = tempMap[row][col];
         if (temp) {
-          updateTargetIsDraw(row, col, true);
           const textAlign = cell.style.textAlign || config.textAlign;
           const textWidth = measureMap[row][col]?.textWidth || 0;
           if (cell.value) {
@@ -109,7 +88,10 @@ export const useDynamicRenderBorder = () => {
               while (remainWidth > 0 && nextCol < data[row].length) {
                 const nextCell = data[row][nextCol];
                 if (nextCell.value) break;
-                updateTargetIsDraw(row, nextCol - 1, false);
+                const target = tempMap[row][nextCol - 1];
+                if (target && target.isDraw) {
+                  target.isDraw = false;
+                }
                 remainWidth -= headerColsWidth[nextCol];
                 nextCol++;
               }
@@ -119,7 +101,10 @@ export const useDynamicRenderBorder = () => {
               while (remainWidth > 0 && preCol >= 0) {
                 const preCell = data[row][preCol];
                 if (preCell.value) break;
-                updateTargetIsDraw(row, preCol, false);
+                const target = tempMap[row][preCol];
+                if (target && target.isDraw) {
+                  target.isDraw = false;
+                }
                 remainWidth -= headerColsWidth[preCol];
                 preCol--;
               }
@@ -133,7 +118,10 @@ export const useDynamicRenderBorder = () => {
               while (rightRemain > 0 && rightCol < data[row].length) {
                 const rightCell = data[row][rightCol];
                 if (rightCell.value) break;
-                updateTargetIsDraw(row, rightCol - 1, false);
+                const target = tempMap[row][rightCol - 1];
+                if (target && target.isDraw) {
+                  target.isDraw = false;
+                }
                 rightRemain -= headerColsWidth[rightCol];
                 rightCol++;
               }
@@ -141,7 +129,10 @@ export const useDynamicRenderBorder = () => {
               while (leftRemain > 0 && leftCol >= 0) {
                 const leftCell = data[row][leftCol];
                 if (leftCell.value) break;
-                updateTargetIsDraw(row, leftCol, false);
+                const target = tempMap[row][leftCol];
+                if (target && target.isDraw) {
+                  target.isDraw = false;
+                }
                 leftRemain -= headerColsWidth[leftCol];
                 leftCol--;
               }
@@ -150,15 +141,8 @@ export const useDynamicRenderBorder = () => {
         }
       }
     }
-  }, [
-    updater,
-    config.textAlign,
-    data,
-    headerColsWidth,
-    measureMap,
-    tempMap,
-    updateTargetIsDraw,
-    zoomSize,
-  ]);
-  return { drawMap: tempMap };
+    return tempMap;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updater, config.textAlign, data, headerColsWidth, measureMap, zoomSize]);
+  return { drawMap };
 };
