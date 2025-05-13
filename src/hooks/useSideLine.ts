@@ -60,13 +60,17 @@ export const useSideLine = (options: {
 
           // 增加边缘检测的精确度
           if (offset <= range && colIndex > 1) {
-            setCurrentSideLineIndex(() => [-1, colIndex - 1]);
+            if (!isMouseDown) {
+              setCurrentSideLineIndex(() => [-1, colIndex - 1]);
+            }
             setSideLineMode("col");
             _setCursor("col-resize");
             return;
           }
           if (offset >= cellWidth - range && offset <= cellWidth) {
-            setCurrentSideLineIndex(() => [-1, colIndex]);
+            if (!isMouseDown) {
+              setCurrentSideLineIndex(() => [-1, colIndex]);
+            }
             setSideLineMode("col");
             _setCursor("col-resize");
             return;
@@ -79,13 +83,17 @@ export const useSideLine = (options: {
           const top = getTop(rowIndex);
           const offset = y - top;
           if (offset <= range && rowIndex > 1) {
-            setCurrentSideLineIndex(() => [rowIndex - 1, -1]);
+            if (!isMouseDown) {
+              setCurrentSideLineIndex(() => [rowIndex - 1, -1]);
+            }
             setSideLineMode("row");
             _setCursor("row-resize");
             return;
           }
           if (offset >= cellHeight - range && offset <= cellHeight) {
-            setCurrentSideLineIndex(() => [rowIndex, -1]);
+            if (!isMouseDown) {
+              setCurrentSideLineIndex(() => [rowIndex, -1]);
+            }
             setSideLineMode("row");
             _setCursor("row-resize");
             return;
