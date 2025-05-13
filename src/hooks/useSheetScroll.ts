@@ -118,6 +118,13 @@ export const useSheetScroll = (config: {
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
+      let deltaX = e.deltaX;
+      let deltaY = e.deltaY;
+      // 兼容 Windows 下 shift+滚轮横向滚动
+      if (e.shiftKey && deltaX === 0 && deltaY !== 0) {
+        deltaX = deltaY;
+        deltaY = 0;
+      }
       // 如果是ctrl或者cmd键按下，不处理滚轮事件
       if (e.ctrlKey || e.metaKey) {
         if (e.deltaY <= 0) {
