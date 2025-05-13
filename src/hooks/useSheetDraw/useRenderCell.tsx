@@ -2,9 +2,11 @@ import { CellData, SelectionSheetType } from "@/types/sheet";
 import { useStore } from "../useStore";
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "../useComputed";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
+import { useTools } from "./useTools";
+import { useDynamicRenderBorder } from "./useDynamicRenderBorder";
 
-interface RenderOptions {
+export interface RenderOptions {
   rowIndex: number;
   colIndex: number;
   x: number;
@@ -16,21 +18,11 @@ interface RenderOptions {
 }
 
 export const useRenderCell = () => {
-  const {
-    data,
-    selection,
-    zoomSize,
-    config,
-    headerColsWidth,
-    headerRowsHeight,
-  } = useStore();
-  const { getMergeCellSize, getLeftAndTargetIndex } = useComputed();
-  // 缓存字体样式
-  const fontFamily = useMemo(() => {
-    return getComputedStyle(document.documentElement)
-      .getPropertyValue("--font-family")
-      .trim();
-  }, []);
+  const { selection, zoomSize, config, headerColsWidth, headerRowsHeight } =
+    useStore();
+  const { getMergeCellSize } = useComputed();
+  const { getFontStyle } = useTools();
+  const { drawMap } = useDynamicRenderBorder();
   const isCellSelected = useCallback(
     (cell: CellData) => {
       if (!selection?.start || !selection?.end) return false;
@@ -41,88 +33,7 @@ export const useRenderCell = () => {
     },
     [selection],
   );
-  const getFontStyle = useCallback(
-    (ctx: CanvasRenderingContext2D, options: RenderOptions) => {
-      const { cell } = options;
-      // 最低宽度尺寸
-      const minWidth = 25 * zoomSize;
-      const textAlign = cell.style.textAlign || config.textAlign;
-      const color = cell.style.color || config.color || "#000000";
-      // 设置字体样式
-      const fontWeight = cell.style.fontWeight || "normal";
-      const fontStyle = cell.style.fontStyle || "normal";
-      const fontSize =
-        (cell.style.fontSize || config.fontSize || 14) * zoomSize;
-      // 获取 CSS 变量定义的字体
-      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-      // 设置文本对齐
-      ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
-      ctx.textBaseline = "middle";
-      return {
-        minWidth,
-        textAlign,
-        color,
-        fontWeight,
-        fontStyle,
-        fontSize,
-      };
-    },
-    [config.color, config.fontSize, config.textAlign, fontFamily, zoomSize],
-  );
-  // 1. 计算 MeasureMap
-  const getMeasureMap = useCallback(
-    (ctx: CanvasRenderingContext2D) => {
-      const cells = data;
-      const measureMap: ({
-        textWidth: number;
-        value: string;
-        readOnly: boolean;
-        row: number;
-        col: number;
-      } | null)[][] = [];
-      for (let row = 0; row < cells.length; row++) {
-        measureMap[row] = [];
-        for (let col = 0; col < cells[row].length; col++) {
-          const cell = cells[row][col];
-          if (!cell.value) {
-            measureMap[row][col] = {
-              textWidth: 0,
-              value: cell.value,
-              readOnly: cell.readOnly || false,
-              row: cell.row,
-              col: cell.col,
-            };
-            continue;
-          }
-          getFontStyle(ctx, {
-            cell,
-            rowIndex: row,
-            colIndex: col,
-            x: 0,
-            y: 0,
-          });
-          const textWidth = ctx.measureText(cell.value).width;
-          measureMap[row][col] = {
-            textWidth,
-            value: cell.value,
-            readOnly: cell.readOnly || false,
-            row: cell.row,
-            col: cell.col,
-          };
-        }
-      }
-      return measureMap;
-    },
-    [data, getFontStyle],
-  );
 
-  const measureMap = useMemo(() => {
-    // 这里假设你有一个 ref 或 ctx 实例
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return [];
-    return getMeasureMap(ctx);
-  }, [getMeasureMap]);
   // 绘制文本
   const renderText = useCallback(
     (ctx: CanvasRenderingContext2D, options: RenderOptions) => {
@@ -312,7 +223,6 @@ export const useRenderCell = () => {
       );
       const cellWidth = width;
       const cellHeight = height;
-      const { textAlign } = getFontStyle(ctx, options);
       // 绘制边框
       const borderColor = cell.style.borderColor || config.borderColor;
       ctx.lineWidth = 1 * zoomSize;
@@ -328,63 +238,22 @@ export const useRenderCell = () => {
         ctx.moveTo(x, y + cellHeight);
         ctx.lineTo(x + cellWidth, y + cellHeight);
         ctx.stroke();
-        if (cell.readOnly) {
+        const current = drawMap[rowIndex][colIndex];
+        if (current?.isDraw) {
           // 绘制右边框
           ctx.beginPath();
           ctx.moveTo(x + cellWidth, y);
           ctx.lineTo(x + cellWidth, y + cellHeight);
           ctx.stroke();
         }
-        if (textAlign === "left") {
-          const textWidth = measureMap[rowIndex]?.[colIndex]?.textWidth || 0;
-          let isDraw = true;
-          // 如果当前 cell 的文本宽度小于 cell 的宽度 不绘制
-          if (textWidth > cellWidth - 5.5 * zoomSize) {
-            isDraw = false;
-          }
-          // 如果当前的单元格的前一个单元格的文本宽度大于 cell 的宽度
-          // 这里做一个遍历
-          let prev = measureMap[rowIndex]?.[colIndex - 1];
-          // 如果前一个 单元格 是有内容
-          if (!prev?.value) {
-            while (prev) {
-              if (prev.readOnly) break;
-              if (prev.value) break;
-              prev = measureMap[rowIndex][prev?.col - 1];
-            }
-          }
-          // 上一个单元格的内容超出当前单元格自身则隐藏边框
-          if (prev && !prev.readOnly) {
-            const space = getLeftAndTargetIndex(prev.col, colIndex);
-            if (prev.textWidth > space + cellWidth - 5.5 * zoomSize) {
-              isDraw = false;
-            }
-          }
-          const next = measureMap[rowIndex][colIndex + 1];
-          // 下一个单元格有内容则自动绘制单元格
-          if (next && next.value) {
-            isDraw = true;
-          }
-          if (isDraw) {
-            // 绘制右边框
-            ctx.beginPath();
-            ctx.moveTo(x + cellWidth, y);
-            ctx.lineTo(x + cellWidth, y + cellHeight);
-            ctx.stroke();
-          }
-        }
-        // TODO: center
-        // TODO: right
       }
     },
     [
       config.borderColor,
-      getFontStyle,
-      getLeftAndTargetIndex,
+      drawMap,
       getMergeCellSize,
       headerColsWidth,
       headerRowsHeight,
-      measureMap,
       zoomSize,
     ],
   );
