@@ -176,27 +176,13 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   const drawCell = useCallback(
     (ctx: CanvasRenderingContext2D) => {
       const { cells } = getRenderArea(startRow, endRow, startCol, endCol);
-      const sortedCells = cells.slice().sort((a, b) => {
-        // 没有内容的最最前面
-        if (!a.cell.value && b.cell.value) return -1;
-        if (a.cell.value && !b.cell.value) return 1;
-        if (!a.cell.value && !b.cell.value) return 0;
-        // 都有内容，按对齐方式排序
-        const alignOrder = (align: string) => {
-          if (align === "right") return 1; // 右对齐优先
-          if (align === "center") return 2; // 居中其次
-          return 3; // 左对齐最后
-        };
-        const aAlign = a.cell.style?.textAlign || "left";
-        const bAlign = b.cell.style?.textAlign || "left";
-        return alignOrder(aAlign) - alignOrder(bAlign);
-      });
-
       // 批量渲染单元格
       for (const { cell, x, y, rowIndex, colIndex } of cells) {
         renderCell(ctx, { rowIndex, colIndex, x, y, cell });
       }
-
+      for (const cell of cells) {
+        renderText(ctx, cell);
+      }
       // 绘制边框
       for (const { cell, x, y, rowIndex, colIndex } of cells) {
         renderBorder(ctx, {
@@ -207,12 +193,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           colIndex,
         });
       }
-
-      // 再绘制文本（无内容的先，有内容的后）
-      for (const cell of sortedCells) {
-        renderText(ctx, cell);
-      } // 合并状态保存，减少 save/restore 调用
-
       // 渲染选中单元格
       for (const cell of selectionCells) {
         const { x, y } = getCellPosition(cell);

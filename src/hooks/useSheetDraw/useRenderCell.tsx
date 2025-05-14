@@ -4,7 +4,7 @@ import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "../useComputed";
 import { useCallback } from "react";
 import { useTools } from "./useTools";
-import { useDynamicRenderBorder } from "./useDynamicRenderBorder";
+import { useDynamicRenderBorder } from "./useDynamicRender";
 
 export interface RenderOptions {
   rowIndex: number;
@@ -18,11 +18,17 @@ export interface RenderOptions {
 }
 
 export const useRenderCell = () => {
-  const { selection, zoomSize, config, headerColsWidth, headerRowsHeight } =
-    useStore();
+  const {
+    data,
+    selection,
+    zoomSize,
+    config,
+    headerColsWidth,
+    headerRowsHeight,
+  } = useStore();
   const { getMergeCellSize } = useComputed();
   const { getFontStyle } = useTools();
-  const { drawMap } = useDynamicRenderBorder();
+  const { drawBorderMap } = useDynamicRenderBorder();
   const isCellSelected = useCallback(
     (cell: CellData) => {
       if (!selection?.start || !selection?.end) return false;
@@ -33,7 +39,6 @@ export const useRenderCell = () => {
     },
     [selection],
   );
-
   // 绘制文本
   const renderText = useCallback(
     (ctx: CanvasRenderingContext2D, options: RenderOptions) => {
@@ -48,23 +53,74 @@ export const useRenderCell = () => {
       const cellWidth = width;
       const cellHeight = height;
 
-      if (cell.value && !cell.readOnly) {
-        const backgroundColor =
-          cell.style.backgroundColor || config.backgroundColor;
-        ctx.fillStyle = backgroundColor;
-        ctx.fillRect(x + 0.5, y + 0.5, cellWidth - 1, cellHeight - 1);
-      }
+      // 设置字体样式
       const { minWidth, color, textAlign, fontSize } = getFontStyle(
         ctx,
         options,
       );
       ctx.fillStyle = color;
+      function hasCellValue(cell: CellData | undefined) {
+        return !!(cell && (cell.value || cell.mergeSpan || cell.mergeParent));
+      }
+      if (!cell.readOnly && textAlign === "left") {
+        const clipX = x;
+        let clipWidth = cellWidth;
+        let col = colIndex + 1;
+        // 向右累计宽度，直到遇到有内容的单元格
+        while (
+          col < data[rowIndex].length &&
+          !hasCellValue(data[rowIndex][col])
+        ) {
+          clipWidth += headerColsWidth[col];
+          col++;
+        }
+        ctx.beginPath();
+        ctx.rect(clipX, y, clipWidth, cellHeight);
+        ctx.clip();
+      }
+      if (!cell.readOnly && textAlign === "center") {
+        let leftCol = colIndex - 1;
+        let rightCol = colIndex + 1;
+        let leftWidth = 0;
+        let rightWidth = 0;
+        // 向左累计宽度
+        while (leftCol >= 0 && !hasCellValue(data[rowIndex][leftCol])) {
+          leftWidth += headerColsWidth[leftCol];
+          leftCol--;
+        }
+        // 向右累计宽度
+        while (
+          rightCol < data[rowIndex].length &&
+          hasCellValue(data[rowIndex][rightCol])
+        ) {
+          rightWidth += headerColsWidth[rightCol];
+          rightCol++;
+        }
+        const clipX = x - leftWidth;
+        const clipWidth = cellWidth + leftWidth + rightWidth;
+        ctx.beginPath();
+        ctx.rect(clipX, y, clipWidth, cellHeight);
+        ctx.clip();
+      }
+      if (!cell.readOnly && textAlign === "right") {
+        let leftCol = colIndex - 1;
+        let leftWidth = 0;
+        while (leftCol >= 0 && !hasCellValue(data[rowIndex][leftCol])) {
+          leftWidth += headerColsWidth[leftCol];
+          leftCol--;
+        }
+        const clipX = x - leftWidth;
+        const clipWidth = cellWidth + leftWidth;
+        ctx.beginPath();
+        ctx.rect(clipX, y, clipWidth, cellHeight);
+        ctx.clip();
+      }
+
       // 大于最小宽度时才 设置裁剪
       if (cell.mergeSpan && cellWidth > minWidth) {
         // 设置剪裁区域
         ctx.beginPath();
-        // + 2 是为了防止文本被裁剪
-        ctx.rect(x - 8 * zoomSize, y, cellWidth, cellHeight);
+        ctx.rect(x + 6.5 * zoomSize, y, cellWidth - 13 * zoomSize, cellHeight);
         ctx.clip();
       }
       // 计算文本位置
@@ -165,13 +221,13 @@ export const useRenderCell = () => {
       ctx.restore();
     },
     [
-      config.backgroundColor,
-      config.height,
-      getFontStyle,
       getMergeCellSize,
       headerColsWidth,
       headerRowsHeight,
+      getFontStyle,
       zoomSize,
+      data,
+      config.height,
     ],
   );
   // 单元格绘制函数
@@ -259,6 +315,7 @@ export const useRenderCell = () => {
       );
       const cellWidth = width;
       const cellHeight = height;
+
       // 绘制边框
       const borderColor = cell.style.borderColor || config.borderColor;
       ctx.lineWidth = 1 * zoomSize;
@@ -274,7 +331,7 @@ export const useRenderCell = () => {
         ctx.moveTo(x, y + cellHeight);
         ctx.lineTo(x + cellWidth, y + cellHeight);
         ctx.stroke();
-        const current = drawMap[rowIndex][colIndex];
+        const current = drawBorderMap[rowIndex][colIndex];
         if (current?.isDraw) {
           // 绘制右边框
           ctx.beginPath();
@@ -286,7 +343,7 @@ export const useRenderCell = () => {
     },
     [
       config.borderColor,
-      drawMap,
+      drawBorderMap,
       getMergeCellSize,
       headerColsWidth,
       headerRowsHeight,

@@ -128,7 +128,7 @@ export function useImportExcel() {
                       value: master ? "" : (cell.value?.toString() ?? ""),
                       style: {
                         ...getDefaultCellStyle(),
-                        fontSize: (cell.font?.size || config.fontSize) * 1.333,
+                        fontSize: cell.font?.size || config.fontSize,
                         fontWeight: cell.font?.bold ? "bold" : undefined,
                         fontStyle: cell.font?.italic ? "italic" : undefined,
                         textDecoration: cell.font?.underline

@@ -50,7 +50,7 @@ export const Header: FC<{
     currentCell,
     data,
     sheetCellSettingsConfig,
-    setUpdater,
+    setData,
     getCurrentCell,
   } = useStore();
   const exportExcel = useExportExcel();
@@ -263,7 +263,12 @@ export const Header: FC<{
         break;
       }
     }
-    setUpdater();
+    setData((data) => {
+      selectionCells.map((cell) => {
+        data[cell.row][cell.col] = cell;
+      });
+      return [...data];
+    });
     onClick?.(type);
   };
   return (
