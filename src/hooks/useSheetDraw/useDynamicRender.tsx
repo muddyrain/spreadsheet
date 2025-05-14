@@ -80,7 +80,7 @@ export const useDynamicRenderBorder = () => {
         if (temp) {
           const textAlign = cell.style.textAlign || config.textAlign;
           const textWidth = measureMap[row][col]?.textWidth || 0;
-          if (cell.value) {
+          if (!cell.readOnly && cell.value) {
             const cellWidth = headerColsWidth[col];
             if (textAlign === "left") {
               let remainWidth = textWidth - (cellWidth - 5.5 * zoomSize);
@@ -157,6 +157,9 @@ export const useDynamicRenderBorder = () => {
                 leftCol--;
               }
             }
+          }
+          if (cell.readOnly) {
+            temp.isDraw = true;
           }
         }
       }

@@ -79,29 +79,6 @@ export const useSheetScroll = (config: {
     };
   }, [config, setScrollPosition]);
 
-  useEffect(() => {
-    const maxScrollX = config.totalWidth - config.viewportWidth;
-    const maxScrollY = config.totalHeight - config.viewportHeight;
-    setScrollPosition((prevPosition) => {
-      let newX = prevPosition.x;
-      let newY = prevPosition.y;
-
-      if (maxScrollX < 0) newX = 0;
-      if (maxScrollY < 0) newY = 0;
-      if (prevPosition.x > maxScrollX) newX = maxScrollX;
-      if (prevPosition.y > maxScrollY) newY = maxScrollY;
-      // 仅当值实际改变时才返回新对象
-      if (newX === prevPosition.x && newY === prevPosition.y) {
-        return prevPosition;
-      }
-      if (maxScrollY > 0 && maxScrollX > 0) {
-        return { x: newX, y: newY };
-      } else {
-        return { x: 0, y: 0 };
-      }
-    });
-  }, [config, zoomSize, setScrollPosition]);
-
   const handleScrollbarDragStart = useCallback(
     (e: React.MouseEvent, type: "horizontal" | "vertical") => {
       setIsDragging(true);
@@ -156,9 +133,8 @@ export const useSheetScroll = (config: {
           maxScrollY,
         );
       }
-
       // 只有当位置真正改变时才更新状态
-      if (newScrollX !== scrollPosition.x || newScrollY !== scrollPosition.y) {
+      if (newScrollY !== scrollPosition.y || newScrollX !== scrollPosition.x) {
         setScrollPosition({
           x: newScrollX,
           y: newScrollY,
