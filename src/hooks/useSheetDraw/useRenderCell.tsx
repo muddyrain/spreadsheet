@@ -171,7 +171,7 @@ export const useRenderCell = () => {
           const textY =
             y +
             (config.height / 2 - 1) * zoomSize +
-            (i * fontSize + i * 7 * zoomSize);
+            (i * fontSize + i * 7.5 * zoomSize);
           ctx.fillText(text, textX, textY);
 
           const textDecoration = cell.style.textDecoration || "none";

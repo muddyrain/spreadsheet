@@ -10,6 +10,7 @@ import {
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
 import { useComputed } from "@/hooks/useComputed";
+import { useUpdateStyle } from "@/hooks/useUpdateStyle";
 
 export type CellInputRef = {
   setInputStyle: (rowIndex: number, colIndex: number, content?: string) => void;
@@ -28,6 +29,7 @@ export const CellInput = forwardRef<
   }
 >(({ style, onChange, onTabKeyDown, onEnterKeyDown }, ref) => {
   const { getMergeCellSize, getCellPosition } = useComputed();
+  const { updaterWrap } = useUpdateStyle();
   const [currentEditingCell, setCurrentEditingCell] = useState<CellData | null>(
     null,
   );
@@ -179,13 +181,11 @@ export const CellInput = forwardRef<
     setInputStyle,
     updateInputSize,
     focus() {
-      console.log("focus");
       updateInputSize();
       setIsFocused(true);
       inputRef.current?.focus();
     },
     blur() {
-      console.log("blur");
       updateInputSize();
       inputRef.current?.blur();
       setIsFocused(false);
@@ -274,16 +274,7 @@ export const CellInput = forwardRef<
           } else if (e.key === "Enter" && e.altKey) {
             // 监听 alt + Enter 键 换行
             e.preventDefault();
-            const textarea = e.currentTarget;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const value = textarea.value;
-            // 在光标位置插入换行符
-            textarea.value = value.slice(0, start) + "\n" + value.slice(end);
-            // 设置新的光标位置
-            textarea.selectionStart = textarea.selectionEnd = start + 1;
-            updateInputSize();
-            onChange?.(textarea.value);
+            updaterWrap(true);
           } else if (e.key === "Enter") {
             e.preventDefault();
             onEnterKeyDown?.();
