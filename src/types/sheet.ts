@@ -73,8 +73,8 @@ export type CellStyle = {
    */
   textAlign?: string;
   /**
-   * @description 单元格字体大小
-   * @default 14
+   * @description 单元格字体大小 - 是以“磅（pt）”为单位 1pt ≈ 1.333px
+   * @default 11
    */
   fontSize?: number;
   /**

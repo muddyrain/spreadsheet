@@ -281,7 +281,7 @@ const Spreadsheet: React.FC<{
           }}
           style={{
             display: isShowInput,
-            fontSize: `${config.fontSize || currentCell?.style.fontSize || 14}px`,
+            fontSize: `${currentCell?.style.fontSize || config.fontSize}px`,
             fontWeight: `${currentCell?.style.fontWeight || "normal"}`,
             fontStyle: `${currentCell?.style.fontStyle || "normal"}`,
             textDecoration: `${currentCell?.style.textDecoration || "none"}`,

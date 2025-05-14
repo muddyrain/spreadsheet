@@ -114,7 +114,7 @@ export const useRenderCell = () => {
           // 计算文本位置 + 起始单元格高度一半 - 边框高度  + 字体大小 + (行间距) 是为了防止文本被裁剪
           const textY =
             y +
-            (config.height / 2 - 1.5) * zoomSize +
+            (config.height / 2 - 1) * zoomSize +
             (i * fontSize + i * 7 * zoomSize);
           ctx.fillText(text, textX, textY);
 

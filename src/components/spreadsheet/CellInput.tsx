@@ -94,7 +94,7 @@ export const CellInput = forwardRef<
         minHeight: `${height + 3}px`,
         maxWidth: `none`,
         padding: `${3 * zoomSize}px ${4 * zoomSize}px ${3 * zoomSize}px ${5 * zoomSize}px`,
-        fontSize: `${(cell.style.fontSize || config.fontSize || 14) * zoomSize}px`,
+        fontSize: `${(cell.style.fontSize || config.fontSize) * zoomSize * 1.333}px`,
         fontWeight: cell.style.fontWeight || "normal",
         fontStyle: cell.style.fontStyle || "normal",
         textDecoration: cell.style.textDecoration || "none",

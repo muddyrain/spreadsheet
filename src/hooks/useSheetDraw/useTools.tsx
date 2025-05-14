@@ -21,7 +21,7 @@ export const useTools = () => {
       const fontWeight = cell.style.fontWeight || "normal";
       const fontStyle = cell.style.fontStyle || "normal";
       const fontSize =
-        (cell.style.fontSize || config.fontSize || 14) * zoomSize;
+        (cell.style.fontSize || config.fontSize) * zoomSize * 1.333;
       // 获取 CSS 变量定义的字体
       ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
       // 设置文本对齐

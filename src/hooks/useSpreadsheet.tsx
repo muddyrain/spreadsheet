@@ -19,7 +19,7 @@ export const useSpreadsheet = (
       _config?.cols || 26,
     );
     return {
-      fontSize: 14,
+      fontSize: 11,
       fixedColWidth: 50,
       scrollAreaPadding: 50,
       width: 100,

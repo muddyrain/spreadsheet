@@ -128,7 +128,7 @@ export function useImportExcel() {
                       value: master ? "" : (cell.value?.toString() ?? ""),
                       style: {
                         ...getDefaultCellStyle(),
-                        fontSize: cell.font?.size,
+                        fontSize: (cell.font?.size || config.fontSize) * 1.333,
                         fontWeight: cell.font?.bold ? "bold" : undefined,
                         fontStyle: cell.font?.italic ? "italic" : undefined,
                         textDecoration: cell.font?.underline
@@ -143,6 +143,7 @@ export function useImportExcel() {
                           backgroundColor,
                           config.borderColor,
                         ),
+                        wrap: !!cell.alignment?.wrapText,
                       },
                       mergeParent: master ? addressToPosition(master) : null,
                       mergeSpan: null,
