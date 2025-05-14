@@ -51,7 +51,6 @@ const RootSpreadsheet: React.FC<{
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [sideLineMode, setSideLineMode] = useState<"row" | "col" | null>(null);
   const { isMac, isWindows } = getSystemInfo();
-
   return (
     <SpreadsheetContext.Provider
       value={{

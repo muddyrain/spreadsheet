@@ -194,22 +194,6 @@ const Spreadsheet: React.FC<{
       },
     },
   );
-  // 监听输入更新事件
-  const handleInputChange = (value: string, _editingCell?: CellData | null) => {
-    if (_editingCell || editingCell) {
-      const row = _editingCell?.row || editingCell?.row;
-      const col = _editingCell?.col || editingCell?.col;
-      if (row && col) {
-        const newData = [...data];
-        const targetCell = newData[row][col];
-        if (targetCell) {
-          targetCell.value = value;
-        }
-        setData(newData);
-        debouncedChange(newData);
-      }
-    }
-  };
   // 防抖更新
   const debouncedChange = useMemo(() => {
     const handleChange = (data: TableData) => {
@@ -217,6 +201,25 @@ const Spreadsheet: React.FC<{
     };
     return _.debounce(handleChange, 500);
   }, [onChange]);
+  // 监听输入更新事件
+  const handleInputChange = useCallback(
+    (value: string, _editingCell?: CellData | null) => {
+      if (_editingCell || editingCell) {
+        const row = _editingCell?.row || editingCell?.row;
+        const col = _editingCell?.col || editingCell?.col;
+        if (row && col) {
+          const newData = [...data];
+          const targetCell = newData[row][col];
+          if (targetCell) {
+            targetCell.value = value;
+          }
+          setData(() => newData);
+          debouncedChange(newData);
+        }
+      }
+    },
+    [data, debouncedChange, editingCell, setData],
+  );
   // 清除选中
   const clearSelection = useCallback(() => {
     setEditingCell(null);

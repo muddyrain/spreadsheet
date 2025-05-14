@@ -179,11 +179,13 @@ export const CellInput = forwardRef<
     setInputStyle,
     updateInputSize,
     focus() {
+      console.log("focus");
       updateInputSize();
       setIsFocused(true);
       inputRef.current?.focus();
     },
     blur() {
+      console.log("blur");
       updateInputSize();
       inputRef.current?.blur();
       setIsFocused(false);
@@ -263,7 +265,12 @@ export const CellInput = forwardRef<
           if (e.key === "Tab") {
             // 监听 Tab 键
             e.preventDefault();
+            e.currentTarget.blur();
             onTabKeyDown?.(e);
+            setTimeout(() => {
+              setIsFocused(true);
+              inputRef.current?.focus();
+            }, 0);
           } else if (e.key === "Enter" && e.altKey) {
             // 监听 alt + Enter 键 换行
             e.preventDefault();
