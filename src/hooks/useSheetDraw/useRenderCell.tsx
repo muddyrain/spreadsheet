@@ -79,7 +79,35 @@ export const useRenderCell = () => {
         const textY = y + cellHeight / 2;
         ctx.fillText(cell.value, textX, textY);
       } else {
-        const contents = cell.value.split("\n");
+        let contents = cell.value.split("\n");
+        if (cell.style.wrap) {
+          const wrapText = (text: string, maxWidth: number) => {
+            const lines: string[] = [];
+            let currentLine = "";
+            for (const char of text) {
+              const testLine = currentLine + char;
+              if (
+                ctx.measureText(testLine).width > maxWidth &&
+                currentLine !== ""
+              ) {
+                lines.push(currentLine);
+                currentLine = char;
+              } else {
+                currentLine = testLine;
+              }
+            }
+            if (currentLine) lines.push(currentLine);
+            return lines;
+          };
+          let wrappedContents: string[] = [];
+          for (let i = 0; i < contents.length; i++) {
+            wrappedContents = wrappedContents.concat(
+              wrapText(contents[i], cellWidth - 10 * zoomSize),
+            );
+          }
+          // 用 wrappedContents 替换原有 contents 进行后续绘制
+          contents = wrappedContents;
+        }
         for (let i = 0; i < contents.length; i++) {
           const text = contents[i];
           const textMetrics = ctx.measureText(text);

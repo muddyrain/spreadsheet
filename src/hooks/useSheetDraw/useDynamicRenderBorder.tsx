@@ -89,7 +89,7 @@ export const useDynamicRenderBorder = () => {
                 const nextCell = data[row][nextCol];
                 if (nextCell.value) break;
                 const target = tempMap[row][nextCol - 1];
-                if (target && target.isDraw) {
+                if (target && target.isDraw && !cell.style.wrap) {
                   target.isDraw = false;
                 }
                 remainWidth -= headerColsWidth[nextCol];
@@ -102,7 +102,7 @@ export const useDynamicRenderBorder = () => {
                 const preCell = data[row][preCol];
                 if (preCell.value) break;
                 const target = tempMap[row][preCol];
-                if (target && target.isDraw) {
+                if (target && target.isDraw && !cell.style.wrap) {
                   target.isDraw = false;
                 }
                 remainWidth -= headerColsWidth[preCol];
@@ -119,7 +119,7 @@ export const useDynamicRenderBorder = () => {
                 const rightCell = data[row][rightCol];
                 if (rightCell.value) break;
                 const target = tempMap[row][rightCol - 1];
-                if (target && target.isDraw) {
+                if (target && target.isDraw && !cell.style.wrap) {
                   target.isDraw = false;
                 }
                 rightRemain -= headerColsWidth[rightCol];
@@ -130,7 +130,7 @@ export const useDynamicRenderBorder = () => {
                 const leftCell = data[row][leftCol];
                 if (leftCell.value) break;
                 const target = tempMap[row][leftCol];
-                if (target && target.isDraw) {
+                if (target && target.isDraw && !cell.style.wrap) {
                   target.isDraw = false;
                 }
                 leftRemain -= headerColsWidth[leftCol];

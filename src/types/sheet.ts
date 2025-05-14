@@ -87,6 +87,11 @@ export type CellStyle = {
    * @default 'none'
    */
   textDecoration?: string;
+  /**
+   * @description 单元格开启换行
+   * @default false
+   */
+  wrap?: boolean;
 };
 
 export type CellData = {

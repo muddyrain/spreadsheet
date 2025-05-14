@@ -38,6 +38,7 @@ export type ClickType =
   | "alignCenter"
   | "alignRight"
   | "merge"
+  | "wrap"
   | "export";
 export const Header: FC<{
   onClick?: (type: ClickType) => void;
@@ -96,6 +97,7 @@ export const Header: FC<{
         currentCell &&
         (currentCell.mergeSpan || currentCell.mergeParent)
       ),
+      isWrap: !!(currentCell && currentCell.style.wrap),
       isAlignLeft:
         !!selectionCells?.length &&
         selectionCells.every((cell) => cell.style.textAlign === "left"),
@@ -165,6 +167,17 @@ export const Header: FC<{
             cell.style.textDecoration?.replace("underline", "");
           } else {
             cell.style.textDecoration = `underline ${cell.style.textDecoration || ""}`;
+          }
+        });
+        break;
+      }
+      case "wrap": {
+        const isAll = selectionCells.every((cell) => cell.style.wrap);
+        selectionCells.forEach((cell) => {
+          if (isAll) {
+            cell.style.wrap = false;
+          } else {
+            cell.style.wrap = true;
           }
         });
         break;
@@ -367,10 +380,10 @@ export const Header: FC<{
       />
       <Tooltip content={"换行"}>
         <Toggle
-          pressed={false}
+          pressed={isStyle.isWrap}
           className="text-lg outline-0"
           onClick={() => {
-            handleClick("merge");
+            handleClick("wrap");
           }}
         >
           <WrapText />

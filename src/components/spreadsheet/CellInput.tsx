@@ -92,13 +92,17 @@ export const CellInput = forwardRef<
       const baseStyles = {
         minWidth: `${width + 3}px`,
         minHeight: `${height + 3}px`,
-        padding: `${3 * zoomSize}px ${5 * zoomSize}px`,
+        maxWidth: `none`,
+        padding: `${3 * zoomSize}px ${4 * zoomSize}px ${3 * zoomSize}px ${5 * zoomSize}px`,
         fontSize: `${(cell.style.fontSize || config.fontSize || 14) * zoomSize}px`,
         fontWeight: cell.style.fontWeight || "normal",
         fontStyle: cell.style.fontStyle || "normal",
         textDecoration: cell.style.textDecoration || "none",
         textAlign: cell.style.textAlign || config.textAlign,
       };
+      if (cell.style.wrap) {
+        baseStyles.maxWidth = `${width + 3}px`;
+      }
       // 应用到输入框
       Object.assign(inputEl.style, baseStyles, {
         color: cell.style.color || config.color || "#000000",
@@ -152,6 +156,25 @@ export const CellInput = forwardRef<
       }, 0);
     }
   };
+  const changeCellHeight = useCallback(
+    (currentEditingCell: CellData | null) => {
+      if (
+        currentEditingCell &&
+        !currentEditingCell.mergeSpan &&
+        !currentEditingCell?.mergeParent
+      ) {
+        const currentRowHeight =
+          headerRowsHeight[currentEditingCell?.row] * zoomSize;
+        if (inputHeight > currentRowHeight) {
+          headerRowsHeight[currentEditingCell?.row] = parseInt(
+            (inputHeight / zoomSize).toString(),
+          );
+          setHeaderRowsHeight([...headerRowsHeight]);
+        }
+      }
+    },
+    [headerRowsHeight, inputHeight, setHeaderRowsHeight, zoomSize],
+  );
   useImperativeHandle(ref, () => ({
     setInputStyle,
     updateInputSize,
@@ -203,7 +226,6 @@ export const CellInput = forwardRef<
         inputRef.current.style.left = "auto";
         inputRef.current.style.right = `${right + 8}px`;
       }
-
       applyCellStyles(
         inputRef.current,
         mirrorRef.current,
@@ -272,20 +294,7 @@ export const CellInput = forwardRef<
         }}
         onBlur={(e) => {
           onChange?.(e.target.value, currentEditingCell);
-          if (
-            currentEditingCell &&
-            !currentEditingCell.mergeSpan &&
-            !currentEditingCell?.mergeParent
-          ) {
-            const currentRowHeight =
-              headerRowsHeight[currentEditingCell?.row] * zoomSize;
-            if (inputHeight > currentRowHeight) {
-              headerRowsHeight[currentEditingCell?.row] = parseInt(
-                (inputHeight / zoomSize).toString(),
-              );
-              setHeaderRowsHeight([...headerRowsHeight]);
-            }
-          }
+          changeCellHeight(currentEditingCell);
         }}
         style={{
           ...style,

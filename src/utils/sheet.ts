@@ -72,6 +72,7 @@ export const createInitialData = (
             fontWeight: "normal",
             fontStyle: "normal",
             textDecoration: "none",
+            wrap: false,
           },
           row: i,
           col: j + 1,
