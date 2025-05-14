@@ -41,6 +41,7 @@ export const CellInput = forwardRef<
     updater,
     currentCell,
     selectedCell,
+    containerWidth,
     setIsFocused,
     setEditingCell,
     headerColsWidth,
@@ -63,7 +64,7 @@ export const CellInput = forwardRef<
   }, [headerRowsHeight, selectedCell]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mirrorRef = useRef<HTMLDivElement>(null);
-  const updateInputSize = () => {
+  const updateInputSize = useCallback(() => {
     if (inputRef.current && mirrorRef.current) {
       // 处理换行，保证最后一行也能被测量
       let value = inputRef.current.value || "";
@@ -77,11 +78,18 @@ export const CellInput = forwardRef<
           const mirrorRect = mirrorRef.current.getBoundingClientRect();
           inputRef.current!.style.width = `${mirrorRect.width}px`;
           inputRef.current!.style.height = `${mirrorRect.height}px`;
+          if (inputRef.current) {
+            const left = parseInt(inputRef.current.style.left) || 0;
+            if (left + mirrorRect.width > containerWidth) {
+              const space = left + mirrorRect.width - containerWidth;
+              inputRef.current!.style.left = `${left - space + 1}px`;
+            }
+          }
           setInputHeight(mirrorRect.height - 4);
         }
       });
     }
-  };
+  }, [containerWidth]);
   const applyCellStyles = useCallback(
     (
       inputEl: HTMLTextAreaElement,
@@ -113,6 +121,8 @@ export const CellInput = forwardRef<
       });
       // 应用到镜像元素
       Object.assign(mirrorEl.style, baseStyles);
+
+      return baseStyles;
     },
     [
       config.color,
@@ -144,16 +154,9 @@ export const CellInput = forwardRef<
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
-          const textAlign = currentCell.style.textAlign || config.textAlign;
           const value = inputRef.current.value;
-          if (textAlign === "right") {
-            // 光标移到末尾
-            inputRef.current.selectionStart = 0;
-            inputRef.current.selectionEnd = 0;
-          } else {
-            inputRef.current.selectionStart = value.length;
-            inputRef.current.selectionEnd = value.length;
-          }
+          inputRef.current.selectionStart = value.length;
+          inputRef.current.selectionEnd = value.length;
         }
       }, 0);
     }
@@ -211,16 +214,18 @@ export const CellInput = forwardRef<
       }
       const { x, y, right } = getCellPosition(cell);
       const { width, height } = getMergeCellSize(cell, cellWidth, cellHeight);
+      const fixedHeight = headerRowsHeight[0];
+      const fixedWidth = headerColsWidth[0];
       // 设置位置
-      if (y <= 0) {
-        inputRef.current.style.top = `${0}px`;
+      if (y <= fixedHeight) {
+        inputRef.current.style.top = `${fixedHeight}px`;
       } else {
         inputRef.current.style.top = `${y - 1}px`;
       }
       const textAlign = cell.style.textAlign || config.textAlign || "left";
       if (textAlign === "left" || textAlign === "center") {
-        if (x <= 0) {
-          inputRef.current.style.left = `${0}px`;
+        if (x <= fixedWidth) {
+          inputRef.current.style.left = `${fixedWidth}px`;
         } else {
           inputRef.current.style.left = `${x - 1}px`;
         }
@@ -251,6 +256,7 @@ export const CellInput = forwardRef<
     getCellPosition,
     getMergeCellSize,
     applyCellStyles,
+    updateInputSize,
   ]);
   return (
     <>
