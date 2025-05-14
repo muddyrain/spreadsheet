@@ -10,7 +10,6 @@ import {
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
 import { useComputed } from "@/hooks/useComputed";
-import { useUpdateStyle } from "@/hooks/useUpdateStyle";
 
 export type CellInputRef = {
   setInputStyle: (rowIndex: number, colIndex: number, content?: string) => void;
@@ -29,7 +28,6 @@ export const CellInput = forwardRef<
   }
 >(({ style, onChange, onTabKeyDown, onEnterKeyDown }, ref) => {
   const { getMergeCellSize, getCellPosition } = useComputed();
-  const { updaterWrap } = useUpdateStyle();
   const [currentEditingCell, setCurrentEditingCell] = useState<CellData | null>(
     null,
   );
@@ -217,15 +215,15 @@ export const CellInput = forwardRef<
       const fixedHeight = headerRowsHeight[0];
       const fixedWidth = headerColsWidth[0];
       // 设置位置
-      if (y <= fixedHeight) {
-        inputRef.current.style.top = `${fixedHeight}px`;
+      if (y <= fixedHeight - 1) {
+        inputRef.current.style.top = `${fixedHeight - 1}px`;
       } else {
         inputRef.current.style.top = `${y - 1}px`;
       }
       const textAlign = cell.style.textAlign || config.textAlign || "left";
       if (textAlign === "left" || textAlign === "center") {
-        if (x <= fixedWidth) {
-          inputRef.current.style.left = `${fixedWidth}px`;
+        if (x <= fixedWidth - 1) {
+          inputRef.current.style.left = `${fixedWidth - 1}px`;
         } else {
           inputRef.current.style.left = `${x - 1}px`;
         }
@@ -280,7 +278,16 @@ export const CellInput = forwardRef<
           } else if (e.key === "Enter" && e.altKey) {
             // 监听 alt + Enter 键 换行
             e.preventDefault();
-            updaterWrap(true);
+            const textarea = e.currentTarget;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const value = textarea.value;
+            // 在光标位置插入换行符
+            textarea.value = value.slice(0, start) + "\n" + value.slice(end);
+            // 设置新的光标位置
+            textarea.selectionStart = textarea.selectionEnd = start + 1;
+            updateInputSize();
+            onChange?.(textarea.value);
           } else if (e.key === "Enter") {
             e.preventDefault();
             onEnterKeyDown?.();

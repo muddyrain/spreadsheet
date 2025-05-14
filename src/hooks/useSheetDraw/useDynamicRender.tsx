@@ -34,7 +34,12 @@ export const useDynamicRenderBorder = () => {
             x: 0,
             y: 0,
           });
-          const textWidth = ctx.measureText(cell.value).width;
+          const contents = cell.value.split("\n");
+          const maxLengthContent = contents.reduce(
+            (a, b) => (a.length > b.length ? a : b),
+            "",
+          );
+          const textWidth = ctx.measureText(maxLengthContent).width;
           measureMap[row][col] = {
             textWidth,
             row: cell.row,
@@ -54,7 +59,6 @@ export const useDynamicRenderBorder = () => {
     if (!ctx) return [];
     return getMeasureMap(ctx);
   }, [getMeasureMap]);
-
   const drawBorderMap = useMemo(() => {
     // 1. 初始化所有单元格边框为显示
     const tempMap: ({
