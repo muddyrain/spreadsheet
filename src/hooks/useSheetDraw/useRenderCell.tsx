@@ -83,15 +83,15 @@ export const useRenderCell = () => {
         let rightCol = colIndex + 1;
         let leftWidth = 0;
         let rightWidth = 0;
-        // 向左累计宽度
+        // 向左累计宽度，直到遇到有内容或合并单元格
         while (leftCol >= 0 && !hasCellValue(data[rowIndex][leftCol])) {
           leftWidth += headerColsWidth[leftCol];
           leftCol--;
         }
-        // 向右累计宽度
+        // 向右累计宽度，直到遇到有内容或合并单元格
         while (
           rightCol < data[rowIndex].length &&
-          hasCellValue(data[rowIndex][rightCol])
+          !hasCellValue(data[rowIndex][rightCol])
         ) {
           rightWidth += headerColsWidth[rightCol];
           rightCol++;
