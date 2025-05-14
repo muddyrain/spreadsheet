@@ -61,7 +61,7 @@ export const useRenderCell = () => {
       const textX = (() => {
         if (textAlign === "left" && cellWidth <= minWidth) return x;
         if (textAlign === "center") return x + cellWidth / 2;
-        if (textAlign === "right") return x + cellWidth;
+        if (textAlign === "right") return x + cellWidth - 5.5 * zoomSize;
         return x + 5.5 * zoomSize;
       })();
 

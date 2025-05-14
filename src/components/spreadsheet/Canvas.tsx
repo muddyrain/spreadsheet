@@ -130,7 +130,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [containerRef, setContainerWidth, setContainerHeight]);
+  }, [setContainerWidth, setContainerHeight]);
   useEffect(() => {
     const currentWrapper = wrapperRef.current;
     if (currentWrapper) {
@@ -271,17 +271,19 @@ export const Canvas: React.FC<CanvasProps> = ({
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       handleGetClient(e, "move", (rowIndex, colIndex) => {
-        if (
-          currentHoverCell &&
-          currentHoverCell[0] === rowIndex &&
-          currentHoverCell[1] === colIndex
-        ) {
-          return;
-        }
-        setCurrentHoverCell([rowIndex, colIndex]);
+        setCurrentHoverCell((currentHoverCell) => {
+          if (
+            currentHoverCell &&
+            currentHoverCell[0] === rowIndex &&
+            currentHoverCell[1] === colIndex
+          ) {
+            return currentHoverCell;
+          }
+          return [rowIndex, colIndex];
+        });
       });
     },
-    [handleGetClient, currentHoverCell],
+    [handleGetClient],
   );
   // 添加页面可见性监听
   useEffect(() => {

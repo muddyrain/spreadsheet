@@ -394,7 +394,6 @@ export const Header: FC<{
       />
       <div className="ml-auto">
         <Settings />
-        Align
       </div>
     </div>
   );

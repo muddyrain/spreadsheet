@@ -138,8 +138,16 @@ export const CellInput = forwardRef<
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
-          const len = inputRef.current.value.length;
-          inputRef.current.setSelectionRange(len, len);
+          const textAlign = currentCell.style.textAlign || config.textAlign;
+          const value = inputRef.current.value;
+          if (textAlign === "right") {
+            // 光标移到末尾
+            inputRef.current.selectionStart = 0;
+            inputRef.current.selectionEnd = 0;
+          } else {
+            inputRef.current.selectionStart = value.length;
+            inputRef.current.selectionEnd = value.length;
+          }
         }
       }, 0);
     }
@@ -185,7 +193,7 @@ export const CellInput = forwardRef<
         inputRef.current.style.top = `${y - 1}px`;
       }
       const textAlign = cell.style.textAlign || config.textAlign || "left";
-      if (textAlign === "left") {
+      if (textAlign === "left" || textAlign === "center") {
         if (x <= 0) {
           inputRef.current.style.left = `${0}px`;
         } else {
