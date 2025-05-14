@@ -37,12 +37,14 @@ export const useRenderCell = () => {
   // 绘制文本
   const renderText = useCallback(
     (ctx: CanvasRenderingContext2D, options: RenderOptions) => {
+      ctx.save();
       const { rowIndex, colIndex, x, y, cell } = options;
       const { width, height } = getMergeCellSize(
         cell,
         headerColsWidth[colIndex],
         headerRowsHeight[rowIndex],
       );
+
       const cellWidth = width;
       const cellHeight = height;
 
@@ -57,6 +59,14 @@ export const useRenderCell = () => {
         options,
       );
       ctx.fillStyle = color;
+      // 大于最小宽度时才 设置裁剪
+      if (cell.mergeSpan && cellWidth > minWidth) {
+        // 设置剪裁区域
+        ctx.beginPath();
+        // + 2 是为了防止文本被裁剪
+        ctx.rect(x - 8 * zoomSize, y, cellWidth, cellHeight);
+        ctx.clip();
+      }
       // 计算文本位置
       const textX = (() => {
         if (textAlign === "left" && cellWidth <= minWidth) return x;
@@ -76,7 +86,7 @@ export const useRenderCell = () => {
           // 计算文本位置 + 起始单元格高度一半 - 边框高度  + 字体大小 + (行间距) 是为了防止文本被裁剪
           const textY =
             y +
-            (config.height / 2 - 2) * zoomSize +
+            (config.height / 2 - 1.5) * zoomSize +
             (i * fontSize + i * 7 * zoomSize);
           ctx.fillText(text, textX, textY);
 
@@ -124,6 +134,7 @@ export const useRenderCell = () => {
           }
         }
       }
+      ctx.restore();
     },
     [
       config.backgroundColor,
@@ -146,9 +157,6 @@ export const useRenderCell = () => {
       );
       const cellWidth = width;
       const cellHeight = height;
-
-      // 合并状态保存，减少 save/restore 调用
-      ctx.save();
       // 如果是非合并单元格
       const backgroundColor =
         cell.style.backgroundColor || config.backgroundColor;

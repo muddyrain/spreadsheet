@@ -196,6 +196,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       for (const { cell, x, y, rowIndex, colIndex } of cells) {
         renderCell(ctx, { rowIndex, colIndex, x, y, cell });
       }
+
       // 绘制边框
       for (const { cell, x, y, rowIndex, colIndex } of cells) {
         renderBorder(ctx, {
@@ -206,10 +207,12 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           colIndex,
         });
       }
+
       // 再绘制文本（无内容的先，有内容的后）
       for (const cell of sortedCells) {
         renderText(ctx, cell);
-      }
+      } // 合并状态保存，减少 save/restore 调用
+
       // 渲染选中单元格
       for (const cell of selectionCells) {
         const { x, y } = getCellPosition(cell);

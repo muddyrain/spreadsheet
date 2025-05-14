@@ -5,14 +5,15 @@ import {
   Bold,
   Eraser,
   Italic,
-  Merge,
   PaintRoller,
   Redo,
   Save,
   Share,
   Strikethrough,
+  TableCellsMerge,
   Underline,
   Undo,
+  WrapText,
 } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -358,6 +359,24 @@ export const Header: FC<{
       <ColorPicker type="text" selectionCells={selectionCells || []} />
       <ColorPicker type="background" selectionCells={selectionCells || []} />
       <Separator orientation="vertical" />
+      <Align
+        isAlignLeft={isStyle.isAlignLeft}
+        isAlignCenter={isStyle.isALignCenter}
+        isAlignRight={isStyle.isALignRight}
+        onClick={handleClick}
+      />
+      <Tooltip content={"换行"}>
+        <Toggle
+          pressed={false}
+          className="text-lg outline-0"
+          onClick={() => {
+            handleClick("merge");
+          }}
+        >
+          <WrapText />
+          <span className="text-xs">换行</span>
+        </Toggle>
+      </Tooltip>
       <Tooltip content={(isStyle.isMergeCell ? "拆分" : "合并") + "单元格"}>
         <Toggle
           pressed={isStyle.isMergeCell}
@@ -366,12 +385,13 @@ export const Header: FC<{
             handleClick("merge");
           }}
         >
-          <Merge />
+          <TableCellsMerge />
           <span className="text-xs">
-            {(isStyle.isMergeCell ? "拆分" : "合并") + "单元格"}
+            {isStyle.isMergeCell ? "拆分" : "合并"}
           </span>
         </Toggle>
       </Tooltip>
+      <Separator orientation="vertical" />
       <Tooltip content={"导出表格"}>
         <Toggle
           pressed={false}
@@ -385,13 +405,7 @@ export const Header: FC<{
         </Toggle>
       </Tooltip>
       <Import />
-      <Separator orientation="vertical" />
-      <Align
-        isAlignLeft={isStyle.isAlignLeft}
-        isAlignCenter={isStyle.isALignCenter}
-        isAlignRight={isStyle.isALignRight}
-        onClick={handleClick}
-      />
+
       <div className="ml-auto">
         <Settings />
       </div>
