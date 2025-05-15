@@ -56,3 +56,12 @@ export function ptToPx(ptStr: string): number {
   const pt = parseFloat(match[1]);
   return pt * 1.3333;
 }
+/**
+ * 将像素数值或字符串（如 "107px"）转换为 pt 单位，1px = 0.75pt
+ * @param px 输入像素值或带 px 的字符串
+ * @returns pt 数值
+ */
+export function pxToPt(px: number | string): number {
+  const pxValue = typeof px === "string" ? parseFloat(px) : px;
+  return pxValue * 0.75;
+}

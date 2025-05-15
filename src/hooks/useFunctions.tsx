@@ -1,9 +1,10 @@
 import { useCallback, useMemo } from "react";
 import { useStore } from "./useStore";
-import { parseHtmlTable, toHtmlTable } from "@/utils/dom";
+import { parseHtmlTable } from "@/utils/dom";
 import { useComputed } from "./useComputed";
 import { getSmartBorderColor } from "@/utils/color";
 import { ptToPx } from "@/utils";
+import { useDom } from "./useDom";
 
 export const useFunctions = () => {
   const {
@@ -16,6 +17,7 @@ export const useFunctions = () => {
     setHeaderRowsHeight,
   } = useStore();
   const { getDefaultCellStyle } = useComputed();
+  const { toHtmlTable } = useDom();
   const startRow = useMemo(() => {
     if (!selection || !selection.start || !selection.end) return 0;
     return Math.min(selection.start.row, selection.end.row);
@@ -55,7 +57,7 @@ export const useFunctions = () => {
       const blob = new Blob([tableString], { type });
       navigator.clipboard.write([new ClipboardItem({ [type]: blob })]);
     }
-  }, [data, endCol, endRow, selection, startCol, startRow]);
+  }, [data, endCol, endRow, selection, startCol, startRow, toHtmlTable]);
   const handlePasteText = useCallback(
     (text?: string) => {
       if (!selection || !selectedCell) return;
