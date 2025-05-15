@@ -96,10 +96,14 @@ const ColorPickerInner: FC<{
     selectionCells.forEach((cItem) => {
       if (backgroundType) {
         cItem.style.backgroundColor = item.value || "";
-        cItem.style.borderColor = getSmartBorderColor(
-          item.value || "",
-          cItem.style.borderColor || config.borderColor,
-        );
+        if (item.value === config.backgroundColor) {
+          cItem.style.borderColor = config.borderColor;
+        } else {
+          cItem.style.borderColor = getSmartBorderColor(
+            item.value || "",
+            cItem.style.borderColor || config.borderColor,
+          );
+        }
       } else {
         cItem.style.color = item.value;
       }
