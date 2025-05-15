@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip } from "@/components/ui/tooltip";
-import { ClickType } from ".";
+import { ClickType } from "@/hooks/useUpdateStyle";
 
 export const Align: FC<{
   isAlignLeft?: boolean;
