@@ -208,7 +208,17 @@ export function useSheetSelection() {
         window.removeEventListener("mouseup", handleMouseUp);
         setIsSelection(false);
         if (formatBrushStyles.length) {
-          handleUpdaterBrush(tempSelection);
+          if (tempSelection) {
+            handleUpdaterBrush(tempSelection);
+          } else {
+            handleUpdaterBrush({
+              start: { row: rowIndex, col: colIndex },
+              end: {
+                row: rowIndex + formatBrushStyles.length - 1,
+                col: colIndex + formatBrushStyles[0].length - 1,
+              },
+            });
+          }
         }
       };
 

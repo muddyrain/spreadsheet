@@ -288,10 +288,12 @@ export const useUpdateStyle = () => {
               formatBrushStyles[i % srcRows][j % srcCols]
                 ? formatBrushStyles[i % srcRows][j % srcCols]
                 : {};
-            data[r1 + i][c1 + j].style = {
-              ...data[r1 + i][c1 + j].style,
-              ...style,
-            };
+            if (data[r1 + i][c1 + j]) {
+              data[r1 + i][c1 + j].style = {
+                ...data[r1 + i][c1 + j].style,
+                ...style,
+              };
+            }
           }
         }
         return [...data];
