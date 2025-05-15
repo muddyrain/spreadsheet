@@ -4,6 +4,7 @@ import {
   SpreadsheetConfig,
   SpreadsheetType,
   SheetCellSettingsConfig,
+  CellStyle,
 } from "../../types/sheet";
 import _ from "lodash";
 import { useSpreadsheet } from "@/hooks/useSpreadsheet";
@@ -40,6 +41,7 @@ const RootSpreadsheet: React.FC<{
     useState<SheetCellSettingsConfig>({
       isAnchorMergePoint: false,
     });
+  const [formatBrushStyles, setFormatBrushStyles] = useState<CellStyle[]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
@@ -153,6 +155,8 @@ const RootSpreadsheet: React.FC<{
         setCurrentSideLinePosition,
         sheetCellSettingsConfig,
         setSheetCellSettingsConfig,
+        formatBrushStyles,
+        setFormatBrushStyles,
         sideLineMode,
         setSideLineMode,
         getCurrentCell,

@@ -11,7 +11,7 @@ import { useSheetDraw } from "@/hooks/useSheetDraw";
 import { ScrollBar } from "./ScrollBar";
 import { useSheetSelection } from "@/hooks/useSheetSelection";
 import { useStore } from "@/hooks/useStore";
-import { useSideLine } from "@/hooks/useSideLine";
+import { useCursor } from "@/hooks/useCursor";
 import { useComputed } from "@/hooks/useComputed";
 
 interface CanvasProps {
@@ -46,6 +46,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   } = useStore();
   const rafId = useRef<number | null>(null);
   const lastClickRowCol = useRef<[number, number] | null>(null);
+  const lastCurrentHoverCell = useRef<[number, number] | null>(null);
   const [currentHoverCell, setCurrentHoverCell] = useState<
     [number, number] | null
   >(null);
@@ -80,10 +81,9 @@ export const Canvas: React.FC<CanvasProps> = ({
     useSheetScroll(scrollConfig);
 
   // 单元格侧边栏 hooks - 拖拽侧边
-  const { currentPosition, setIsMouseDown, handleMouseUp } = useSideLine({
+  const { currentPosition, setIsMouseDown, handleMouseUp } = useCursor({
     currentHoverCell,
     canvasRef,
-    scrollPosition,
   });
   // 绘制 hooks
   const { drawTable } = useSheetDraw({
@@ -271,6 +271,15 @@ export const Canvas: React.FC<CanvasProps> = ({
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       handleGetClient(e, "move", (rowIndex, colIndex) => {
+        if (lastCurrentHoverCell.current) {
+          if (
+            lastCurrentHoverCell.current[0] === rowIndex &&
+            lastCurrentHoverCell.current[1] === colIndex
+          ) {
+            return;
+          }
+        }
+        lastCurrentHoverCell.current = [rowIndex, colIndex];
         setCurrentHoverCell((currentHoverCell) => {
           if (
             currentHoverCell &&

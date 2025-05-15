@@ -68,8 +68,9 @@ export const Header: FC<{
           <Redo />
         </Toggle>
       </Tooltip>
-      <Tooltip content="格式刷（未开发）">
+      <Tooltip content="格式刷">
         <Toggle
+          pressed={isStyle.isPaint}
           className="text-lg"
           onClick={() => {
             handleClick("paint");
@@ -78,7 +79,7 @@ export const Header: FC<{
           <PaintRoller />
         </Toggle>
       </Tooltip>
-      <Tooltip content="清除格式（未开发）">
+      <Tooltip content="清除格式">
         <Toggle
           pressed={false}
           className="text-lg"

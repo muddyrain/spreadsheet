@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "./useStore";
-import { PositionType } from "@/types/sheet";
 import { useComputed } from "./useComputed";
+import { PaintCursorURL } from "@/assets";
 
-export const useSideLine = (options: {
+export const useCursor = (options: {
   currentHoverCell: [number, number] | null;
-  scrollPosition: PositionType;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
 }) => {
-  const { currentHoverCell, canvasRef, scrollPosition } = options;
+  const { currentHoverCell, canvasRef } = options;
   const {
     data,
+    scrollPosition,
     headerColsWidth,
     headerRowsHeight,
     sideLineMode,
@@ -25,6 +25,7 @@ export const useSideLine = (options: {
     setSideLineMode,
     setCurrentSideLinePosition,
     setCurrentSideLineIndex,
+    formatBrushStyles,
   } = useStore();
   const { getLeft, getTop } = useComputed();
   const lastValidPosition = useRef<[number, number] | null>(null);
@@ -102,7 +103,11 @@ export const useSideLine = (options: {
           return;
         }
       }
-      _setCursor("cell");
+      if (formatBrushStyles.length) {
+        _setCursor(`url(${PaintCursorURL}), auto`);
+      } else {
+        _setCursor(`cell`);
+      }
     }
     return () => {
       _setCursor("default"); // 清理时重置 cursor
@@ -116,6 +121,7 @@ export const useSideLine = (options: {
     data,
     zoomSize,
     scrollPosition,
+    formatBrushStyles,
     getLeft,
     getTop,
     setCurrentSideLineIndex,
@@ -189,16 +195,14 @@ export const useSideLine = (options: {
         if (stableTimeoutRef.current) {
           clearTimeout(stableTimeoutRef.current);
         }
-        stableTimeoutRef.current = setTimeout(() => {
-          lastValidPosition.current = [x, y];
-        }, 0);
-        setCurrentPosition((_currentPosition) => {
-          if (_currentPosition?.[0] === x && _currentPosition?.[1] === y) {
-            return _currentPosition;
-          } else {
-            return [x, y];
-          }
-        });
+        if (
+          lastValidPosition.current &&
+          lastValidPosition.current[0] !== x &&
+          lastValidPosition.current[1] !== y
+        ) {
+          setCurrentPosition(() => [x, y]);
+        }
+        lastValidPosition.current = [x, y];
         if (isMouseDown) {
           if (sideLineMode === "col") {
             const left = getLeft(currentSideLineIndex[1]);

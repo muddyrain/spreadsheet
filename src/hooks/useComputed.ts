@@ -1,6 +1,11 @@
-import { ArrowDirectionType, CellData } from "@/types/sheet";
+import {
+  ArrowDirectionType,
+  CellData,
+  SelectionSheetType,
+} from "@/types/sheet";
 import { useStore } from "./useStore";
 import { useCallback } from "react";
+import { getAbsoluteSelection } from "@/utils/sheet";
 
 export const useComputed = () => {
   const {
@@ -19,6 +24,30 @@ export const useComputed = () => {
     setEditingCell,
     setScrollPosition,
   } = useStore();
+  const getSelectionCells = useCallback(
+    (selection: SelectionSheetType | null) => {
+      if (!selection) {
+        return [];
+      }
+      const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
+      if (r1 === r2 && c1 === c2) {
+        if (data[r1][c1]) {
+          return [data[r1][c1]];
+        } else {
+          return [];
+        }
+      }
+      const cells: CellData[] = [];
+      for (let i = r1; i <= r2; i++) {
+        for (let j = c1; j <= c2; j++) {
+          if (!data[i][j]) continue;
+          cells.push(data[i][j]);
+        }
+      }
+      return cells;
+    },
+    [data],
+  );
   // 获取默认样式
   const getDefaultCellStyle = useCallback(() => {
     return {
@@ -427,6 +456,7 @@ export const useComputed = () => {
     updateSelectionAndCell,
     getDefaultCellStyle,
     getLeftAndTargetIndex,
+    getSelectionCells,
     getLeft,
     getTop,
     getRight,

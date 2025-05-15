@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useStore } from "./useStore";
 import { useComputed } from "./useComputed";
+import { SelectionSheetType } from "@/types/sheet";
+import { useUpdateStyle } from "./useUpdateStyle";
 
 export function useSheetSelection() {
   const {
@@ -8,13 +10,15 @@ export function useSheetSelection() {
     selection,
     scrollPosition,
     setSelection,
+    formatBrushStyles,
     headerColsWidth,
     headerRowsHeight,
   } = useStore();
+  const { handleUpdaterBrush } = useUpdateStyle();
   const [isSelection, setIsSelection] = useState(false);
   const movedRef = useRef(false);
   const scrollPositionRef = useRef(scrollPosition);
-  const { findIndexByAccumulate } = useComputed();
+  const { findIndexByAccumulate, getSelectionCells } = useComputed();
   const expandSelection = useCallback(
     (startRow: number, startCol: number, endRow: number, endCol: number) => {
       const checkMergedCells = (
@@ -169,6 +173,7 @@ export function useSheetSelection() {
       movedRef.current = false;
       let lastRow = rowIndex;
       let lastCol = colIndex;
+      let tempSelection: SelectionSheetType | null = null;
       const handleMouseMove = (e: MouseEvent) => {
         if (!wrapperRef.current) return;
         const rect = wrapperRef.current.getBoundingClientRect();
@@ -182,6 +187,10 @@ export function useSheetSelection() {
           setSelection(() => {
             const { newStartRow, newStartCol, newEndRow, newEndCol } =
               expandSelection(rowIndex, colIndex, row!, col!);
+            tempSelection = {
+              start: { row: newStartRow, col: newStartCol },
+              end: { row: newEndRow, col: newEndCol },
+            };
             return {
               start: { row: newStartRow, col: newStartCol },
               end: { row: newEndRow, col: newEndCol },
@@ -198,6 +207,11 @@ export function useSheetSelection() {
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
         setIsSelection(false);
+        if (formatBrushStyles.length) {
+          const tempSelectionCells = getSelectionCells(tempSelection);
+          console.log(tempSelectionCells);
+          handleUpdaterBrush(tempSelectionCells);
+        }
       };
 
       // 添加事件监听
@@ -210,12 +224,14 @@ export function useSheetSelection() {
       };
     },
     [
-      setSelection,
+      findIndexByAccumulate,
       headerColsWidth,
       headerRowsHeight,
+      setSelection,
       expandSelection,
-      findIndexByAccumulate,
-      scrollPositionRef,
+      formatBrushStyles.length,
+      getSelectionCells,
+      handleUpdaterBrush,
     ],
   );
   return {

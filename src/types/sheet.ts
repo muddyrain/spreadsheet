@@ -1,3 +1,6 @@
+/**
+ * @description 表格数据
+ */
 export interface Sheet {
   /**
    * @description 表格唯一标识
@@ -45,7 +48,9 @@ export interface Sheet {
    */
   headerRowsHeight: number[];
 }
-
+/**
+ * @description 单元格样式
+ */
 export type CellStyle = {
   /**
    * @description 单元格颜色
@@ -93,7 +98,9 @@ export type CellStyle = {
    */
   wrap?: boolean;
 };
-
+/**
+ * @description 单元格数据
+ */
 export type CellData = {
   /**
    * @description 单元格的值
@@ -125,14 +132,36 @@ export type CellData = {
    */
   mergeParent: { row: number; col: number } | null;
 } & EditingCell;
+/**
+ * @description 合并单元格
+ * @description 合并单元格的坐标
+ */
 export type MergeSpanType = {
+  /**
+   * @description 起始行号
+   */
   r1: number;
+  /**
+   * @description 起始列号
+   */
   c1: number;
+  /**
+   * @description 结束行号
+   */
   r2: number;
+  /**
+   * @description 结束列号
+   */
   c2: number;
 };
+/**
+ * @description 表格数据 - 二维数组
+ */
 export type TableData = CellData[][];
 
+/**
+ * @description 表格配置
+ */
 export type SpreadsheetConfig = {
   /**
    * @description 表格行数
@@ -215,7 +244,9 @@ export type SpreadsheetConfig = {
    */
   readOnlyColor?: string;
 };
-
+/**
+ * @description 表格当前编辑单元格
+ */
 export type EditingCell = {
   /**
    * @description 当前编辑的单元格的行号
@@ -226,12 +257,16 @@ export type EditingCell = {
    */
   col: number;
 } | null;
-
+/**
+ * @description 表格选择框
+ */
 export type SelectionSheetType = {
   start: { row: number; col: number } | null;
   end: { row: number; col: number } | null;
 };
-
+/**
+ * @description 电子表格类型
+ */
 export type SpreadsheetType = {
   currentSheet: Sheet | null;
   currentCell: CellData | null;
@@ -252,23 +287,32 @@ export type SpreadsheetType = {
   getCurrentCell: (row: number, col: number) => CellData | null;
   setCurrentSheet: <T extends keyof Sheet>(key: T, value: Sheet[T]) => void;
 };
-
+/**
+ * @description 位置类型
+ */
 export type PositionType = {
   x: number;
   y: number;
 };
-
+/**
+ * @description 表格绘制配置
+ */
 export interface DrawConfig {
   wrapperWidth: number;
   wrapperHeight: number;
 }
-
+/**
+ * @description 箭头方向
+ */
 export type ArrowDirectionType =
   | "ArrowUp"
   | "ArrowDown"
   | "ArrowLeft"
   | "ArrowRight";
 
+/**
+ * @description 表格单元格设置配置
+ */
 export interface SheetCellSettingsConfig {
   /**
    * 是否以选中单元格为基准作为合并点。

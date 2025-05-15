@@ -1,8 +1,9 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useExportExcel } from "./useExportExcel";
 import { useStore } from "./useStore";
 import { CellData } from "@/types/sheet";
 import { getAbsoluteSelection } from "@/utils/sheet";
+import { useComputed } from "./useComputed";
 export type ClickType =
   | "save"
   | "undo"
@@ -30,28 +31,18 @@ export const useUpdateStyle = () => {
     sheetCellSettingsConfig,
     setData,
     getCurrentCell,
+    formatBrushStyles,
+    setFormatBrushStyles,
   } = useStore();
-  const selectionCells: CellData[] = useMemo(() => {
+  const { getSelectionCells } = useComputed();
+  const [selectionCells, setSelectionCells] = useState<CellData[]>([]);
+  useMemo(() => {
     if (!selection) {
       return [];
     }
-    const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
-    if (r1 === r2 && c1 === c2) {
-      if (data[r1][c1]) {
-        return [data[r1][c1]];
-      } else {
-        return [];
-      }
-    }
-    const cells: CellData[] = [];
-    for (let i = r1; i <= r2; i++) {
-      for (let j = c1; j <= c2; j++) {
-        if (!data[i][j]) continue;
-        cells.push(data[i][j]);
-      }
-    }
-    return cells;
-  }, [selection, data]);
+    const _selectionCells = getSelectionCells(selection);
+    setSelectionCells(_selectionCells);
+  }, [selection, getSelectionCells]);
   const isStyle = useMemo(() => {
     return {
       isBold:
@@ -84,6 +75,7 @@ export const useUpdateStyle = () => {
       isALignRight:
         !!selectionCells?.length &&
         selectionCells.every((cell) => cell.style.textAlign === "right"),
+      isPaint: !!formatBrushStyles.length,
     };
     // 通过updater来判断是否需要更新isStyle
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,17 +88,17 @@ export const useUpdateStyle = () => {
       return [...data];
     });
   }, [selectionCells, setData]);
-  const updaterWrap = useCallback(
-    (bool: boolean) => {
-      selectionCells.forEach((cell) => {
-        cell.style.wrap = bool;
-      });
-      handleUpdater();
-    },
-    [selectionCells, handleUpdater],
-  );
   const updateStyle = (type: ClickType) => {
     switch (type) {
+      case "paint": {
+        const _formatBrushStyles = selectionCells.map((cell) => {
+          return {
+            ...cell.style,
+          };
+        });
+        setFormatBrushStyles(_formatBrushStyles);
+        break;
+      }
       case "eraser": {
         selectionCells.forEach((cell) => {
           cell.style = {};
@@ -268,10 +260,27 @@ export const useUpdateStyle = () => {
     handleUpdater();
     return type;
   };
+  const handleUpdaterBrush = useCallback(
+    (selectionCells: CellData[]) => {
+      if (!formatBrushStyles.length) return;
+      setFormatBrushStyles([]);
+      setData((data) => {
+        selectionCells.map((cell, index) => {
+          const target = data[cell.row][cell.col];
+          target.style = {
+            ...target.style,
+            ...formatBrushStyles[index % formatBrushStyles.length],
+          };
+        });
+        return [...data];
+      });
+    },
+    [formatBrushStyles, setData, setFormatBrushStyles],
+  );
   return {
     isStyle,
     selectionCells,
     updateStyle,
-    updaterWrap,
+    handleUpdaterBrush,
   };
 };
