@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useExportExcel } from "./useExportExcel";
 import { useStore } from "./useStore";
-import { CellData } from "@/types/sheet";
+import { CellData, SelectionSheetType } from "@/types/sheet";
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "./useComputed";
 export type ClickType =
@@ -91,11 +91,21 @@ export const useUpdateStyle = () => {
   const updateStyle = (type: ClickType) => {
     switch (type) {
       case "paint": {
-        const _formatBrushStyles = selectionCells.map((cell) => {
-          return {
-            ...cell.style,
-          };
-        });
+        if (!selection) return;
+        const { c1, c2, r1, r2 } = getAbsoluteSelection(selection);
+        const rows = r2 - r1 + 1;
+        const cols = c2 - c1 + 1;
+        const _formatBrushStyles: CellData["style"][][] = [];
+        for (let i = 0; i < rows; i++) {
+          const rowStyles: CellData["style"][] = [];
+          for (let j = 0; j < cols; j++) {
+            const cell = selectionCells.find(
+              (cell) => cell.row === r1 + i && cell.col === c1 + j,
+            );
+            rowStyles.push(cell ? { ...cell.style } : {});
+          }
+          _formatBrushStyles.push(rowStyles);
+        }
         setFormatBrushStyles(_formatBrushStyles);
         break;
       }
@@ -261,17 +271,29 @@ export const useUpdateStyle = () => {
     return type;
   };
   const handleUpdaterBrush = useCallback(
-    (selectionCells: CellData[]) => {
+    (currentSelection: SelectionSheetType | null) => {
       if (!formatBrushStyles.length) return;
+      if (!currentSelection) return;
       setFormatBrushStyles([]);
       setData((data) => {
-        selectionCells.map((cell, index) => {
-          const target = data[cell.row][cell.col];
-          target.style = {
-            ...target.style,
-            ...formatBrushStyles[index % formatBrushStyles.length],
-          };
-        });
+        const { r1, c1, r2, c2 } = getAbsoluteSelection(currentSelection);
+        const rows = r2 - r1 + 1;
+        const cols = c2 - c1 + 1;
+        const srcRows = formatBrushStyles.length;
+        const srcCols = formatBrushStyles[0]?.length || 0;
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < cols; j++) {
+            const style =
+              formatBrushStyles[i % srcRows] &&
+              formatBrushStyles[i % srcRows][j % srcCols]
+                ? formatBrushStyles[i % srcRows][j % srcCols]
+                : {};
+            data[r1 + i][c1 + j].style = {
+              ...data[r1 + i][c1 + j].style,
+              ...style,
+            };
+          }
+        }
         return [...data];
       });
     },

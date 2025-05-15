@@ -59,8 +59,8 @@ export const SpreadsheetContext = React.createContext<
       setEditingCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
       currentSideLineIndex: number[];
       setCurrentSideLineIndex: React.Dispatch<React.SetStateAction<number[]>>;
-      formatBrushStyles: CellStyle[];
-      setFormatBrushStyles: React.Dispatch<React.SetStateAction<CellStyle[]>>;
+      formatBrushStyles: CellStyle[][];
+      setFormatBrushStyles: React.Dispatch<React.SetStateAction<CellStyle[][]>>;
       currentSideLinePosition: number[];
       setCurrentSideLinePosition: React.Dispatch<
         React.SetStateAction<number[]>

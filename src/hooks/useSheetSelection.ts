@@ -18,7 +18,7 @@ export function useSheetSelection() {
   const [isSelection, setIsSelection] = useState(false);
   const movedRef = useRef(false);
   const scrollPositionRef = useRef(scrollPosition);
-  const { findIndexByAccumulate, getSelectionCells } = useComputed();
+  const { findIndexByAccumulate } = useComputed();
   const expandSelection = useCallback(
     (startRow: number, startCol: number, endRow: number, endCol: number) => {
       const checkMergedCells = (
@@ -208,9 +208,7 @@ export function useSheetSelection() {
         window.removeEventListener("mouseup", handleMouseUp);
         setIsSelection(false);
         if (formatBrushStyles.length) {
-          const tempSelectionCells = getSelectionCells(tempSelection);
-          console.log(tempSelectionCells);
-          handleUpdaterBrush(tempSelectionCells);
+          handleUpdaterBrush(tempSelection);
         }
       };
 
@@ -230,7 +228,6 @@ export function useSheetSelection() {
       setSelection,
       expandSelection,
       formatBrushStyles.length,
-      getSelectionCells,
       handleUpdaterBrush,
     ],
   );
