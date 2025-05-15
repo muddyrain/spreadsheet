@@ -237,7 +237,7 @@ export function useSheetSelection() {
       headerRowsHeight,
       setSelection,
       expandSelection,
-      formatBrushStyles.length,
+      formatBrushStyles,
       handleUpdaterBrush,
     ],
   );
