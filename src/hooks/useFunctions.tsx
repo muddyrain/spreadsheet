@@ -35,7 +35,7 @@ export const useFunctions = () => {
     return Math.max(selection.start.col, selection.end.col);
   }, [selection]);
   const handleCopyText = useCallback(() => {
-    if (!selection) return;
+    if (!selection) return "";
     if (selection.start && selection.end) {
       let text = "";
       for (let i = startRow; i <= endRow; i++) {
@@ -46,18 +46,31 @@ export const useFunctions = () => {
         }
         text += row.join("\t") + (i < endRow ? "\n" : "");
       }
-      navigator.clipboard.writeText(text);
+      return text;
     }
+    return "";
   }, [data, endCol, endRow, selection, startCol, startRow]);
   const handleCopy = useCallback(() => {
     if (!selection) return;
     if (selection.start && selection.end) {
       const tableString = toHtmlTable(data, startRow, endRow, startCol, endCol);
-      const type = "text/html";
-      const blob = new Blob([tableString], { type });
-      navigator.clipboard.write([new ClipboardItem({ [type]: blob })]);
+      const text = handleCopyText();
+      const clipboardItem = new ClipboardItem({
+        "text/html": new Blob([tableString], { type: "text/html" }),
+        "text/plain": new Blob([text], { type: "text/plain" }),
+      });
+      navigator.clipboard.write([clipboardItem]);
     }
-  }, [data, endCol, endRow, selection, startCol, startRow, toHtmlTable]);
+  }, [
+    data,
+    endCol,
+    endRow,
+    selection,
+    startCol,
+    startRow,
+    toHtmlTable,
+    handleCopyText,
+  ]);
   const handlePasteText = useCallback(
     (text?: string) => {
       if (!selection || !selectedCell) return;
@@ -89,87 +102,92 @@ export const useFunctions = () => {
     },
     [data, selectedCell, selection, setData],
   );
-  const handlePaste = useCallback(() => {
-    if (!selection || !selectedCell) return;
-    navigator.clipboard.read().then(async (items) => {
-      let htmlHandled = false;
-      for (const item of items) {
-        if (item.types.includes("text/html")) {
-          const blob = await item.getType("text/html");
-          const html = await blob.text();
-          const tableData = parseHtmlTable(html);
-          if (tableData?.length) {
-            const row = selection.start?.row ?? selectedCell.row;
-            const col = selection.start?.col ?? selectedCell.col;
-            for (let i = 0; i < tableData.length; i++) {
-              for (let j = 0; j < tableData[i].length; j++) {
-                if (!data[row + i] || !data[row + i][col + j]) continue;
-                const tableCell = tableData[i][j];
-                const target = data[row + i][col + j];
-                target.value = tableCell.value;
-                const style = tableCell.style;
-                target.style = {
-                  ...getDefaultCellStyle(),
-                  fontSize: +style.fontSize || config.fontSize,
-                  fontWeight: style.fontWeight || "normal",
-                  fontStyle: style.fontStyle,
-                  textDecoration: style.textDecoration || "normal",
-                  textAlign: style.textAlign || config.textAlign,
-                  color: style.color || config.color,
-                  backgroundColor:
-                    style.background ||
-                    style.backgroundColor ||
-                    config.backgroundColor,
-                  borderColor: getSmartBorderColor(
-                    style.background ||
+  const handlePaste = useCallback(
+    (isPasteContent: boolean = true) => {
+      if (!selection || !selectedCell) return;
+      navigator.clipboard.read().then(async (items) => {
+        let htmlHandled = false;
+        for (const item of items) {
+          if (item.types.includes("text/html")) {
+            const blob = await item.getType("text/html");
+            const html = await blob.text();
+            const tableData = parseHtmlTable(html);
+            if (tableData?.length) {
+              const row = selection.start?.row ?? selectedCell.row;
+              const col = selection.start?.col ?? selectedCell.col;
+              for (let i = 0; i < tableData.length; i++) {
+                for (let j = 0; j < tableData[i].length; j++) {
+                  if (!data[row + i] || !data[row + i][col + j]) continue;
+                  const tableCell = tableData[i][j];
+                  const target = data[row + i][col + j];
+                  if (isPasteContent) {
+                    target.value = tableCell.value;
+                  }
+                  const style = tableCell.style;
+                  target.style = {
+                    ...getDefaultCellStyle(),
+                    fontSize: +style.fontSize || config.fontSize,
+                    fontWeight: style.fontWeight || "normal",
+                    fontStyle: style.fontStyle,
+                    textDecoration: style.textDecoration || "normal",
+                    textAlign: style.textAlign || config.textAlign,
+                    color: style.color || config.color,
+                    backgroundColor:
+                      style.background ||
                       style.backgroundColor ||
                       config.backgroundColor,
-                    config.borderColor,
-                  ),
-                  wrap: style.whiteSpace === "normal",
-                };
-                if (style.height) {
-                  const height = ptToPx(style.height);
-                  const rowHeight = headerRowsHeight[row + i];
-                  if (height > rowHeight) {
-                    headerRowsHeight[row + i] = height;
-                    setHeaderRowsHeight([...headerRowsHeight]);
+                    borderColor: getSmartBorderColor(
+                      style.background ||
+                        style.backgroundColor ||
+                        config.backgroundColor,
+                      config.borderColor,
+                    ),
+                    wrap: style.whiteSpace === "normal",
+                  };
+                  if (style.height) {
+                    const height = ptToPx(style.height);
+                    const rowHeight = headerRowsHeight[row + i];
+                    if (height > rowHeight) {
+                      headerRowsHeight[row + i] = height;
+                      setHeaderRowsHeight([...headerRowsHeight]);
+                    }
                   }
                 }
               }
+              setData([...data]);
+              htmlHandled = true;
             }
-            setData([...data]);
-            htmlHandled = true;
-          }
-          break;
-        }
-      }
-      if (!htmlHandled) {
-        for (const item of items) {
-          if (item.types.includes("text/plain")) {
-            const blob = await item.getType("text/plain");
-            const text = await blob.text();
-            handlePasteText(text);
             break;
           }
         }
-      }
-    });
-  }, [
-    selection,
-    selectedCell,
-    headerRowsHeight,
-    setData,
-    data,
-    getDefaultCellStyle,
-    config.fontSize,
-    config.textAlign,
-    config.color,
-    config.backgroundColor,
-    config.borderColor,
-    handlePasteText,
-    setHeaderRowsHeight,
-  ]);
+        if (!htmlHandled) {
+          for (const item of items) {
+            if (item.types.includes("text/plain")) {
+              const blob = await item.getType("text/plain");
+              const text = await blob.text();
+              handlePasteText(text);
+              break;
+            }
+          }
+        }
+      });
+    },
+    [
+      selection,
+      selectedCell,
+      headerRowsHeight,
+      setData,
+      data,
+      getDefaultCellStyle,
+      config.fontSize,
+      config.textAlign,
+      config.color,
+      config.backgroundColor,
+      config.borderColor,
+      handlePasteText,
+      setHeaderRowsHeight,
+    ],
+  );
   const handleClearContent = useCallback(() => {
     if (!selection) return;
     setData((data) => {

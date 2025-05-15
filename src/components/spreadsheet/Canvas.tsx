@@ -351,15 +351,34 @@ export const Canvas: React.FC<CanvasProps> = ({
             handleMouseUp();
           }}
           onMouseDown={(e) => {
+            if (e.button === 1) return;
             if (["col-resize", "row-resize"].includes(cursor)) {
               handleMouseDownResize(e);
               return;
             }
+            // 单击
             if (e.detail === 1) {
               handleGetClient(e, "click", (rowIndex, colIndex) => {
                 lastClickRowCol.current = [rowIndex, colIndex];
-                onCellClick?.(e, { row: rowIndex, col: colIndex });
-                handleCellMouseDown(rowIndex, colIndex, wrapperRef);
+                let isClick = true;
+                if (e.button === 2) {
+                  // 判断当前单元格是否在 selection 区域内
+                  const inSelection =
+                    selection &&
+                    selection.start &&
+                    selection.end &&
+                    rowIndex >= selection.start.row &&
+                    rowIndex <= selection.end.row &&
+                    colIndex >= selection.start.col &&
+                    colIndex <= selection.end.col;
+                  if (inSelection) {
+                    isClick = false;
+                  }
+                }
+                if (isClick) {
+                  onCellClick?.(e, { row: rowIndex, col: colIndex });
+                  handleCellMouseDown(rowIndex, colIndex, wrapperRef);
+                }
               });
             }
             // 双击

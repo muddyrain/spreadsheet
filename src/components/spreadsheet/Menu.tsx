@@ -8,7 +8,7 @@ import {
   EraserIcon,
   ScissorsIcon,
 } from "lucide-react";
-import { FC, ReactNode, useRef } from "react";
+import { FC, ReactNode, useMemo, useRef } from "react";
 import { Separator } from "../ui/separator";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { useFunctions } from "@/hooks/useFunctions";
@@ -30,8 +30,9 @@ export const Menu: FC<{
   open?: boolean;
   onClose?: () => void;
 }> = ({ open, position, onClose }) => {
-  const { currentCtrlKey } = useStore();
-  const { handleCopy, handlePaste, handleClearContent } = useFunctions();
+  const { currentCtrlKey, containerWidth, containerHeight } = useStore();
+  const { handleCopy, handlePaste, handlePasteText, handleClearContent } =
+    useFunctions();
   const menuRef = useRef<HTMLDivElement | null>(null);
   useClickOutside(menuRef, () => {
     onClose?.();
@@ -67,15 +68,24 @@ export const Menu: FC<{
       children: [
         {
           key: "paste-value",
-          name: "仅粘贴值",
+          name: "仅粘贴文本",
+          onClick: () => {
+            handlePasteText();
+          },
         },
         {
           key: "paste-format",
           name: "仅粘贴格式",
+          onClick: () => {
+            handlePaste(false);
+          },
         },
         {
           key: "paste-all",
           name: "粘贴所有",
+          onClick: () => {
+            handlePaste();
+          },
         },
       ],
     },
@@ -124,20 +134,32 @@ export const Menu: FC<{
       ],
     },
   ];
+  const autoPosition = useMemo(() => {
+    let left = 0;
+    let top = 0;
+    if (position) {
+      left = position.x + 20;
+      top = position.y - 50;
+      if (left + 240 > containerWidth) {
+        left = left - 240 - 20;
+      }
+      if (top > containerHeight / 2) {
+        top = containerHeight / 2;
+      }
+    }
+    return {
+      left,
+      top,
+    };
+  }, [containerWidth, containerHeight, position]);
   return (
     <div
       ref={menuRef}
-      className={`fixed z-50 shadow bg-white rounded py-1 duration-300 w-56`}
+      className={`fixed z-50 shadow bg-white rounded py-1`}
       style={{
-        ...(position
-          ? {
-              left: position.x + 10,
-              top: position.y,
-            }
-          : {
-              left: 0,
-              top: 0,
-            }),
+        width: 240,
+        left: autoPosition.left,
+        top: autoPosition.top,
         display: open ? "block" : "none",
       }}
     >
