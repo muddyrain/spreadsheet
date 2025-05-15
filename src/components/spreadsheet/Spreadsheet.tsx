@@ -159,41 +159,35 @@ const Spreadsheet: React.FC<{
   const { onTabKeyDown } = useTab(cellInputRef);
   const { onDirectionKeyDown } = useDirection();
   // 键盘 hooks
-  useKeyDown(
-    {
-      data,
-      setData,
-    },
-    {
-      onCellInputKey(content) {
-        if (selectedCell) {
-          let rowIndex = selectedCell.row;
-          let colIndex = selectedCell.col;
-          if (selectedCell?.mergeParent) {
-            const { row, col } = selectedCell.mergeParent;
-            colIndex = col;
-            rowIndex = row;
-          }
-          setEditingCell({ row: rowIndex, col: colIndex });
-          const currentCell = data[rowIndex][colIndex];
-          if (currentCell) {
-            cellInputRef.current?.setValue(currentCell.value + content);
-            currentCell.value += content;
-          }
-          cellInputRef.current?.setInputStyle(rowIndex, colIndex);
+  useKeyDown({
+    onCellInputKey(content) {
+      if (selectedCell) {
+        let rowIndex = selectedCell.row;
+        let colIndex = selectedCell.col;
+        if (selectedCell?.mergeParent) {
+          const { row, col } = selectedCell.mergeParent;
+          colIndex = col;
+          rowIndex = row;
         }
-      },
-      onSelectAll: handleSelectAll,
-      onTabKey: onTabKeyDown,
-      onDirectionKey: onDirectionKeyDown,
-      onEnterKey: () => {
-        onDirectionKeyDown("ArrowDown");
-        clearSelection();
-        cellInputRef.current?.blur();
-        setIsFocused(false);
-      },
+        setEditingCell({ row: rowIndex, col: colIndex });
+        const currentCell = data[rowIndex][colIndex];
+        if (currentCell) {
+          cellInputRef.current?.setValue(currentCell.value + content);
+          currentCell.value += content;
+        }
+        cellInputRef.current?.setInputStyle(rowIndex, colIndex);
+      }
     },
-  );
+    onSelectAll: handleSelectAll,
+    onTabKey: onTabKeyDown,
+    onDirectionKey: onDirectionKeyDown,
+    onEnterKey: () => {
+      onDirectionKeyDown("ArrowDown");
+      clearSelection();
+      cellInputRef.current?.blur();
+      setIsFocused(false);
+    },
+  });
   // 防抖更新
   const debouncedChange = useMemo(() => {
     const handleChange = (data: TableData) => {

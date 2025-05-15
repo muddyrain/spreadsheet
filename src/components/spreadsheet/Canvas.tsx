@@ -13,6 +13,7 @@ import { useSheetSelection } from "@/hooks/useSheetSelection";
 import { useStore } from "@/hooks/useStore";
 import { useCursor } from "@/hooks/useCursor";
 import { useComputed } from "@/hooks/useComputed";
+import { Menu } from "./Menu";
 
 interface CanvasProps {
   data: TableData;
@@ -52,6 +53,11 @@ export const Canvas: React.FC<CanvasProps> = ({
   >(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const { findIndexByAccumulate } = useComputed();
   const scrollConfig = useMemo(
     () => ({
@@ -318,6 +324,13 @@ export const Canvas: React.FC<CanvasProps> = ({
           overflow: "hidden",
         }}
       >
+        <Menu
+          open={contextMenuOpen}
+          position={contextMenuPosition}
+          onClose={() => {
+            setContextMenuOpen(false);
+          }}
+        />
         <canvas
           className="outline-0"
           style={{
@@ -326,6 +339,14 @@ export const Canvas: React.FC<CanvasProps> = ({
           tabIndex={0}
           ref={canvasRef}
           onMouseMove={handleMouseMove}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setContextMenuOpen(true);
+            setContextMenuPosition({
+              x: e.clientX,
+              y: e.clientY,
+            });
+          }}
           onMouseUp={() => {
             handleMouseUp();
           }}
