@@ -1,3 +1,17 @@
+export function rgbToHex(rgb: string): string {
+  const result = rgb.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+  if (!result) return rgb;
+  const r = parseInt(result[1], 10);
+  const g = parseInt(result[2], 10);
+  const b = parseInt(result[3], 10);
+  return (
+    "#" +
+    r.toString(16).padStart(2, "0").toUpperCase() +
+    g.toString(16).padStart(2, "0").toUpperCase() +
+    b.toString(16).padStart(2, "0").toUpperCase()
+  );
+}
+
 export function blendColor(hex: string, percent: number): string {
   // percent > 0 向黑色靠近，percent < 0 向白色靠近
   let r = parseInt(hex.slice(1, 3), 16);
@@ -12,6 +26,10 @@ export function getSmartBorderColor(
   bgColor: string,
   defaultBorder: string = "#DFDFDF",
 ): string {
+  // 新增：如果是 rgb 格式，先转为 hex
+  if (/^rgb\s*\(/i.test(bgColor)) {
+    bgColor = rgbToHex(bgColor);
+  }
   if (bgColor.toUpperCase() === "#FFFFFF") return defaultBorder;
   const r = parseInt(bgColor.slice(1, 3), 16);
   const g = parseInt(bgColor.slice(3, 5), 16);

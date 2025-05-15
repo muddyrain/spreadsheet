@@ -20,10 +20,9 @@ export const useTools = () => {
       // 设置字体样式
       const fontWeight = cell.style.fontWeight || "normal";
       const fontStyle = cell.style.fontStyle || "normal";
-      const fontSize =
-        (cell.style.fontSize || config.fontSize) * zoomSize * 1.333;
+      const fontSize = (cell.style.fontSize || config.fontSize) * zoomSize;
       // 获取 CSS 变量定义的字体
-      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}pt ${fontFamily}`;
       // 设置文本对齐
       ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
       ctx.textBaseline = "middle";

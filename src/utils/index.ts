@@ -44,3 +44,15 @@ export function limitSheetSize(rows: number, cols: number, maxCells = 2000000) {
   }
   return { rows, cols };
 }
+
+/**
+ * 将 pt 单位字符串转换为像素数值，1pt = 1.3333px
+ * @param ptStr 形如 "80.25pt" 的字符串
+ * @returns 对应的像素数值（number）
+ */
+export function ptToPx(ptStr: string): number {
+  const match = ptStr?.match(/([\d.]+)pt$/i);
+  if (!match) return 0;
+  const pt = parseFloat(match[1]);
+  return pt * 1.3333;
+}

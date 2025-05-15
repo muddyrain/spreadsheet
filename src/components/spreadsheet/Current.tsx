@@ -11,7 +11,7 @@ export const Current: FC = () => {
         className="h-full flex justify-center items-center border-r select-none text-sm border-zinc-200"
         style={{
           width: config.fixedColWidth * zoomSize + 1,
-          fontSize: config.fontSize * zoomSize * 1.333,
+          fontSize: `${config.fontSize * zoomSize}pt`,
         }}
       >
         <span>
@@ -25,7 +25,7 @@ export const Current: FC = () => {
           type="text"
           className="w-full h-full outline-0"
           style={{
-            fontSize: config.fontSize * zoomSize * 1.333,
+            fontSize: `${config.fontSize * zoomSize}pt`,
           }}
           onChange={(e) => {
             e.stopPropagation();
