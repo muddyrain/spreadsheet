@@ -41,7 +41,7 @@ const RootSpreadsheet: React.FC<{
     useState<SheetCellSettingsConfig>({
       isAnchorMergePoint: false,
     });
-  const [formatBrushStyles, setFormatBrushStyles] = useState<CellStyle[]>([]);
+  const [formatBrushStyles, setFormatBrushStyles] = useState<CellStyle[][]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
