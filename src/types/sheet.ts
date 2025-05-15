@@ -230,7 +230,7 @@ export type SpreadsheetConfig = {
   backgroundColor?: string;
   /**
    * @description 表格字体大小
-   * @default 14
+   * @default 11
    */
   fontSize?: number;
   /**
