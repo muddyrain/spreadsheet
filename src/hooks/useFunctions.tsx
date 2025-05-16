@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useStore } from "./useStore";
 import { useComputed } from "./useComputed";
 import { getSmartBorderColor } from "@/utils/color";
@@ -18,6 +18,7 @@ export const useFunctions = () => {
     config,
     data,
     selection,
+    cutSelection,
     selectedCell,
     headerRowsHeight,
     currentSheet,
@@ -29,6 +30,7 @@ export const useFunctions = () => {
   const { getDefaultCellStyle } = useComputed();
   const { updateCellsBySelection } = useData();
   const { toHtmlTable, parseHtmlTable, parseSelectionRange } = useDom();
+  const lastPasteHTMLString = useRef<string>("");
   const startRow = useMemo(() => {
     if (!selection || !selection.start || !selection.end) return 0;
     return Math.min(selection.start.row, selection.end.row);
@@ -122,6 +124,7 @@ export const useFunctions = () => {
           if (item.types.includes("text/html")) {
             const blob = await item.getType("text/html");
             const html = await blob.text();
+            if (html === lastPasteHTMLString.current) return;
             // 选区范围
             const selectionRangeString = getAttrFromHtml(
               html,
@@ -129,11 +132,13 @@ export const useFunctions = () => {
             );
             const operationType = getAttrFromHtml(html, DATA_OPERATION_TYPE);
             // 代表是剪切数据
-            if (operationType === "cut") {
+            if (operationType === "cut" && cutSelection) {
               const range = parseSelectionRange(selectionRangeString);
               updateCellsBySelection(range, (cell) => {
                 return createDefaultCell(config, cell.row, cell.col);
               });
+              // 如果是剪切数据，需要将剪切数据的范围设置到剪切板中
+              lastPasteHTMLString.current = html;
             }
             const tableData = parseHtmlTable(html);
             if (tableData?.length) {
@@ -205,10 +210,12 @@ export const useFunctions = () => {
     },
     [
       selection,
+      cutSelection,
       selectedCell,
       parseHtmlTable,
       parseSelectionRange,
       updateCellsBySelection,
+      setCutSelection,
       config,
       setData,
       data,
