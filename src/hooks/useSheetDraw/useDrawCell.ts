@@ -330,9 +330,18 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           // 绘制一个倒三角作为左上角交叉单元格的标志
           ctx.fillStyle = config.selectionBorderColor;
           ctx.beginPath();
-          ctx.moveTo(x + colWidth / 2 - 5 + 0.5, y + colHeight / 2 + 5 + 0.5);
-          ctx.lineTo(x + colWidth / 2 + 5 + 0.5, y + colHeight / 2 + 5 + 0.5);
-          ctx.lineTo(x + colWidth / 2 + 5 + 0.5, y + colHeight / 2 - 5 + 0.5);
+          ctx.moveTo(
+            (x + colWidth / 2 - 5 + 0.5) * zoomSize,
+            (y + colHeight / 2 + 5 + 0.5) * zoomSize,
+          );
+          ctx.lineTo(
+            (x + colWidth / 2 + 5 + 0.5) * zoomSize,
+            (y + colHeight / 2 + 5 + 0.5) * zoomSize,
+          );
+          ctx.lineTo(
+            (x + colWidth / 2 + 5 + 0.5) * zoomSize,
+            (y + colHeight / 2 - 5 + 0.5) * zoomSize,
+          );
           ctx.closePath();
           ctx.fill();
           renderBorder(ctx, { rowIndex, colIndex, x, y, cell });
@@ -342,6 +351,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     [
       config.selectionBorderColor,
       data,
+      zoomSize,
       getCellPosition,
       headerColsWidth,
       headerRowsHeight,
