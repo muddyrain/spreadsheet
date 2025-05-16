@@ -15,7 +15,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ClickType } from "@/hooks/useUpdateStyle";
 
-export const Align: FC<{
+export const TextAlign: FC<{
   isAlignLeft?: boolean;
   isAlignCenter?: boolean;
   isAlignRight?: boolean;

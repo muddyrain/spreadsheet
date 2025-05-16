@@ -19,8 +19,9 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Settings } from "./Settings";
 import { ColorPicker } from "./ColorPicker";
 import { Import } from "./import";
-import { Align } from "./Align";
+import { TextAlign } from "./TextAlign";
 import { ClickType, useUpdateStyle } from "@/hooks/useUpdateStyle";
+import { VerticalAlign } from "./VerticalAlign";
 
 export const Header: FC<{
   onClick?: (type: ClickType) => void;
@@ -138,7 +139,13 @@ export const Header: FC<{
       <ColorPicker type="text" selectionCells={selectionCells || []} />
       <ColorPicker type="background" selectionCells={selectionCells || []} />
       <Separator orientation="vertical" />
-      <Align
+      <VerticalAlign
+        isVerticalAlignStart={isStyle.isVerticalAlignStart}
+        isVerticalAlignCenter={isStyle.isVerticalAlignCenter}
+        isVerticalAlignEnd={isStyle.isVerticalAlignEnd}
+        onClick={handleClick}
+      />
+      <TextAlign
         isAlignLeft={isStyle.isAlignLeft}
         isAlignCenter={isStyle.isALignCenter}
         isAlignRight={isStyle.isALignRight}

@@ -76,7 +76,12 @@ export type CellStyle = {
    * @description 单元格文字对齐方式
    * @default 'left'
    */
-  textAlign?: string;
+  textAlign?: AlignType;
+  /**
+   * @description 单元格文字垂直对齐方式
+   * @default 'center'
+   */
+  verticalAlign?: VerticalAlignType;
   /**
    * @description 单元格字体大小 - 是以“磅（pt）”为单位 1pt ≈ 1.333px
    * @default 11
@@ -197,7 +202,12 @@ export type SpreadsheetConfig = {
    * @description 默认文本对齐方式
    * @default 'left'
    */
-  textAlign?: "left" | "center" | "right";
+  textAlign?: AlignType;
+  /**
+   * @description 默认文本垂直对齐方式
+   * @default 'center'
+   */
+  verticalAlign?: VerticalAlignType;
   /**
    * @description 选择框背景颜色
    * @default 'rgba(60, 112, 255, 0.15)'
@@ -310,6 +320,11 @@ export type ArrowDirectionType =
   | "ArrowLeft"
   | "ArrowRight";
 
+export type AlignType = "left" | "center" | "right";
+export type VerticalAlignType = "start" | "center" | "end";
+/**
+ * @description 表格单元格设置
+ */
 /**
  * @description 表格单元格设置配置
  */

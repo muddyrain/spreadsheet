@@ -17,6 +17,9 @@ export type ClickType =
   | "alignLeft"
   | "alignCenter"
   | "alignRight"
+  | "verticalAlignStart"
+  | "verticalAlignCenter"
+  | "verticalAlignEnd"
   | "merge"
   | "wrap"
   | "export";
@@ -75,6 +78,15 @@ export const useUpdateStyle = () => {
       isALignRight:
         !!selectionCells?.length &&
         selectionCells.every((cell) => cell.style.textAlign === "right"),
+      isVerticalAlignStart:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) => cell.style.verticalAlign === "start"),
+      isVerticalAlignCenter:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) => cell.style.verticalAlign === "center"),
+      isVerticalAlignEnd:
+        !!selectionCells?.length &&
+        selectionCells.every((cell) => cell.style.verticalAlign === "end"),
       isPaint: !!formatBrushStyles.length,
     };
     // 通过updater来判断是否需要更新isStyle
@@ -201,6 +213,24 @@ export const useUpdateStyle = () => {
       case "alignRight": {
         selectionCells.forEach((cell) => {
           cell.style.textAlign = "right";
+        });
+        break;
+      }
+      case "verticalAlignStart": {
+        selectionCells.forEach((cell) => {
+          cell.style.verticalAlign = "start";
+        });
+        break;
+      }
+      case "verticalAlignCenter": {
+        selectionCells.forEach((cell) => {
+          cell.style.verticalAlign = "center";
+        });
+        break;
+      }
+      case "verticalAlignEnd": {
+        selectionCells.forEach((cell) => {
+          cell.style.verticalAlign = "end";
         });
         break;
       }

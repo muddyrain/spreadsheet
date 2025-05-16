@@ -25,6 +25,7 @@ export const useSpreadsheet = (
       width: 100,
       height: 30,
       textAlign: "left",
+      verticalAlign: "center",
       selectionBorderColor: "rgba(60, 112, 255, 1)",
       selectionBackgroundColor: "rgba(60, 112, 255, 0.15)",
       readOnlyBackgroundColor: "#F2F2F2",

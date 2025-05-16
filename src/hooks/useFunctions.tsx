@@ -12,6 +12,7 @@ import {
   DATA_SELECTION_RANGE,
 } from "@/constant/dom";
 import { useData } from "./useData";
+import { AlignType } from "@/types/sheet";
 
 export const useFunctions = () => {
   const {
@@ -162,7 +163,8 @@ export const useFunctions = () => {
                     fontWeight: style.fontWeight || "normal",
                     fontStyle: style.fontStyle,
                     textDecoration: style.textDecoration || "normal",
-                    textAlign: style.textAlign || config.textAlign,
+                    textAlign: (style.textAlign ||
+                      config.textAlign) as AlignType,
                     color: style.color || config.color,
                     backgroundColor:
                       style.background ||

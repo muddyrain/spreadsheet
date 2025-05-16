@@ -21,6 +21,7 @@ export const createDefaultCell = (
       borderColor: config.borderColor,
       fontSize: config.fontSize,
       textAlign: config.textAlign,
+      verticalAlign: config.verticalAlign,
       fontWeight: "normal",
       fontStyle: "normal",
       textDecoration: "none",

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import ExcelJS from "exceljs";
-import { CellData, Sheet } from "@/types/sheet";
+import { AlignType, CellData, Sheet } from "@/types/sheet";
 import { useStore } from "./useStore";
 import { addressToPosition, generateColName } from "@/utils/sheet";
 import { applyTint, getSmartBorderColor } from "@/utils/color";
@@ -135,7 +135,7 @@ export function useImportExcel() {
                           ? "underline"
                           : "normal",
                         textAlign: cell.alignment?.horizontal
-                          ? cell.alignment.horizontal
+                          ? (cell.alignment.horizontal as AlignType)
                           : undefined,
                         color: textColor,
                         backgroundColor,
