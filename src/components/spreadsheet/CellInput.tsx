@@ -129,7 +129,8 @@ export const CellInput = forwardRef<
         minHeight: `${Math.min(height + 3, containerHeight)}px`,
         maxWidth: `${containerWidth - (headerColsWidth?.[0] || 0)}px`,
         maxHeight: `${containerHeight - (headerRowsHeight?.[0] || 0)}px`,
-        padding: `${3 * zoomSize}px ${4 * zoomSize}px ${3 * zoomSize}px ${5 * zoomSize}px`,
+        paddingLeft: `${5 * zoomSize}px`,
+        paddingRight: `${4 * zoomSize}px`,
         fontSize: `${(cell.style.fontSize || config.fontSize) * zoomSize}pt`,
         fontWeight: cell.style.fontWeight || "normal",
         fontStyle: cell.style.fontStyle || "normal",
@@ -147,19 +148,18 @@ export const CellInput = forwardRef<
       });
       // 应用到镜像元素
       Object.assign(mirrorEl.style, baseStyles);
-
       return baseStyles;
     },
     [
-      config.color,
-      config.backgroundColor,
-      config.fontSize,
-      config.textAlign,
-      zoomSize,
       containerWidth,
       containerHeight,
       headerColsWidth,
       headerRowsHeight,
+      zoomSize,
+      config.fontSize,
+      config.textAlign,
+      config.color,
+      config.backgroundColor,
     ],
   );
   const setInputStyle = (rowIndex: number, colIndex: number) => {
@@ -305,7 +305,7 @@ export const CellInput = forwardRef<
     <>
       <textarea
         ref={inputRef}
-        className="fixed hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0"
+        className="fixed hidden bg-white box-border text-black outline-none resize-none whitespace-normal break-words m-0"
         onChange={(e) => {
           onChange?.(e.target.value, currentEditingCell);
           updateInputSize();
@@ -352,7 +352,7 @@ export const CellInput = forwardRef<
         onBlur={(e) => {
           onChange?.(e.target.value, currentEditingCell);
           setIsFocused(false);
-          setEditingCell(null);
+          // setEditingCell(null);
           // 如果当前cell是自动换行的 或者 输入了 换行符的
           if (currentEditingCell?.style.wrap || e.target.value.includes("\n")) {
             changeCellHeight(currentEditingCell);
@@ -372,7 +372,7 @@ export const CellInput = forwardRef<
           ...style,
           fontFamily: "PingFangSC sans-serif",
           border: `2px solid ${config.selectionBorderColor}`,
-          visibility: "hidden",
+          // visibility: "hidden",
         }}
       />
     </>

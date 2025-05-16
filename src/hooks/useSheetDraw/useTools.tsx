@@ -16,6 +16,7 @@ export const useTools = () => {
       // 最低宽度尺寸
       const minWidth = 25 * zoomSize;
       const textAlign = cell.style.textAlign || config.textAlign;
+      const verticalAlign = cell.style.verticalAlign || config.verticalAlign;
       const color = cell.style.color || config.color || "#000000";
       // 设置字体样式
       const fontWeight = cell.style.fontWeight || "normal";
@@ -33,9 +34,17 @@ export const useTools = () => {
         fontWeight,
         fontStyle,
         fontSize,
+        verticalAlign,
       };
     },
-    [config.color, config.fontSize, config.textAlign, fontFamily, zoomSize],
+    [
+      config.color,
+      config.fontSize,
+      config.textAlign,
+      config.verticalAlign,
+      fontFamily,
+      zoomSize,
+    ],
   );
   return { getFontStyle };
 };

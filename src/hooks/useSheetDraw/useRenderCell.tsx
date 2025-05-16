@@ -54,10 +54,8 @@ export const useRenderCell = () => {
       const cellHeight = height;
 
       // 设置字体样式
-      const { minWidth, color, textAlign, fontSize } = getFontStyle(
-        ctx,
-        options,
-      );
+      const { minWidth, color, textAlign, verticalAlign, fontSize } =
+        getFontStyle(ctx, options);
       ctx.fillStyle = color;
       function hasCellValue(cell: CellData | undefined) {
         return !!(cell && (cell.value || cell.mergeSpan || cell.mergeParent));
@@ -164,16 +162,26 @@ export const useRenderCell = () => {
           // 用 wrappedContents 替换原有 contents 进行后续绘制
           contents = wrappedContents;
         }
+        let baseY = 0;
+        if (verticalAlign === "start") {
+          baseY = y + fontSize + 3.5 * zoomSize; // 顶端对齐
+        } else if (verticalAlign === "center") {
+          baseY =
+            y + cellHeight / 2 - (contents.length - 1) * fontSize * zoomSize;
+        } else if (verticalAlign === "end") {
+          baseY =
+            y +
+            cellHeight -
+            (contents.length * fontSize * zoomSize +
+              (contents.length - 1) * 11 * zoomSize) -
+            3.5 * zoomSize;
+        }
         for (let i = 0; i < contents.length; i++) {
           const text = contents[i];
           const textMetrics = ctx.measureText(text);
           // 计算文本位置 + 起始单元格高度一半 - 边框高度  + 字体大小 + (行间距) 是为了防止文本被裁剪
-          const textY =
-            y +
-            (config.height / 2 - 1) * zoomSize +
-            (i * fontSize + i * 11 * zoomSize);
+          const textY = baseY + i * fontSize + i * 11 * zoomSize;
           ctx.fillText(text, textX, textY);
-
           const textDecoration = cell.style.textDecoration || "none";
           // 计算文本装饰线的位置
           const calculateLinePosition = (
@@ -227,7 +235,6 @@ export const useRenderCell = () => {
       getFontStyle,
       zoomSize,
       data,
-      config.height,
     ],
   );
   // 单元格绘制函数
