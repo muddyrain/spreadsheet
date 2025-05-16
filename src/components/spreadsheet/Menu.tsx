@@ -31,8 +31,13 @@ export const Menu: FC<{
   onClose?: () => void;
 }> = ({ open, position, onClose }) => {
   const { currentCtrlKey, containerWidth, containerHeight } = useStore();
-  const { handleCopy, handlePaste, handlePasteText, handleClearContent } =
-    useFunctions();
+  const {
+    handleCopy,
+    handlePaste,
+    handleCut,
+    handlePasteText,
+    handleClearContent,
+  } = useFunctions();
   const menuRef = useRef<HTMLDivElement | null>(null);
   useClickOutside(menuRef, () => {
     onClose?.();
@@ -52,6 +57,9 @@ export const Menu: FC<{
       name: "剪切",
       icon: <ScissorsIcon size={16} />,
       shortcutKey: `${currentCtrlKey}+X`,
+      onClick: () => {
+        handleCut();
+      },
     },
     {
       key: "paste",

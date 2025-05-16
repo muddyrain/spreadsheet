@@ -117,7 +117,7 @@ export function useImportExcel() {
                   let indexNumber = 0;
                   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
                     const master = cell.model?.master;
-                    const address = generateColName(colNumber) + rowIndex;
+                    const address = generateColName(colNumber) + (rowIndex + 1);
                     const backgroundColor = getColor(
                       "background",
                       appName,
@@ -147,7 +147,7 @@ export function useImportExcel() {
                       },
                       mergeParent: master ? addressToPosition(master) : null,
                       mergeSpan: null,
-                      row: row.number,
+                      row: rowIndex + 1,
                       col: colNumber,
                       address,
                     });
@@ -155,7 +155,8 @@ export function useImportExcel() {
                   });
                   // 后列 补充空白单元格
                   while (indexNumber < colsTotal) {
-                    const address = generateColName(indexNumber) + rowIndex;
+                    const address =
+                      generateColName(indexNumber) + (rowIndex + 1);
                     rowData.push({
                       value: "",
                       style: {
