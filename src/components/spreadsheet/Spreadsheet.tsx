@@ -228,7 +228,6 @@ const Spreadsheet: React.FC<{
       import.meta.hot.dispose(() => {
         clearSelection();
         cellInputRef.current?.blur();
-        setIsFocused(false);
       });
     }
   }, [clearSelection, setIsFocused]);

@@ -4,7 +4,7 @@ import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "../useComputed";
 import { useCallback } from "react";
 import { useTools } from "./useTools";
-import { useDynamicRenderBorder } from "./useDynamicRender";
+import { useDynamicRender } from "./useDynamicRender";
 
 export interface RenderOptions {
   rowIndex: number;
@@ -28,7 +28,7 @@ export const useRenderCell = () => {
   } = useStore();
   const { getMergeCellSize } = useComputed();
   const { getFontStyle } = useTools();
-  const { drawBorderMap } = useDynamicRenderBorder();
+  const { drawBorderMap } = useDynamicRender();
   const isCellSelected = useCallback(
     (cell: CellData) => {
       if (!selection?.start || !selection?.end) return false;

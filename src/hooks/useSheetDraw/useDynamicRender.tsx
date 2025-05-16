@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useStore } from "../useStore";
 import { useTools } from "./useTools";
 
-export const useDynamicRenderBorder = () => {
+export const useDynamicRender = () => {
   const { data, config, headerColsWidth, zoomSize } = useStore();
 
   const { getFontStyle } = useTools();

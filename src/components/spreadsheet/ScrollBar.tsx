@@ -38,6 +38,12 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
       onContextMenu={(e) => {
         e.preventDefault();
       }}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+      }}
       style={{
         position: "absolute",
         ...(isHorizontal

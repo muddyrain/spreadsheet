@@ -82,19 +82,29 @@ export const CellInput = forwardRef<
           if (inputRef.current) {
             const left = parseInt(inputRef.current.style.left) || 0;
             const top = parseInt(inputRef.current.style.top) || 0;
+            // 获取首列的宽度（用于后续宽度补偿）
+            const fixedColWidth = headerColsWidth[0];
+            // 判断输入框右侧是否超出容器宽度
             if (left - wrapperRect.x + mirrorRect.width > containerWidth) {
+              // 计算超出的宽度
               const space = left + mirrorRect.width - containerWidth;
-              inputRef.current!.style.left = `${left - space + 1 + wrapperRect.x}px`;
+              // 调整输入框的 left，使其不超出容器右侧
+              inputRef.current!.style.left = `${left - space - 1 + wrapperRect.x}px`;
             }
-            // 在 updateInputSize 里，设置 textarea 的最大高度不超过 containerHeight，并且必要时调整 top 让其始终在容器内
-            if (top - wrapperRect.y + mirrorRect.height > containerHeight) {
+            // 判断输入框底部是否超出容器高度
+            if (
+              top - wrapperRect.y + mirrorRect.height + 1 >=
+              containerHeight
+            ) {
+              // 如果超出，则限制输入框高度和最小高度为剩余空间，并扩展宽度，显示滚动条
               inputRef.current!.style.height = `${containerHeight - (top - wrapperRect.y)}px`;
               inputRef.current!.style.minHeight = `${containerHeight - (top - wrapperRect.y)}px`;
-              inputRef.current!.style.width = `${mirrorRect.width + 20}px`;
+              inputRef.current!.style.width = `${mirrorRect.width + 20 + fixedColWidth}px`;
               inputRef.current!.style.overflowY = "auto";
               // 自动将滚动条滚动到底部
               inputRef.current!.scrollTop = inputRef.current!.scrollHeight;
             } else {
+              // 未超出时，宽度与 mirror 一致，隐藏滚动条，高度自适应
               inputRef.current!.style.width = `${mirrorRect.width}px`;
               inputRef.current!.style.overflowY = "hidden";
               inputRef.current!.style.minHeight = `${mirrorRect.height}px`;
@@ -104,7 +114,7 @@ export const CellInput = forwardRef<
         }
       });
     }
-  }, [isFocused, containerWidth, containerHeight, wrapperRef]);
+  }, [isFocused, containerWidth, containerHeight, headerColsWidth, wrapperRef]);
   const applyCellStyles = useCallback(
     (
       inputEl: HTMLTextAreaElement,
@@ -117,8 +127,8 @@ export const CellInput = forwardRef<
       const baseStyles = {
         minWidth: `${Math.min(width + 3, containerWidth)}px`,
         minHeight: `${Math.min(height + 3, containerHeight)}px`,
-        maxWidth: `${containerWidth}px`,
-        maxHeight: `${containerHeight}px`,
+        maxWidth: `${containerWidth - (headerColsWidth?.[0] || 0)}px`,
+        maxHeight: `${containerHeight - (headerRowsHeight?.[0] || 0)}px`,
         padding: `${3 * zoomSize}px ${4 * zoomSize}px ${3 * zoomSize}px ${5 * zoomSize}px`,
         fontSize: `${(cell.style.fontSize || config.fontSize) * zoomSize}pt`,
         fontWeight: cell.style.fontWeight || "normal",
@@ -148,6 +158,8 @@ export const CellInput = forwardRef<
       zoomSize,
       containerWidth,
       containerHeight,
+      headerColsWidth,
+      headerRowsHeight,
     ],
   );
   const setInputStyle = (rowIndex: number, colIndex: number) => {
@@ -220,6 +232,7 @@ export const CellInput = forwardRef<
       updateInputSize();
       inputRef.current?.blur();
       setIsFocused(false);
+      setEditingCell(null);
     },
     setValue(value: string) {
       if (inputRef.current) {
@@ -249,7 +262,6 @@ export const CellInput = forwardRef<
       const { x, y, right } = getCellPosition(cell);
       const { width, height } = getMergeCellSize(cell, cellWidth, cellHeight);
       const fixedHeight = headerRowsHeight[0];
-      const fixedWidth = headerColsWidth[0];
       // 设置位置
       if (y <= fixedHeight - 1) {
         inputRef.current.style.top = `${fixedHeight - 1 + wrapperRect.y}px`;
@@ -258,11 +270,7 @@ export const CellInput = forwardRef<
       }
       const textAlign = cell.style.textAlign || config.textAlign || "left";
       if (textAlign === "left" || textAlign === "center") {
-        if (x <= fixedWidth - 1) {
-          inputRef.current.style.left = `${fixedWidth - 1 + wrapperRect.x}px`;
-        } else {
-          inputRef.current.style.left = `${x - 1 + wrapperRect.x}px`;
-        }
+        inputRef.current.style.left = `${x - 1 + wrapperRect.x}px`;
       } else if (textAlign === "right") {
         inputRef.current.style.left = "auto";
         inputRef.current.style.right = `${right + 8 + wrapperRect.right}px`;
@@ -343,8 +351,12 @@ export const CellInput = forwardRef<
         }}
         onBlur={(e) => {
           onChange?.(e.target.value, currentEditingCell);
-          changeCellHeight(currentEditingCell);
           setIsFocused(false);
+          setEditingCell(null);
+          // 如果当前cell是自动换行的 或者 输入了 换行符的
+          if (currentEditingCell?.style.wrap || e.target.value.includes("\n")) {
+            changeCellHeight(currentEditingCell);
+          }
         }}
         style={{
           ...style,
@@ -355,7 +367,7 @@ export const CellInput = forwardRef<
       {/* 隐藏的 mirror div 用于测量内容尺寸 */}
       <div
         ref={mirrorRef}
-        className="absolute whitespace-pre-wrap break-all box-border"
+        className="absolute box-border whitespace-pre-wrap break-all"
         style={{
           ...style,
           fontFamily: "PingFangSC sans-serif",

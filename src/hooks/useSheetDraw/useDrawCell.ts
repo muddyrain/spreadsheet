@@ -4,6 +4,7 @@ import { CellData, DrawConfig } from "@/types/sheet";
 import { useRenderCell } from "./useRenderCell";
 import { useComputed } from "../useComputed";
 import { useCallback, useMemo } from "react";
+import { useDynamicRender } from "./useDynamicRender";
 
 // 冻结行数和列数（可根据需要调整）
 const FROZEN_ROW_COUNT = 1;
@@ -25,7 +26,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     selection,
     cutSelection,
   } = useStore();
-
+  const { measureMap } = useDynamicRender();
   const { renderCell, renderText, renderBorder, renderSelectedCell } =
     useRenderCell();
   const {
@@ -138,6 +139,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
             if (colIndex === 0 || rowIndex === 0) continue;
             const cell = data[rowIndex]?.[colIndex];
             if (!cell) continue;
+            // console.log(measureMap[rowIndex][colIndex]);
             // 处理合并单元格的情况
             if (cell.mergeParent) {
               const parentCell =
@@ -171,7 +173,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       }
       return cache.get(key)!;
     };
-  }, [data, getCellPosition]);
+  }, [data, measureMap, getCellPosition]);
 
   // 优化后的 drawCell 函数
   const drawCell = useCallback(
