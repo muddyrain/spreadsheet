@@ -23,6 +23,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     headerRowsHeight,
     headerColsWidth,
     selection,
+    cutSelection,
   } = useStore();
 
   const { renderCell, renderText, renderBorder, renderSelectedCell } =
@@ -396,8 +397,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       selectedCell,
     ],
   );
-  // 绘制选中区域边框
-  const drawSelectedAreaBorder = useCallback(
+  // 绘制头部选中区域线
+  const drawHeaderSelectedAreaLine = useCallback(
     (ctx: CanvasRenderingContext2D) => {
       if (selection?.start && selection?.end) {
         const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
@@ -443,8 +444,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       zoomSize,
     ],
   );
-  // 修改 drawHighLightCell 函数
-  const drawHighLightCell = useCallback(
+  // 绘制当前选中单元格的边框
+  const drawSelectionBorder = useCallback(
     (ctx: CanvasRenderingContext2D) => {
       if (selection?.start && selection?.end) {
         if (isOneSelection && isFocused) return;
@@ -476,6 +477,40 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       isFocused,
       isOneSelection,
       selection,
+      startCol,
+      startRow,
+    ],
+  );
+  // 绘制剪切选中单元格的边框
+  const drawCtSelectionBorder = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      if (cutSelection?.start && cutSelection?.end) {
+        const { r1, r2, c1, c2 } = getAbsoluteSelection(cutSelection);
+        // 只绘制在当前可视区域内的部分
+        if (r2 >= startRow && r1 < endRow && c2 >= startCol && c1 < endCol) {
+          const { x, y } = getCellPosition(data[r1][c1]);
+          const width = getAccumulatedSize.getWidth(c1, c2);
+          const height = getAccumulatedSize.getHeight(r1, r2);
+
+          // 使用 Path2D 优化绘制
+          const path = new Path2D();
+          path.rect(x + 0.5, y + 0.5, width - 1, height - 1);
+          ctx.setLineDash([5, 5]);
+          ctx.strokeStyle = config.selectionBorderColor;
+          ctx.lineWidth = 1;
+          ctx.stroke(path);
+          ctx.restore();
+        }
+      }
+    },
+    [
+      config.selectionBorderColor,
+      data,
+      endCol,
+      endRow,
+      getAccumulatedSize,
+      getCellPosition,
+      cutSelection,
       startCol,
       startRow,
     ],
@@ -553,10 +588,11 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     drawFrozenCols,
     drawFrozenRows,
     drawFrozenCrossCell,
-    drawHighLightCell,
+    drawSelectionBorder,
+    drawCtSelectionBorder,
     drawSelectedCell,
     drawDragLine,
     drawMergeCellBorder,
-    drawSelectedAreaBorder,
+    drawHeaderSelectedAreaLine,
   };
 };

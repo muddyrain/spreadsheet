@@ -12,19 +12,19 @@ button:focus:not(:focus-visible) {
 }
 
 /* 隐藏 WebKit 内核浏览器的滚动条 */
-textarea::-webkit-scrollbar {
+/* textarea::-webkit-scrollbar {
   display: none;
-}
+} */
 
 /* 隐藏 Firefox 浏览器的滚动条 */
-textarea {
+/* textarea {
   scrollbar-width: none;
-}
+} */
 
 /* 隐藏 IE 和 Edge 浏览器的滚动条 */
-textarea {
+/* textarea {
   -ms-overflow-style: none;
-}
+} */
 
 @font-face {
   font-family: "PingFangSC";

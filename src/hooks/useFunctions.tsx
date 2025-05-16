@@ -12,8 +12,9 @@ export const useFunctions = () => {
     data,
     selection,
     selectedCell,
-    setData,
     headerRowsHeight,
+    setData,
+    setCutSelection,
     setHeaderRowsHeight,
   } = useStore();
   const { getDefaultCellStyle } = useComputed();
@@ -111,6 +112,7 @@ export const useFunctions = () => {
           if (item.types.includes("text/html")) {
             const blob = await item.getType("text/html");
             const html = await blob.text();
+            console.log(html);
             const tableData = parseHtmlTable(html);
             if (tableData?.length) {
               const row = selection.start?.row ?? selectedCell.row;
@@ -201,9 +203,35 @@ export const useFunctions = () => {
       return [...data];
     });
   }, [selection, startCol, startRow, endCol, endRow, setData]);
+  const handleCut = useCallback(() => {
+    if (!selection) return;
+    if (selection.start && selection.end) {
+      setCutSelection({
+        ...selection,
+      });
+      // const tableString = toHtmlTable(data, startRow, endRow, startCol, endCol);
+      // const text = handleCopyText();
+      // const clipboardItem = new ClipboardItem({
+      //   "text/html": new Blob([tableString], { type: "text/html" }),
+      //   "text/plain": new Blob([text], { type: "text/plain" }),
+      // });
+      // navigator.clipboard.write([clipboardItem]);
+    }
+  }, [
+    data,
+    endCol,
+    endRow,
+    handleCopyText,
+    selection,
+    startCol,
+    startRow,
+    toHtmlTable,
+    setCutSelection,
+  ]);
   return {
     handleCopy,
     handleCopyText,
+    handleCut,
     handlePaste,
     handlePasteText,
     handleClearContent,

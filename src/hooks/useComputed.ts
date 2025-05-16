@@ -128,31 +128,24 @@ export const useComputed = () => {
     (wrapperHeight: number) => {
       // 计算 startRow
       let acc = 0;
-      let startRow = 0;
+      let startRow = -1;
+      let endRow = -1;
+      const viewTop = scrollPosition.y;
+      const viewBottom = scrollPosition.y + wrapperHeight;
       for (let i = 0; i < headerRowsHeight.length; i++) {
-        acc += headerRowsHeight[i] * zoomSize;
-        if (acc > scrollPosition.y) {
-          startRow = i;
-          break;
+        const rowTop = acc;
+        const rowBottom = acc + headerRowsHeight[i] * zoomSize;
+        if (rowBottom > viewTop && rowTop < viewBottom) {
+          if (startRow === -1) startRow = i;
+          endRow = i;
         }
-      }
-      // 计算 endRow
-      let endRow = startRow;
-      let visibleHeight = 0;
-      for (let i = startRow; i < headerRowsHeight.length; i++) {
-        visibleHeight += headerRowsHeight[i] * zoomSize;
-        endRow = i + 1;
-        if (visibleHeight > wrapperHeight) {
-          break;
-        }
+        acc = rowBottom;
       }
       // 多加一行预加载
-      endRow = endRow + 1;
-      if (endRow > headerRowsHeight.length) {
-        endRow = headerRowsHeight.length;
-      }
-      if (startRow === endRow) {
-        endRow = headerRowsHeight.length;
+      if (endRow !== -1) endRow = Math.min(endRow + 2, headerRowsHeight.length);
+      if (startRow === -1 || endRow === -1) {
+        startRow = 0;
+        endRow = 1;
       }
       return {
         startRow,
@@ -164,37 +157,29 @@ export const useComputed = () => {
   // 获取 startCol 和 endCol
   const getStartEndCol = useCallback(
     (wrapperWidth: number) => {
-      // 计算 startCol
       let acc = 0;
-      let startCol = 0;
+      let startCol = -1;
+      let endCol = -1;
+      const viewLeft = scrollPosition.x;
+      const viewRight = scrollPosition.x + wrapperWidth;
       for (let i = 0; i < headerColsWidth.length; i++) {
-        acc += headerColsWidth[i] * zoomSize;
-        startCol = i;
-        if (acc > scrollPosition.x) {
-          break;
+        const colLeft = acc;
+        const colRight = acc + headerColsWidth[i] * zoomSize;
+        if (colRight > viewLeft && colLeft < viewRight) {
+          if (startCol === -1) startCol = i;
+          endCol = i;
         }
-      }
-      // 计算 endCol
-      let endCol = startCol;
-      let visibleWidth = 0;
-      for (let i = startCol; i <= headerColsWidth.length; i++) {
-        visibleWidth += headerColsWidth[i] * zoomSize;
-        endCol = i + 1;
-        if (visibleWidth >= wrapperWidth) {
-          break;
-        }
+        acc = colRight;
       }
       // 多加一列预加载
-      endCol = endCol + 1;
-      if (endCol > headerColsWidth.length) {
-        endCol = headerColsWidth.length;
-      }
-      if (startCol === endCol) {
-        endCol = headerColsWidth.length;
+      if (endCol !== -1) endCol = Math.min(endCol + 2, headerColsWidth.length);
+      if (startCol === -1 || endCol === -1) {
+        startCol = 0;
+        endCol = 1;
       }
       return {
         startCol,
-        endCol: endCol + 1,
+        endCol,
       };
     },
     [zoomSize, scrollPosition, headerColsWidth],

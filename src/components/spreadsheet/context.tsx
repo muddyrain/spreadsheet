@@ -47,6 +47,10 @@ export const SpreadsheetContext = React.createContext<
       setSelection: React.Dispatch<
         React.SetStateAction<SelectionSheetType | null>
       >;
+      cutSelection: SelectionSheetType | null;
+      setCutSelection: React.Dispatch<
+        React.SetStateAction<SelectionSheetType | null>
+      >;
       headerColsWidth: number[];
       setHeaderColsWidth: React.Dispatch<React.SetStateAction<number[]>>;
       headerRowsHeight: number[];

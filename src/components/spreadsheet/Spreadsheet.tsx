@@ -8,7 +8,6 @@ import { CellInput, CellInputRef } from "./CellInput";
 import { useKeyDown } from "@/hooks/useKeyDown";
 import { Current } from "./Current";
 import { useStore } from "@/hooks/useStore";
-import { useComputed } from "@/hooks/useComputed";
 import { Footer } from "./Footer/index";
 import { useTab } from "@/hooks/useTab";
 import { useDirection } from "@/hooks/useDirection";
@@ -30,7 +29,6 @@ const Spreadsheet: React.FC<{
     setIsFocused,
     getCurrentCell,
   } = useStore();
-  const { fitCellViewPort } = useComputed();
   const cellInputRef = useRef<CellInputRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const handleSelectAll = () => {
@@ -130,7 +128,6 @@ const Spreadsheet: React.FC<{
       }
     }
     setSelectedCell(data[rowIndex][colIndex]);
-    fitCellViewPort(rowIndex, colIndex);
     setSelection({
       start: { row: rowIndex, col: colIndex },
       end: { row: rowIndex, col: colIndex },
@@ -257,7 +254,7 @@ const Spreadsheet: React.FC<{
         className="relative overflow-hidden flex-1 flex flex-col"
         ref={wrapperRef}
       >
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden shrink-0">
           <Canvas
             data={data}
             selectedCell={selectedCell}
@@ -268,6 +265,7 @@ const Spreadsheet: React.FC<{
         </div>
         <CellInput
           ref={cellInputRef}
+          wrapperRef={wrapperRef}
           onChange={handleInputChange}
           onTabKeyDown={onTabKeyDown}
           onEnterKeyDown={() => {

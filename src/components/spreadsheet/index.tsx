@@ -95,6 +95,7 @@ const RootSpreadsheet: React.FC<{
           if (typeof data === "function") {
             data = data(currentSheet?.data || []);
           }
+          setCurrentSheet("cutSelection", null);
           setCurrentSheet("data", data);
         },
         selection: currentSheet?.selection || null,
@@ -103,6 +104,13 @@ const RootSpreadsheet: React.FC<{
             selection = selection(currentSheet?.selection || null);
           }
           setCurrentSheet("selection", selection);
+        },
+        cutSelection: currentSheet?.cutSelection || null,
+        setCutSelection(cutSelection) {
+          if (typeof cutSelection === "function") {
+            cutSelection = cutSelection(currentSheet?.cutSelection || null);
+          }
+          setCurrentSheet("cutSelection", cutSelection);
         },
         headerColsWidth: currentSheet?.headerColsWidth || [],
         setHeaderColsWidth(headerColsWidth) {

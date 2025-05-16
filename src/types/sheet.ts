@@ -24,9 +24,9 @@ export interface Sheet {
    */
   selection: SelectionSheetType | null;
   /**
-   * @description 表格当前单元格
+   * @description 表格裁剪选择框
    */
-  currentCell: CellData | null;
+  cutSelection: SelectionSheetType | null;
   /**
    * @description 表格选中单元格
    */

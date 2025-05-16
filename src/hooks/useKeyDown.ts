@@ -7,6 +7,7 @@ interface useKeyDownCallback {
   onCellInputKey?: (value: string) => void;
   onCellCopyKey?: () => void;
   onCellPasteKey?: () => void;
+  onCellCutKey?: () => void;
   onCellDeleteKey?: () => void;
   onSelectAll?: () => void;
   onDirectionKey?: (key: ArrowDirectionType) => void;
@@ -15,7 +16,8 @@ interface useKeyDownCallback {
 }
 export const useKeyDown = (callback: useKeyDownCallback = {}) => {
   const { selection } = useStore();
-  const { handleCopy, handlePaste, handleClearContent } = useFunctions();
+  const { handleCopy, handlePaste, handleCut, handleClearContent } =
+    useFunctions();
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const key = e.key;
@@ -59,6 +61,10 @@ export const useKeyDown = (callback: useKeyDownCallback = {}) => {
           e.preventDefault();
           handlePaste();
           callback?.onCellPasteKey?.();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "x") {
+          e.preventDefault();
+          handleCut();
+          callback?.onCellCutKey?.();
         } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
           e.preventDefault();
           handleCopy();
@@ -84,6 +90,7 @@ export const useKeyDown = (callback: useKeyDownCallback = {}) => {
       callback,
       handlePaste,
       handleCopy,
+      handleCut,
       handleClearContent,
     ],
   );

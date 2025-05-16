@@ -95,6 +95,10 @@ export const useSheetScroll = (config: {
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
+      // 判断事件是否发生在 textarea 内
+      if ((e.target as HTMLElement).tagName === "TEXTAREA") {
+        return;
+      }
       let deltaX = e.deltaX;
       let deltaY = e.deltaY;
       // 兼容 Windows 下 shift+滚轮横向滚动

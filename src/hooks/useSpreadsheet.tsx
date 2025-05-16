@@ -50,7 +50,7 @@ export const useSpreadsheet = (
         id: generateUUID(),
         name: `Sheet` + (sheets.length + 1),
         selection: null,
-        currentCell: null,
+        cutSelection: null,
         selectedCell: null,
         editingCell: null,
         zoomSize: 1,

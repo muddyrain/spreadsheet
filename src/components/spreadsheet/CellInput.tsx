@@ -22,11 +22,12 @@ export const CellInput = forwardRef<
   CellInputRef,
   {
     style?: React.CSSProperties;
+    wrapperRef: React.RefObject<HTMLDivElement | null>;
     onChange: (value: string, editingCell?: CellData | null) => void;
     onTabKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
     onEnterKeyDown?: () => void;
   }
->(({ style, onChange, onTabKeyDown, onEnterKeyDown }, ref) => {
+>(({ style, wrapperRef, onChange, onTabKeyDown, onEnterKeyDown }, ref) => {
   const { getMergeCellSize, getCellPosition } = useComputed();
   const [currentEditingCell, setCurrentEditingCell] = useState<CellData | null>(
     null,
@@ -40,6 +41,8 @@ export const CellInput = forwardRef<
     currentCell,
     selectedCell,
     containerWidth,
+    containerHeight,
+    isFocused,
     setIsFocused,
     setEditingCell,
     headerColsWidth,
@@ -63,7 +66,7 @@ export const CellInput = forwardRef<
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mirrorRef = useRef<HTMLDivElement>(null);
   const updateInputSize = useCallback(() => {
-    if (inputRef.current && mirrorRef.current) {
+    if (inputRef.current && mirrorRef.current && isFocused) {
       // 处理换行，保证最后一行也能被测量
       let value = inputRef.current.value || "";
       if (value.endsWith("\n")) {
@@ -72,22 +75,36 @@ export const CellInput = forwardRef<
       mirrorRef.current.textContent = value;
       // 用 requestAnimationFrame 等待 DOM 更新
       window.requestAnimationFrame(() => {
-        if (mirrorRef.current) {
+        if (mirrorRef.current && wrapperRef.current) {
           const mirrorRect = mirrorRef.current.getBoundingClientRect();
-          inputRef.current!.style.width = `${mirrorRect.width}px`;
+          const wrapperRect = wrapperRef.current.getBoundingClientRect();
           inputRef.current!.style.height = `${mirrorRect.height}px`;
           if (inputRef.current) {
             const left = parseInt(inputRef.current.style.left) || 0;
-            if (left + mirrorRect.width > containerWidth) {
+            const top = parseInt(inputRef.current.style.top) || 0;
+            if (left - wrapperRect.x + mirrorRect.width > containerWidth) {
               const space = left + mirrorRect.width - containerWidth;
-              inputRef.current!.style.left = `${left - space + 1}px`;
+              inputRef.current!.style.left = `${left - space + 1 + wrapperRect.x}px`;
+            }
+            // 在 updateInputSize 里，设置 textarea 的最大高度不超过 containerHeight，并且必要时调整 top 让其始终在容器内
+            if (top - wrapperRect.y + mirrorRect.height > containerHeight) {
+              inputRef.current!.style.height = `${containerHeight - (top - wrapperRect.y)}px`;
+              inputRef.current!.style.minHeight = `${containerHeight - (top - wrapperRect.y)}px`;
+              inputRef.current!.style.width = `${mirrorRect.width + 20}px`;
+              inputRef.current!.style.overflowY = "auto";
+              // 自动将滚动条滚动到底部
+              inputRef.current!.scrollTop = inputRef.current!.scrollHeight;
+            } else {
+              inputRef.current!.style.width = `${mirrorRect.width}px`;
+              inputRef.current!.style.overflowY = "hidden";
+              inputRef.current!.style.minHeight = `${mirrorRect.height}px`;
             }
           }
           setInputHeight(mirrorRect.height - 4);
         }
       });
     }
-  }, [containerWidth]);
+  }, [isFocused, containerWidth, containerHeight, wrapperRef]);
   const applyCellStyles = useCallback(
     (
       inputEl: HTMLTextAreaElement,
@@ -98,9 +115,10 @@ export const CellInput = forwardRef<
     ) => {
       // 设置尺寸
       const baseStyles = {
-        minWidth: `${width + 3}px`,
-        minHeight: `${height + 3}px`,
-        maxWidth: `none`,
+        minWidth: `${Math.min(width + 3, containerWidth)}px`,
+        minHeight: `${Math.min(height + 3, containerHeight)}px`,
+        maxWidth: `${containerWidth}px`,
+        maxHeight: `${containerHeight}px`,
         padding: `${3 * zoomSize}px ${4 * zoomSize}px ${3 * zoomSize}px ${5 * zoomSize}px`,
         fontSize: `${(cell.style.fontSize || config.fontSize) * zoomSize}pt`,
         fontWeight: cell.style.fontWeight || "normal",
@@ -128,6 +146,8 @@ export const CellInput = forwardRef<
       config.fontSize,
       config.textAlign,
       zoomSize,
+      containerWidth,
+      containerHeight,
     ],
   );
   const setInputStyle = (rowIndex: number, colIndex: number) => {
@@ -166,17 +186,27 @@ export const CellInput = forwardRef<
         !currentEditingCell.mergeSpan &&
         !currentEditingCell?.mergeParent
       ) {
+        let _inputHeight = inputHeight;
+        if (_inputHeight > containerHeight) {
+          _inputHeight = containerHeight;
+        }
         const currentRowHeight =
           headerRowsHeight[currentEditingCell?.row] * zoomSize;
-        if (inputHeight > currentRowHeight) {
+        if (_inputHeight > currentRowHeight) {
           headerRowsHeight[currentEditingCell?.row] = parseInt(
-            (inputHeight / zoomSize).toString(),
+            (_inputHeight / zoomSize).toString(),
           );
           setHeaderRowsHeight([...headerRowsHeight]);
         }
       }
     },
-    [headerRowsHeight, inputHeight, setHeaderRowsHeight, zoomSize],
+    [
+      headerRowsHeight,
+      inputHeight,
+      setHeaderRowsHeight,
+      containerHeight,
+      zoomSize,
+    ],
   );
   useImperativeHandle(ref, () => ({
     setInputStyle,
@@ -203,7 +233,13 @@ export const CellInput = forwardRef<
     }
   }, [style, setIsFocused]);
   useEffect(() => {
-    if (inputRef.current && mirrorRef.current && currentCell) {
+    if (
+      inputRef.current &&
+      mirrorRef.current &&
+      wrapperRef.current &&
+      currentCell
+    ) {
+      const wrapperRect = wrapperRef.current.getBoundingClientRect();
       let cell = currentCell;
       if (cell.mergeParent) {
         const row = cell.mergeParent.row;
@@ -216,20 +252,20 @@ export const CellInput = forwardRef<
       const fixedWidth = headerColsWidth[0];
       // 设置位置
       if (y <= fixedHeight - 1) {
-        inputRef.current.style.top = `${fixedHeight - 1}px`;
+        inputRef.current.style.top = `${fixedHeight - 1 + wrapperRect.y}px`;
       } else {
-        inputRef.current.style.top = `${y - 1}px`;
+        inputRef.current.style.top = `${y - 1 + wrapperRect.y}px`;
       }
       const textAlign = cell.style.textAlign || config.textAlign || "left";
       if (textAlign === "left" || textAlign === "center") {
         if (x <= fixedWidth - 1) {
-          inputRef.current.style.left = `${fixedWidth - 1}px`;
+          inputRef.current.style.left = `${fixedWidth - 1 + wrapperRect.x}px`;
         } else {
-          inputRef.current.style.left = `${x - 1}px`;
+          inputRef.current.style.left = `${x - 1 + wrapperRect.x}px`;
         }
       } else if (textAlign === "right") {
         inputRef.current.style.left = "auto";
-        inputRef.current.style.right = `${right + 8}px`;
+        inputRef.current.style.right = `${right + 8 + wrapperRect.right}px`;
       }
       applyCellStyles(
         inputRef.current,
@@ -251,6 +287,7 @@ export const CellInput = forwardRef<
     headerRowsHeight,
     selectedCell,
     updater,
+    wrapperRef,
     getCellPosition,
     getMergeCellSize,
     applyCellStyles,
@@ -260,8 +297,9 @@ export const CellInput = forwardRef<
     <>
       <textarea
         ref={inputRef}
-        className="absolute hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0 overflow-hidden"
-        onChange={() => {
+        className="fixed hidden bg-white text-black outline-none box-border resize-none whitespace-normal break-words m-0"
+        onChange={(e) => {
+          onChange?.(e.target.value, currentEditingCell);
           updateInputSize();
         }}
         onKeyDown={(e) => {
@@ -306,6 +344,7 @@ export const CellInput = forwardRef<
         onBlur={(e) => {
           onChange?.(e.target.value, currentEditingCell);
           changeCellHeight(currentEditingCell);
+          setIsFocused(false);
         }}
         style={{
           ...style,
