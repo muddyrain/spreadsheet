@@ -1,10 +1,17 @@
 import { useCallback, useMemo } from "react";
 import { useStore } from "./useStore";
-import { parseHtmlTable } from "@/utils/dom";
 import { useComputed } from "./useComputed";
 import { getSmartBorderColor } from "@/utils/color";
 import { ptToPx } from "@/utils";
 import { useDom } from "./useDom";
+import { createDefaultCell, generateColName } from "@/utils/sheet";
+import { getAttrFromHtml } from "@/utils/dom";
+import {
+  DATA_ID,
+  DATA_OPERATION_TYPE,
+  DATA_SELECTION_RANGE,
+} from "@/constant/dom";
+import { useData } from "./useData";
 
 export const useFunctions = () => {
   const {
@@ -13,12 +20,15 @@ export const useFunctions = () => {
     selection,
     selectedCell,
     headerRowsHeight,
+    currentSheet,
+    setSelection,
     setData,
     setCutSelection,
     setHeaderRowsHeight,
   } = useStore();
   const { getDefaultCellStyle } = useComputed();
-  const { toHtmlTable } = useDom();
+  const { updateCellsBySelection } = useData();
+  const { toHtmlTable, parseHtmlTable, parseSelectionRange } = useDom();
   const startRow = useMemo(() => {
     if (!selection || !selection.start || !selection.end) return 0;
     return Math.min(selection.start.row, selection.end.row);
@@ -112,16 +122,31 @@ export const useFunctions = () => {
           if (item.types.includes("text/html")) {
             const blob = await item.getType("text/html");
             const html = await blob.text();
-            console.log(html);
+            // 选区范围
+            const selectionRangeString = getAttrFromHtml(
+              html,
+              DATA_SELECTION_RANGE,
+            );
+            const operationType = getAttrFromHtml(html, DATA_OPERATION_TYPE);
+            // 代表是剪切数据
+            if (operationType === "cut") {
+              const range = parseSelectionRange(selectionRangeString);
+              updateCellsBySelection(range, (cell) => {
+                return createDefaultCell(config, cell.row, cell.col);
+              });
+            }
             const tableData = parseHtmlTable(html);
             if (tableData?.length) {
-              const row = selection.start?.row ?? selectedCell.row;
-              const col = selection.start?.col ?? selectedCell.col;
+              const startRow = selection.start?.row ?? selectedCell.row;
+              const startCol = selection.start?.col ?? selectedCell.col;
+              const endRow = startRow + tableData.length - 1;
+              const endCol = startCol + tableData[0].length - 1;
               for (let i = 0; i < tableData.length; i++) {
                 for (let j = 0; j < tableData[i].length; j++) {
-                  if (!data[row + i] || !data[row + i][col + j]) continue;
+                  if (!data[startRow + i] || !data[startRow + i][startCol + j])
+                    continue;
                   const tableCell = tableData[i][j];
-                  const target = data[row + i][col + j];
+                  const target = data[startRow + i][startCol + j];
                   if (isPasteContent) {
                     target.value = tableCell.value;
                   }
@@ -148,15 +173,19 @@ export const useFunctions = () => {
                   };
                   if (style.height) {
                     const height = ptToPx(style.height);
-                    const rowHeight = headerRowsHeight[row + i];
+                    const rowHeight = headerRowsHeight[startRow + i];
                     if (height > rowHeight) {
-                      headerRowsHeight[row + i] = height;
+                      headerRowsHeight[startRow + i] = height;
                       setHeaderRowsHeight([...headerRowsHeight]);
                     }
                   }
                 }
               }
               setData([...data]);
+              setSelection({
+                start: { row: startRow, col: startCol },
+                end: { row: endRow, col: endCol },
+              });
               htmlHandled = true;
             }
             break;
@@ -177,17 +206,17 @@ export const useFunctions = () => {
     [
       selection,
       selectedCell,
-      headerRowsHeight,
+      parseHtmlTable,
+      parseSelectionRange,
+      updateCellsBySelection,
+      config,
       setData,
       data,
+      setSelection,
       getDefaultCellStyle,
-      config.fontSize,
-      config.textAlign,
-      config.color,
-      config.backgroundColor,
-      config.borderColor,
-      handlePasteText,
+      headerRowsHeight,
       setHeaderRowsHeight,
+      handlePasteText,
     ],
   );
   const handleClearContent = useCallback(() => {
@@ -209,24 +238,37 @@ export const useFunctions = () => {
       setCutSelection({
         ...selection,
       });
-      // const tableString = toHtmlTable(data, startRow, endRow, startCol, endCol);
-      // const text = handleCopyText();
-      // const clipboardItem = new ClipboardItem({
-      //   "text/html": new Blob([tableString], { type: "text/html" }),
-      //   "text/plain": new Blob([text], { type: "text/plain" }),
-      // });
-      // navigator.clipboard.write([clipboardItem]);
+      const startCellAddress =
+        generateColName(selection.start.col) + selection.start.row;
+      const endCellAddress =
+        generateColName(selection.end.col) + selection.end.row;
+      const tag = `${DATA_ID}="${currentSheet?.id}" ${DATA_OPERATION_TYPE}="cut" ${DATA_SELECTION_RANGE}="${currentSheet?.name}!${startCellAddress}:${endCellAddress}"`;
+      const tableString = toHtmlTable(
+        data,
+        startRow,
+        endRow,
+        startCol,
+        endCol,
+        tag,
+      );
+      const text = handleCopyText();
+      const clipboardItem = new ClipboardItem({
+        "text/html": new Blob([tableString], { type: "text/html" }),
+        "text/plain": new Blob([text], { type: "text/plain" }),
+      });
+      navigator.clipboard.write([clipboardItem]);
     }
   }, [
-    data,
-    endCol,
-    endRow,
-    handleCopyText,
     selection,
-    startCol,
-    startRow,
-    toHtmlTable,
     setCutSelection,
+    currentSheet,
+    toHtmlTable,
+    data,
+    startRow,
+    endRow,
+    startCol,
+    endCol,
+    handleCopyText,
   ]);
   return {
     handleCopy,

@@ -5,8 +5,8 @@ import { useStore } from "./useStore";
 import { addressToPosition, generateColName } from "@/utils/sheet";
 import { applyTint, getSmartBorderColor } from "@/utils/color";
 import { getAppName } from "@/utils";
-import { WPS_THEME_COLOR_CONFIG } from "@/constant/wps_colors";
-import { MICRO_THEME_COLOR_CONFIG } from "@/constant/micro_colors";
+import { WPS_THEME_COLOR_CONFIG } from "@/constant/colors/wps_colors";
+import { MICRO_THEME_COLOR_CONFIG } from "@/constant/colors/micro_colors";
 import { useComputed } from "./useComputed";
 
 export function useImportExcel() {
@@ -98,7 +98,7 @@ export function useImportExcel() {
                 if (!row) {
                   const emptyRow: CellData[] = [];
                   for (let c = 1; c <= colsTotal; c++) {
-                    const address = generateColName(c - 1) + (rowIndex + 1);
+                    const address = generateColName(c) + (rowIndex + 1);
                     emptyRow.push({
                       value: "",
                       style: {
@@ -117,7 +117,7 @@ export function useImportExcel() {
                   let indexNumber = 0;
                   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
                     const master = cell.model?.master;
-                    const address = generateColName(colNumber - 1) + rowIndex;
+                    const address = generateColName(colNumber) + rowIndex;
                     const backgroundColor = getColor(
                       "background",
                       appName,

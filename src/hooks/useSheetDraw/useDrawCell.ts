@@ -4,7 +4,6 @@ import { CellData, DrawConfig } from "@/types/sheet";
 import { useRenderCell } from "./useRenderCell";
 import { useComputed } from "../useComputed";
 import { useCallback, useMemo } from "react";
-import { useDynamicRender } from "./useDynamicRender";
 
 // 冻结行数和列数（可根据需要调整）
 const FROZEN_ROW_COUNT = 1;
@@ -26,7 +25,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     selection,
     cutSelection,
   } = useStore();
-  const { measureMap } = useDynamicRender();
   const { renderCell, renderText, renderBorder, renderSelectedCell } =
     useRenderCell();
   const {
@@ -139,7 +137,6 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
             if (colIndex === 0 || rowIndex === 0) continue;
             const cell = data[rowIndex]?.[colIndex];
             if (!cell) continue;
-            // console.log(measureMap[rowIndex][colIndex]);
             // 处理合并单元格的情况
             if (cell.mergeParent) {
               const parentCell =
@@ -173,7 +170,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       }
       return cache.get(key)!;
     };
-  }, [data, measureMap, getCellPosition]);
+  }, [data, getCellPosition]);
 
   // 优化后的 drawCell 函数
   const drawCell = useCallback(
@@ -490,6 +487,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
         const { r1, r2, c1, c2 } = getAbsoluteSelection(cutSelection);
         // 只绘制在当前可视区域内的部分
         if (r2 >= startRow && r1 < endRow && c2 >= startCol && c1 < endCol) {
+          ctx.save();
           const { x, y } = getCellPosition(data[r1][c1]);
           const width = getAccumulatedSize.getWidth(c1, c2);
           const height = getAccumulatedSize.getHeight(r1, r2);

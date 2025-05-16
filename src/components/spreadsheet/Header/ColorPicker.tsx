@@ -1,6 +1,6 @@
 import { ButtonTrigger } from "@/components/ui/buttonTrigger";
 import { FC, memo, useMemo, useRef, useState } from "react";
-import { DEFAULT_COLOR_CONFIG } from "@/constant/default_colors";
+import { DEFAULT_COLOR_CONFIG } from "@/constant/colors/default_colors";
 import { Separator } from "@/components/ui/separator";
 import { CheckIcon, ChevronRightIcon, PaletteIcon } from "lucide-react";
 import { CellData } from "@/types/sheet";

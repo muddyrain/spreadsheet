@@ -59,6 +59,7 @@ const RootSpreadsheet: React.FC<{
         sheets,
         activeSheetId,
         setActiveSheetId,
+        currentSheet,
         config,
         currentCell,
         updater,

@@ -26,50 +26,13 @@ export const measureTextWidth = (
 };
 
 /**
- * 解析html表格
+ * 从 html 字符串中获取指定属性的值
+ * @param html HTML 字符串
+ * @param attrName 属性名
+ * @returns 属性值或空字符串
  */
-export function parseHtmlTable(html: string) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  const table = doc.querySelector("table");
-  if (!table) return [];
-  const result: { value: string; style: Record<string, string> }[][] = [];
-  const rows = table.querySelectorAll("tr");
-  rows.forEach((tr) => {
-    const row: { value: string; style: Record<string, string> }[] = [];
-    tr.querySelectorAll("td").forEach((td) => {
-      const style =
-        (td.getAttribute("style") ?? "")
-          ? Object.fromEntries(
-              (td.getAttribute("style") ?? "")
-                .split(";")
-                .filter(Boolean)
-                .map((s) => {
-                  const [k, v] = s.split(":");
-                  return [k.trim(), v.trim()];
-                }),
-            )
-          : {};
-      row.push({
-        value: td.textContent?.trim() ?? "",
-        style: cssStyleKeysToCamelCase(style),
-      });
-    });
-    result.push(row);
-  });
-  return result;
-}
-
-/**
- * 批量将 style 对象的 key 转为小驼峰
- */
-export function cssStyleKeysToCamelCase(
-  styleObj: Record<string, string>,
-): Record<string, string> {
-  const result: Record<string, string> = {};
-  Object.entries(styleObj).forEach(([key, value]) => {
-    const camelKey = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-    result[camelKey] = value;
-  });
-  return result;
+export function getAttrFromHtml(html: string, attrName: string): string {
+  const reg = new RegExp(attrName + "=[\"']([^\"']+)[\"']");
+  const match = html.match(reg);
+  return match ? match[1] : "";
 }

@@ -18,6 +18,7 @@ export const SpreadsheetContext = React.createContext<
       sheets: Sheet[];
       activeSheetId: string;
       setActiveSheetId: (activeSheetId: string) => void;
+      currentSheet: Sheet | null;
       data: TableData;
       setData: React.Dispatch<React.SetStateAction<TableData>>;
       config: Required<SpreadsheetConfig>;

@@ -1,10 +1,38 @@
 import {
-  TableData,
-  CellData,
-  SpreadsheetConfig,
   SelectionSheetType,
   MergeSpanType,
+  SpreadsheetConfig,
+  CellData,
+  TableData,
 } from "../types/sheet";
+
+export const createDefaultCell = (
+  config: SpreadsheetConfig,
+  row: number,
+  col: number,
+): CellData => {
+  const cell = {
+    mergeSpan: null,
+    mergeParent: null,
+    value: ``,
+    style: {
+      color: config.color,
+      backgroundColor: config.backgroundColor,
+      borderColor: config.borderColor,
+      fontSize: config.fontSize,
+      textAlign: config.textAlign,
+      fontWeight: "normal",
+      fontStyle: "normal",
+      textDecoration: "none",
+      wrap: false,
+    },
+    row: row,
+    col: col,
+    address: generateColName(col) + row,
+  };
+  return cell;
+};
+
 export const createInitialData = (
   config: SpreadsheetConfig,
   rows: number,
@@ -18,31 +46,22 @@ export const createInitialData = (
     borderColor: config.readOnlyBorderColor,
     color: config.color,
   };
-  const defaultCellData = {
-    mergeSpan: null,
-    mergeParent: null,
-  };
   const colNames: CellData[] = [
     {
-      ...defaultCellData,
-      value: "",
-      readOnly: true,
+      ...createDefaultCell(config, 0, 0),
       style: readOnlyStyle,
-      row: 0,
-      col: 0,
+      readOnly: true,
+      value: "",
       address: "0",
     },
   ];
 
   for (let i = 0; i < (isInitialData ? cols : initialData[0].length); i++) {
     colNames.push({
-      ...defaultCellData,
-      value: generateColName(i),
+      ...createDefaultCell(config, 0, i + 1),
       readOnly: true,
       style: readOnlyStyle,
-      row: 0,
-      col: i + 1,
-      address: generateColName(i) + "0",
+      value: generateColName(i + 1),
     });
   }
   if (isInitialData) {
@@ -51,7 +70,8 @@ export const createInitialData = (
       // 每一行：第一列是行号，其余列都是空白 取名为 行头
       const rowData: CellData[] = [];
       rowData.push({
-        ...defaultCellData,
+        mergeSpan: null,
+        mergeParent: null,
         value: `${i}`,
         readOnly: true,
         style: readOnlyStyle,
@@ -60,24 +80,7 @@ export const createInitialData = (
         address: i.toString(),
       });
       for (let j = 0; j < cols; j++) {
-        rowData.push({
-          ...defaultCellData,
-          value: ``,
-          style: {
-            color: config.color,
-            backgroundColor: config.backgroundColor,
-            borderColor: config.borderColor,
-            fontSize: config.fontSize,
-            textAlign: config.textAlign,
-            fontWeight: "normal",
-            fontStyle: "normal",
-            textDecoration: "none",
-            wrap: false,
-          },
-          row: i,
-          col: j + 1,
-          address: generateColName(j) + i,
-        });
+        rowData.push(createDefaultCell(config, i, j + 1));
       }
       initialData.push(rowData);
     }
@@ -86,13 +89,11 @@ export const createInitialData = (
     initialData.forEach((row, rowIndex) => {
       if (rowIndex > 0) {
         row.unshift({
-          ...defaultCellData,
-          value: `${rowIndex}`,
+          ...createDefaultCell(config, rowIndex, 0),
           readOnly: true,
           style: readOnlyStyle,
-          row: rowIndex,
-          col: 0,
-          address: "",
+          value: `${rowIndex}`,
+          address: `${rowIndex}`,
         });
       }
     });
@@ -100,34 +101,11 @@ export const createInitialData = (
   return initialData;
 };
 
-export const drawTableGrid = (
-  ctx: CanvasRenderingContext2D,
-  data: TableData,
-  cellWidth: number,
-  cellHeight: number,
-) => {
-  data.forEach((row, rowIndex) => {
-    row.forEach((_, colIndex) => {
-      if (colIndex < data[0].length - 1) {
-        ctx.beginPath();
-        ctx.moveTo((colIndex + 1) * cellWidth, rowIndex * cellHeight);
-        ctx.lineTo((colIndex + 1) * cellWidth, (rowIndex + 1) * cellHeight);
-        ctx.stroke();
-      }
-      if (rowIndex < data.length - 1) {
-        ctx.beginPath();
-        ctx.moveTo(colIndex * cellWidth, (rowIndex + 1) * cellHeight);
-        ctx.lineTo((colIndex + 1) * cellWidth, (rowIndex + 1) * cellHeight);
-        ctx.stroke();
-      }
-    });
-  });
-};
-
 // 生成 A-Z 然后继续 AA AB AC AD ... 然后继续 BA BB BC BD...
 export const generateColName = (index: number) => {
   let colName = "";
-  let temp = index;
+  // 默认col 从 1 开始 前方自带一个固定列头 所以这里要 -1
+  let temp = index - 1;
   while (temp >= 0) {
     colName = String.fromCharCode(65 + (temp % 26)) + colName;
     temp = Math.floor(temp / 26) - 1;
