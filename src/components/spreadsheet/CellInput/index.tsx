@@ -81,7 +81,7 @@ export const CellInput = forwardRef<
       if (!canvasRef.current || !selectedCell) return 0;
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return 0;
-      const { fontSize, verticalAlign } = getFontStyle(ctx, {
+      const { fontSize } = getFontStyle(ctx, {
         rowIndex: selectedCell.row,
         colIndex: selectedCell.col,
         x: 0,
@@ -90,13 +90,17 @@ export const CellInput = forwardRef<
       });
       const lineHeight = fontSize * 1.3333;
       let line = 0;
-      if (verticalAlign === "center") {
-        line = Math.floor((y - (cellHeight / 2 - lineHeight / 2)) / lineHeight);
-      } else {
-        line = Math.floor((y - 2) / lineHeight);
-      }
       const lines = value.split("\n");
-      line = Math.max(0, Math.min(line, lines.length - 1));
+      for (let i = 0; i < lines.length; i++) {
+        const lineTop = (2 + i * lineHeight + (i * fontSize) / 2) * zoomSize;
+        const lineBottom =
+          (2 + (i + 1) * lineHeight + ((i + 1) * fontSize) / 2) * zoomSize;
+        if (y >= lineTop && y < lineBottom) {
+          line = i;
+          break;
+        }
+      }
+      // line = Math.max(0, Math.min(line, lines.length - 1));
       let idx = 0;
       const accWidth = 8;
       for (let i = 0; i <= lines[line].length; i++) {
@@ -114,13 +118,13 @@ export const CellInput = forwardRef<
       cursorPos += idx;
       return cursorPos;
     },
-    [canvasRef, selectedCell, cellHeight, getFontStyle, value],
+    [selectedCell, getFontStyle, value, zoomSize],
   );
   // 监听鼠标按下事件
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (!canvasRef.current || !selectedCell) return;
-      const rect = containerRef.current?.getBoundingClientRect();
+      const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -177,8 +181,8 @@ export const CellInput = forwardRef<
         ...lines.map((line) => ctx.measureText(line).width),
       );
       const width = Math.max(maxLineWidth + 8, minSize.width);
-      lastWidth.current = Math.ceil(width + 8);
-      containerRef.current.style.width = `${Math.ceil(width + 8)}px`;
+      lastWidth.current = Math.ceil(width);
+      containerRef.current.style.width = `${Math.ceil(width + 4)}px`;
       const fontSize = getFontSize(selectedCell);
       const height =
         Math.ceil((fontSize * 1.3333 + fontSize / 2) * zoomSize) *
@@ -564,6 +568,7 @@ export const CellInput = forwardRef<
         <div className="relative" ref={innerRef}>
           <canvas ref={canvasRef} style={{ pointerEvents: "none" }} />
           <div
+            key={cursor}
             className="selection-cursor absolute bg-zinc-600 animate-blink"
             style={{
               left: cursorStyle.left,
