@@ -17,8 +17,8 @@ const Spreadsheet: React.FC<{
 }> = (props) => {
   const { onChange } = props;
   const {
-    config,
     data,
+    isFocused,
     selectedCell,
     currentCell,
     editingCell,
@@ -44,6 +44,7 @@ const Spreadsheet: React.FC<{
     e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
     options: { col: number; row: number },
   ) => {
+    cellInputRef.current?.blur();
     const { row: rowIndex, col: colIndex } = options;
     if (rowIndex === 0 && colIndex === 0) {
       handleSelectAll();
@@ -151,7 +152,7 @@ const Spreadsheet: React.FC<{
     if (editingCell) {
       cellInputRef.current?.setValue(editingCell.value);
     }
-    cellInputRef.current?.setInputStyle(rowIndex, colIndex);
+    cellInputRef.current?.focus(rowIndex, colIndex);
   };
   const { onTabKeyDown } = useTab(cellInputRef);
   const { onDirectionKeyDown } = useDirection();
@@ -166,13 +167,12 @@ const Spreadsheet: React.FC<{
           colIndex = col;
           rowIndex = row;
         }
-        setEditingCell({ row: rowIndex, col: colIndex });
-        const currentCell = data[rowIndex][colIndex];
-        if (currentCell) {
-          cellInputRef.current?.setValue(currentCell.value + content);
-          currentCell.value += content;
+        if (!isFocused) {
+          cellInputRef.current?.setValue(selectedCell.value + content);
+          selectedCell.value = selectedCell.value + content;
+          cellInputRef.current?.focus(rowIndex, colIndex);
+          setEditingCell(() => ({ row: rowIndex, col: colIndex }));
         }
-        cellInputRef.current?.setInputStyle(rowIndex, colIndex);
       }
     },
     onSelectAll: handleSelectAll,
@@ -195,7 +195,7 @@ const Spreadsheet: React.FC<{
   // 监听输入更新事件
   const handleInputChange = useCallback(
     (value: string, _editingCell?: CellData | null) => {
-      if (_editingCell || editingCell) {
+      if ((_editingCell || editingCell) && isFocused) {
         const row = _editingCell?.row || editingCell?.row;
         const col = _editingCell?.col || editingCell?.col;
         if (row && col) {
@@ -209,19 +209,12 @@ const Spreadsheet: React.FC<{
         }
       }
     },
-    [data, debouncedChange, editingCell, setData],
+    [isFocused, data, debouncedChange, editingCell, setData],
   );
   // 清除选中
   const clearSelection = useCallback(() => {
     setEditingCell(null);
   }, [setEditingCell]);
-  const isShowInput = useMemo(() => {
-    if (editingCell) {
-      return "block";
-    } else {
-      return "none";
-    }
-  }, [editingCell]);
   // 监听热更新，重置状态
   useEffect(() => {
     if (import.meta?.hot) {
@@ -236,9 +229,9 @@ const Spreadsheet: React.FC<{
       <Header
         onClick={(type) => {
           if (!["eraser"].includes(type)) {
-            cellInputRef.current?.focus();
-            if (type === "wrap") {
-              if (currentCell) {
+            if (currentCell) {
+              cellInputRef.current?.focus(currentCell.row, currentCell.col);
+              if (type === "wrap") {
                 onCellDoubleClick(currentCell.row, currentCell.col);
               }
             }
@@ -264,7 +257,6 @@ const Spreadsheet: React.FC<{
         </div>
         <CellInput
           ref={cellInputRef}
-          wrapperRef={wrapperRef}
           onChange={handleInputChange}
           onTabKeyDown={onTabKeyDown}
           onEnterKeyDown={() => {
@@ -272,15 +264,6 @@ const Spreadsheet: React.FC<{
             clearSelection();
             cellInputRef.current?.blur();
             setIsFocused(false);
-          }}
-          style={{
-            display: isShowInput,
-            fontSize: `${currentCell?.style.fontSize || config.fontSize}px`,
-            fontWeight: `${currentCell?.style.fontWeight || "normal"}`,
-            fontStyle: `${currentCell?.style.fontStyle || "normal"}`,
-            textDecoration: `${currentCell?.style.textDecoration || "none"}`,
-            color: `${currentCell?.style.color || "#000000"}`,
-            backgroundColor: `${currentCell?.style.backgroundColor || "#FFFFFF"}`,
           }}
         />
       </div>

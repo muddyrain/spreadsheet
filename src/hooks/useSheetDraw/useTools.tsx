@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useStore } from "../useStore";
 import { RenderOptions } from "./useRenderCell";
+import { CellData } from "@/types/sheet";
 
 export const useTools = () => {
   const { config, zoomSize } = useStore();
@@ -10,6 +11,12 @@ export const useTools = () => {
       .getPropertyValue("--font-family")
       .trim();
   }, []);
+  const getFontSize = useCallback(
+    (cell: CellData) => {
+      return (cell.style.fontSize || config.fontSize) * zoomSize;
+    },
+    [config.fontSize, zoomSize],
+  );
   const getFontStyle = useCallback(
     (ctx: CanvasRenderingContext2D, options: RenderOptions) => {
       const { cell } = options;
@@ -21,7 +28,7 @@ export const useTools = () => {
       // 设置字体样式
       const fontWeight = cell.style.fontWeight || "normal";
       const fontStyle = cell.style.fontStyle || "normal";
-      const fontSize = (cell.style.fontSize || config.fontSize) * zoomSize;
+      const fontSize = getFontSize(cell);
       // 获取 CSS 变量定义的字体
       ctx.font = `${fontStyle} ${fontWeight} ${fontSize}pt ${fontFamily}`;
       // 设置文本对齐
@@ -39,12 +46,12 @@ export const useTools = () => {
     },
     [
       config.color,
-      config.fontSize,
       config.textAlign,
       config.verticalAlign,
       fontFamily,
       zoomSize,
+      getFontSize,
     ],
   );
-  return { getFontStyle };
+  return { getFontStyle, getFontSize };
 };
