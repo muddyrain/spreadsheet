@@ -29,6 +29,8 @@ export const CellInput = forwardRef<
   const rafId = useRef<number | null>(null);
   const [value, setValue] = useState("");
   const [cursor, setCursor] = useState(0);
+  const isSelecting = useRef(false);
+  const selectionAnchor = useRef<number | null>(null);
   const [selectionText, setSelectionText] = useState<{
     start: number;
     end: number;
@@ -74,51 +76,89 @@ export const CellInput = forwardRef<
       return 0;
     }
   }, [headerRowsHeight, selectedCell]);
-  // 监听鼠标按下事件
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!canvasRef.current || !selectedCell) return;
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-    const { fontSize, verticalAlign } = getFontStyle(ctx, {
-      rowIndex: selectedCell.row,
-      colIndex: selectedCell.col,
-      x: 0,
-      y: 0,
-      cell: selectedCell,
-    });
-    const lineHeight = fontSize * 1.3333;
-    // 计算点击的是第几行
-    let line = 0;
-    if (verticalAlign === "center") {
-      line = Math.floor((y - (cellHeight / 2 - lineHeight / 2)) / lineHeight);
-    } else {
-      line = Math.floor((y - 2) / lineHeight); // 2为padding
-    }
-    const lines = value.split("\n");
-    line = Math.max(0, Math.min(line, lines.length - 1));
-    // 计算该行内点击的字符索引
-    let idx = 0;
-    const accWidth = 8; // 左侧 padding
-    for (let i = 0; i <= lines[line].length; i++) {
-      const w = ctx.measureText(lines[line].slice(0, i)).width + accWidth;
-      if (x < w) {
-        idx = i;
-        break;
+  const getCursorPosByXY = useCallback(
+    (x: number, y: number) => {
+      if (!canvasRef.current || !selectedCell) return 0;
+      const ctx = canvasRef.current.getContext("2d");
+      if (!ctx) return 0;
+      const { fontSize, verticalAlign } = getFontStyle(ctx, {
+        rowIndex: selectedCell.row,
+        colIndex: selectedCell.col,
+        x: 0,
+        y: 0,
+        cell: selectedCell,
+      });
+      const lineHeight = fontSize * 1.3333;
+      let line = 0;
+      if (verticalAlign === "center") {
+        line = Math.floor((y - (cellHeight / 2 - lineHeight / 2)) / lineHeight);
+      } else {
+        line = Math.floor((y - 2) / lineHeight);
       }
-      idx = i;
-    }
-    // 计算全局 cursor
-    let cursorPos = 0;
-    for (let l = 0; l < line; l++) {
-      cursorPos += lines[l].length + 1; // +1 for '\n'
-    }
-    cursorPos += idx;
-    setCursor(cursorPos);
-  };
+      const lines = value.split("\n");
+      line = Math.max(0, Math.min(line, lines.length - 1));
+      let idx = 0;
+      const accWidth = 8;
+      for (let i = 0; i <= lines[line].length; i++) {
+        const w = ctx.measureText(lines[line].slice(0, i)).width + accWidth;
+        if (x < w) {
+          idx = i;
+          break;
+        }
+        idx = i;
+      }
+      let cursorPos = 0;
+      for (let l = 0; l < line; l++) {
+        cursorPos += lines[l].length + 1;
+      }
+      cursorPos += idx;
+      return cursorPos;
+    },
+    [canvasRef, selectedCell, cellHeight, getFontStyle, value],
+  );
+  // 监听鼠标按下事件
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!canvasRef.current || !selectedCell) return;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const cursorPos = getCursorPosByXY(x, y);
+      setCursor(cursorPos);
+      setSelectionText(null);
+      isSelecting.current = true;
+      selectionAnchor.current = cursorPos;
+      // 监听 mousemove 和 mouseup
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        if (!isSelecting.current) return;
+        const moveX = moveEvent.clientX - rect.left;
+        const moveY = moveEvent.clientY - rect.top;
+        const moveCursor = getCursorPosByXY(moveX, moveY);
+        if (
+          selectionAnchor.current !== null &&
+          moveCursor !== selectionAnchor.current
+        ) {
+          const start = Math.min(selectionAnchor.current, moveCursor);
+          const end = Math.max(selectionAnchor.current, moveCursor);
+          setSelectionText({ start, end });
+          setCursor(moveCursor);
+        } else {
+          setSelectionText(null);
+          setCursor(moveCursor);
+        }
+      };
+      const handleMouseUp = () => {
+        isSelecting.current = false;
+        selectionAnchor.current = null;
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    },
+    [canvasRef, selectedCell, getCursorPosByXY],
+  );
   // 更新输入框大小
   const updateInputSize = useCallback(
     (value: string) => {
@@ -214,7 +254,44 @@ export const CellInput = forwardRef<
       } else if (e.key === "ArrowRight") {
         setCursor(Math.min(value.length, cursor + 1));
         e.preventDefault();
-      } else if (e.key === "Home") {
+      } else if (e.key === "ArrowUp") {
+        // 上箭头：移动到上一行对应列
+        const lines = value.split("\n");
+        const beforeCursor = value.slice(0, cursor);
+        const currentLine = beforeCursor.split("\n").length - 1;
+        const currentCol =
+          beforeCursor.length - beforeCursor.lastIndexOf("\n") - 1;
+        if (currentLine > 0) {
+          const prevLineLen = lines[currentLine - 1].length;
+          const newCol = Math.min(prevLineLen, currentCol);
+          let newCursor = 0;
+          for (let i = 0; i < currentLine - 1; i++) {
+            newCursor += lines[i].length + 1;
+          }
+          newCursor += newCol;
+          setCursor(newCursor);
+        }
+        e.preventDefault();
+      } else if (e.key === "ArrowDown") {
+        // 下箭头：移动到下一行对应列
+        const lines = value.split("\n");
+        const beforeCursor = value.slice(0, cursor);
+        const currentLine = beforeCursor.split("\n").length - 1;
+        const currentCol =
+          beforeCursor.length - beforeCursor.lastIndexOf("\n") - 1;
+        if (currentLine < lines.length - 1) {
+          const nextLineLen = lines[currentLine + 1].length;
+          const newCol = Math.min(nextLineLen, currentCol);
+          let newCursor = 0;
+          for (let i = 0; i <= currentLine; i++) {
+            newCursor += lines[i].length + 1;
+          }
+          newCursor += newCol;
+          setCursor(newCursor);
+        }
+        e.preventDefault();
+      }
+      if (e.key === "Home") {
         setCursor(0);
         e.preventDefault();
       } else if (e.key === "End") {
@@ -379,37 +456,37 @@ export const CellInput = forwardRef<
       cell: selectedCell,
     });
     const contents = value.split("\n");
+    let globalStart = 0;
     // 绘制选中
-    console.log(selectionText);
     for (let lineIndex = 0; lineIndex < contents.length; lineIndex++) {
       const texts = contents[lineIndex];
-      let startX = 5; // 或 textX
       const startY =
         2 + lineIndex * fontSize * 1.3333 + (lineIndex * fontSize) / 2; // 第一行
+      let startX = 5;
       for (let i = 0; i < texts.length; i++) {
         const text = texts[i];
-        if (selectionText) {
-          const currentIndex = i + (texts[lineIndex - 1]?.length || 0);
-          if (
-            currentIndex >= selectionText.start &&
-            currentIndex < selectionText.end
-          ) {
-            const metrics = ctx.measureText(text);
-            const width = metrics.width; // 字符的宽度
-            // 绘制选中的文本样式
-            ctx.fillStyle = config.inputSelectionColor;
-            const x = startX * zoomSize;
-            const y = startY * zoomSize;
-            ctx.fillRect(
-              x,
-              y,
-              width + 1,
-              (fontSize * 1.3333 + Math.ceil(fontSize / 2)) * zoomSize,
-            );
-            startX += width;
-          }
+        const metrics = ctx.measureText(text);
+        const width = Math.round(metrics.width); // 字符的宽度
+        const globalCharIndex = globalStart + i;
+        if (
+          selectionText &&
+          globalCharIndex >= selectionText.start &&
+          globalCharIndex < selectionText.end
+        ) {
+          // 绘制选中的文本样式
+          ctx.fillStyle = config.inputSelectionColor;
+          const x = startX * zoomSize;
+          const y = startY * zoomSize;
+          ctx.fillRect(
+            x,
+            y,
+            width,
+            (fontSize * 1.3333 + Math.ceil(fontSize / 2)) * zoomSize,
+          );
         }
+        startX += width;
       }
+      globalStart += texts.length + 1; // +1 是因为换行符
     }
 
     ctx.fillStyle = color;
@@ -493,6 +570,7 @@ export const CellInput = forwardRef<
               top: cursorStyle.top,
               width: 1,
               height: cursorStyle.height,
+              display: selectionText ? "none" : "block",
             }}
           />
         </div>
