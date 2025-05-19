@@ -14,7 +14,6 @@ import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 
 export type CellInputRef = {
-  setInputStyle: (rowIndex: number, colIndex: number, content?: string) => void;
   focus: (rowIndex: number, colIndex: number) => void;
   blur: () => void;
   setValue: (value: string) => void;
@@ -30,6 +29,10 @@ export const CellInput = forwardRef<
   const rafId = useRef<number | null>(null);
   const [value, setValue] = useState("");
   const [cursor, setCursor] = useState(0);
+  const [selectionText, setSelectionText] = useState<{
+    start: number;
+    end: number;
+  } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -49,6 +52,7 @@ export const CellInput = forwardRef<
     headerRowsHeight,
     selectedCell,
     isFocused,
+    editingCell,
     scrollPosition,
     setIsFocused,
     getCurrentCell,
@@ -148,27 +152,46 @@ export const CellInput = forwardRef<
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const key = e.key;
+      e.preventDefault();
+      e.stopPropagation();
       // 换行
       if (e.key === "Enter" && e.altKey) {
         const newValue = value.slice(0, cursor) + "\n" + value.slice(cursor);
         setValue(newValue);
         setCursor(cursor + 1);
         onChange?.(newValue);
-        e.preventDefault();
-        e.stopPropagation();
         updateInputSize(newValue);
+      } else if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key.toLocaleUpperCase() === "A"
+      ) {
+        setSelectionText({
+          start: 0,
+          end: value.length,
+        });
       } else if (
         key.length === 1 &&
         (/[a-zA-Z0-9]/.test(key) || // 字母数字
           /[~!@#$%^&*()_+\-=[\]{};':"|,.<>\\/?`]/.test(key)) // 常见符号
       ) {
         // 普通字符输入
-        const newValue = value.slice(0, cursor) + e.key + value.slice(cursor);
+        let newValue;
+        let newCursor: number;
+        if (selectionText) {
+          // 有选区，替换选中内容
+          newValue =
+            value.slice(0, selectionText.start) +
+            e.key +
+            value.slice(selectionText.end);
+          newCursor = selectionText.start + 1;
+          setSelectionText(null);
+        } else {
+          newValue = value.slice(0, cursor) + e.key + value.slice(cursor);
+          newCursor = cursor + 1;
+        }
         setValue(newValue);
-        setCursor(cursor + 1);
+        setCursor(newCursor);
         onChange?.(newValue);
-        e.preventDefault();
-        e.stopPropagation();
         updateInputSize(newValue);
       } else if (e.key === "Backspace") {
         if (cursor > 0) {
@@ -199,7 +222,7 @@ export const CellInput = forwardRef<
         e.preventDefault();
       }
     },
-    [cursor, onChange, updateInputSize, value],
+    [cursor, onChange, updateInputSize, value, selectionText],
   );
   // 计算光标位置
   const updateCursorPosition = useCallback(() => {
@@ -314,11 +337,11 @@ export const CellInput = forwardRef<
     }
   }, [scrollPosition, isFocused, setInputStyle]);
   useImperativeHandle(ref, () => ({
-    setInputStyle() {},
     focus(rowIndex: number, colIndex: number) {
       const currentCell = getCurrentCell(rowIndex, colIndex);
       if (!currentCell) return;
       currentFocusCell.current = currentCell;
+      setSelectionText(null);
       setIsFocused(true);
     },
     blur() {
@@ -355,9 +378,42 @@ export const CellInput = forwardRef<
       y,
       cell: selectedCell,
     });
+    const contents = value.split("\n");
+    // 绘制选中
+    console.log(selectionText);
+    for (let lineIndex = 0; lineIndex < contents.length; lineIndex++) {
+      const texts = contents[lineIndex];
+      let startX = 5; // 或 textX
+      const startY =
+        2 + lineIndex * fontSize * 1.3333 + (lineIndex * fontSize) / 2; // 第一行
+      for (let i = 0; i < texts.length; i++) {
+        const text = texts[i];
+        if (selectionText) {
+          const currentIndex = i + (texts[lineIndex - 1]?.length || 0);
+          if (
+            currentIndex >= selectionText.start &&
+            currentIndex < selectionText.end
+          ) {
+            const metrics = ctx.measureText(text);
+            const width = metrics.width; // 字符的宽度
+            // 绘制选中的文本样式
+            ctx.fillStyle = config.inputSelectionColor;
+            const x = startX * zoomSize;
+            const y = startY * zoomSize;
+            ctx.fillRect(
+              x,
+              y,
+              width + 1,
+              (fontSize * 1.3333 + Math.ceil(fontSize / 2)) * zoomSize,
+            );
+            startX += width;
+          }
+        }
+      }
+    }
+
     ctx.fillStyle = color;
     ctx.textBaseline = "middle";
-    const contents = value.split("\n");
     // 计算文本位置
     const textX = (() => {
       if (textAlign === "left" && cellWidth <= minWidth) return 0;
@@ -365,6 +421,7 @@ export const CellInput = forwardRef<
       if (textAlign === "right") return cellWidth - 5.5 * zoomSize;
       return 5.5 * zoomSize;
     })();
+    // 绘制文本
     for (let i = 0; i < contents.length; i++) {
       const text = contents[i];
       const textY =
@@ -375,9 +432,11 @@ export const CellInput = forwardRef<
     selectedCell,
     isFocused,
     getCellPosition,
-    zoomSize,
-    value,
     getFontStyle,
+    value,
+    selectionText,
+    config.inputSelectionColor,
+    zoomSize,
     cellWidth,
   ]);
   useEffect(() => {
@@ -398,6 +457,14 @@ export const CellInput = forwardRef<
     getFontStyle,
     drawInput,
   ]);
+  useEffect(() => {
+    if (currentFocusCell.current && editingCell) {
+      const { row, col } = currentFocusCell.current;
+      if (row !== editingCell.row && col !== editingCell.col) {
+        handleBlur();
+      }
+    }
+  }, [editingCell, handleBlur]);
   useLayoutEffect(() => {
     updateCursorPosition();
   }, [value, cursor, updateCursorPosition]);

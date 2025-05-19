@@ -209,6 +209,11 @@ export type SpreadsheetConfig = {
    */
   verticalAlign?: VerticalAlignType;
   /**
+   * @description 输入框选中的颜色
+   * @default '#ABC1FF'
+   */
+  inputSelectionColor?: string;
+  /**
    * @description 选择框背景颜色
    * @default 'rgba(60, 112, 255, 0.15)'
    */
