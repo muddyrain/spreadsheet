@@ -12,6 +12,7 @@ import { CellData } from "@/types/sheet";
 import { useStore } from "@/hooks/useStore";
 import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
+import { useInput } from "./useInput";
 
 export type CellInputRef = {
   focus: (rowIndex: number, colIndex: number) => void;
@@ -45,8 +46,7 @@ export const CellInput = forwardRef<
     top: 0,
     height: 20,
   });
-  const lastWidth = useRef(0);
-  const lastHeight = useRef(0);
+
   const {
     config,
     zoomSize,
@@ -61,7 +61,14 @@ export const CellInput = forwardRef<
     setHeaderRowsHeight,
   } = useStore();
   const { getMergeCellSize, getCellPosition } = useComputed();
-  const { getFontStyle, getFontSize } = useTools();
+  const { getFontStyle } = useTools();
+  const { lastWidth, lastHeight, getCursorPosByXY, updateInputSize } = useInput(
+    {
+      canvasRef,
+      value,
+      minSize,
+    },
+  );
   const cellWidth = useMemo(() => {
     if (selectedCell) {
       return headerColsWidth[selectedCell.col];
@@ -76,50 +83,7 @@ export const CellInput = forwardRef<
       return 0;
     }
   }, [headerRowsHeight, selectedCell]);
-  const getCursorPosByXY = useCallback(
-    (x: number, y: number) => {
-      if (!canvasRef.current || !selectedCell) return 0;
-      const ctx = canvasRef.current.getContext("2d");
-      if (!ctx) return 0;
-      const { fontSize } = getFontStyle(ctx, {
-        rowIndex: selectedCell.row,
-        colIndex: selectedCell.col,
-        x: 0,
-        y: 0,
-        cell: selectedCell,
-      });
-      const lineHeight = fontSize * 1.3333;
-      let line = 0;
-      const lines = value.split("\n");
-      for (let i = 0; i < lines.length; i++) {
-        const lineTop = (2 + i * lineHeight + (i * fontSize) / 2) * zoomSize;
-        const lineBottom =
-          (2 + (i + 1) * lineHeight + ((i + 1) * fontSize) / 2) * zoomSize;
-        if (y >= lineTop && y < lineBottom) {
-          line = i;
-          break;
-        }
-      }
-      // line = Math.max(0, Math.min(line, lines.length - 1));
-      let idx = 0;
-      const accWidth = 8;
-      for (let i = 0; i <= lines[line].length; i++) {
-        const w = ctx.measureText(lines[line].slice(0, i)).width + accWidth;
-        if (x < w) {
-          idx = i;
-          break;
-        }
-        idx = i;
-      }
-      let cursorPos = 0;
-      for (let l = 0; l < line; l++) {
-        cursorPos += lines[l].length + 1;
-      }
-      cursorPos += idx;
-      return cursorPos;
-    },
-    [selectedCell, getFontStyle, value, zoomSize],
-  );
+
   // 监听鼠标按下事件
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -163,35 +127,6 @@ export const CellInput = forwardRef<
     },
     [canvasRef, selectedCell, getCursorPosByXY],
   );
-  // 更新输入框大小
-  const updateInputSize = useCallback(
-    (value: string) => {
-      if (!canvasRef.current || !containerRef.current) return;
-      const ctx = canvasRef.current.getContext("2d");
-      if (!ctx || !selectedCell) return;
-      getFontStyle(ctx, {
-        rowIndex: selectedCell?.row || 0,
-        colIndex: selectedCell?.col || 0,
-        x: 0,
-        y: 0,
-        cell: selectedCell,
-      });
-      const lines = value.split("\n");
-      const maxLineWidth = Math.max(
-        ...lines.map((line) => ctx.measureText(line).width),
-      );
-      const width = Math.max(maxLineWidth + 8, minSize.width);
-      lastWidth.current = Math.ceil(width);
-      containerRef.current.style.width = `${Math.ceil(width + 4)}px`;
-      const fontSize = getFontSize(selectedCell);
-      const height =
-        Math.ceil((fontSize * 1.3333 + fontSize / 2) * zoomSize) *
-        value.split("\n").length;
-      lastHeight.current = Math.ceil(height);
-      containerRef.current.style.height = `${Math.ceil(height)}px`;
-    },
-    [getFontSize, getFontStyle, minSize.width, selectedCell, zoomSize],
-  );
   // 处理键盘输入
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -204,7 +139,6 @@ export const CellInput = forwardRef<
         setValue(newValue);
         setCursor(cursor + 1);
         onChange?.(newValue);
-        updateInputSize(newValue);
       } else if (
         (e.ctrlKey || e.metaKey) &&
         e.key.toLocaleUpperCase() === "A"
@@ -236,7 +170,6 @@ export const CellInput = forwardRef<
         setValue(newValue);
         setCursor(newCursor);
         onChange?.(newValue);
-        updateInputSize(newValue);
       } else if (e.key === "Backspace") {
         if (cursor > 0) {
           const newValue = value.slice(0, cursor - 1) + value.slice(cursor);
@@ -303,7 +236,7 @@ export const CellInput = forwardRef<
         e.preventDefault();
       }
     },
-    [cursor, onChange, updateInputSize, value, selectionText],
+    [cursor, onChange, value, selectionText],
   );
   // 计算光标位置
   const updateCursorPosition = useCallback(() => {
@@ -344,11 +277,8 @@ export const CellInput = forwardRef<
       const ctx = canvasRef.current?.getContext("2d");
       if (!ctx) return;
       if (containerRef.current) {
-        const { width, height } = getMergeCellSize(
-          currentCell,
-          cellWidth,
-          cellHeight,
-        );
+        const { width: computedWidth, height: computedHeight } =
+          getMergeCellSize(currentCell, cellWidth, cellHeight);
         const { x, y } = getCellPosition(currentCell);
         const { verticalAlign } = getFontStyle(ctx, {
           rowIndex: currentCell.row,
@@ -357,18 +287,19 @@ export const CellInput = forwardRef<
           y,
           cell: currentCell,
         });
-        lastHeight.current = height;
-        lastWidth.current = width;
         containerRef.current.style.display = "flex";
         containerRef.current.style.alignItems = verticalAlign;
-        containerRef.current.style.minWidth = `${width + 4}px`;
-        containerRef.current.style.minHeight = `${height + 4}px`;
-        containerRef.current.style.width = `${width + 4}px`;
-        containerRef.current.style.height = `${height + 4}px`;
+        containerRef.current.style.minWidth = `${computedWidth + 4}px`;
+        containerRef.current.style.minHeight = `${computedHeight + 4}px`;
         containerRef.current.style.left = `${x - 2}px`;
         containerRef.current.style.top = `${y - 2}px`;
-        setMinSize({ width: width, height: height });
-        updateInputSize(value);
+        setMinSize({ width: computedWidth, height: computedHeight });
+        const { width, height } = updateInputSize(value);
+        const lastContainerHeight = containerRef.current?.offsetHeight;
+        containerRef.current.style.width = `${width + 4}px`;
+        if (height > lastContainerHeight) {
+          containerRef.current.style.height = `${height + 4}px`;
+        }
         setTimeout(() => {
           containerRef.current?.focus();
         }, 0);
@@ -407,6 +338,7 @@ export const CellInput = forwardRef<
     setIsFocused,
     onChange,
     value,
+    lastHeight,
     cellHeight,
     setHeaderRowsHeight,
     headerRowsHeight,
@@ -512,6 +444,8 @@ export const CellInput = forwardRef<
   }, [
     selectedCell,
     isFocused,
+    lastWidth,
+    lastHeight,
     getCellPosition,
     getFontStyle,
     value,
