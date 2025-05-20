@@ -27,7 +27,7 @@ export const useRenderCell = () => {
     headerRowsHeight,
   } = useStore();
   const { getMergeCellSize } = useComputed();
-  const { getFontStyle } = useTools();
+  const { getFontStyle, getWrapContent } = useTools();
   const { drawBorderMap } = useDynamicRender();
   const isCellSelected = useCallback(
     (cell: CellData) => {
@@ -135,31 +135,10 @@ export const useRenderCell = () => {
       } else {
         let contents = cell.value.split("\n");
         if (cell.style.wrap) {
-          const wrapText = (text: string, maxWidth: number) => {
-            const lines: string[] = [];
-            let currentLine = "";
-            for (const char of text) {
-              const testLine = currentLine + char;
-              if (
-                ctx.measureText(testLine).width > maxWidth &&
-                currentLine !== ""
-              ) {
-                lines.push(currentLine);
-                currentLine = char;
-              } else {
-                currentLine = testLine;
-              }
-            }
-            if (currentLine) lines.push(currentLine);
-            return lines;
-          };
-          let wrappedContents: string[] = [];
-          for (let i = 0; i < contents.length; i++) {
-            wrappedContents = wrappedContents.concat(
-              wrapText(contents[i], cellWidth - 10 * zoomSize),
-            );
-          }
-          // 用 wrappedContents 替换原有 contents 进行后续绘制
+          const wrappedContents = getWrapContent(ctx, {
+            cell,
+            cellWidth,
+          });
           contents = wrappedContents;
         }
         let baseY = 0;

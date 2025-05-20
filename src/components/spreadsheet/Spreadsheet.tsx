@@ -230,7 +230,6 @@ const Spreadsheet: React.FC<{
         onClick={(type) => {
           if (!["eraser"].includes(type)) {
             if (currentCell) {
-              cellInputRef.current?.focus(currentCell.row, currentCell.col);
               if (type === "wrap") {
                 onCellDoubleClick(currentCell.row, currentCell.col);
               }

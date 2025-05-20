@@ -53,5 +53,40 @@ export const useTools = () => {
       getFontSize,
     ],
   );
-  return { getFontStyle, getFontSize };
+  const getWrapContent = (
+    ctx: CanvasRenderingContext2D,
+    { cell, cellWidth }: { cell: CellData; cellWidth: number },
+  ) => {
+    if (cell.style?.wrap) {
+      const contents = cell.value?.split("\n");
+      const wrapText = (text: string, maxWidth: number) => {
+        const lines: string[] = [];
+        let currentLine = "";
+        for (const char of text) {
+          const testLine = currentLine + char;
+          if (
+            ctx.measureText(testLine).width > maxWidth &&
+            currentLine !== ""
+          ) {
+            lines.push(currentLine);
+            currentLine = char;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines;
+      };
+      let wrappedContents: string[] = [];
+      for (let i = 0; i < contents.length; i++) {
+        wrappedContents = wrappedContents.concat(
+          wrapText(contents[i], cellWidth - 10 * zoomSize),
+        );
+      }
+      return wrappedContents;
+    } else {
+      return [];
+    }
+  };
+  return { getFontStyle, getFontSize, getWrapContent };
 };

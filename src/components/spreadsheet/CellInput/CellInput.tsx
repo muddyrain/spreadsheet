@@ -46,21 +46,23 @@ export const CellInput = forwardRef<
     top: 0,
     height: 20,
   });
-
   const {
     config,
     headerColsWidth,
     headerRowsHeight,
-    selectedCell,
     isFocused,
     editingCell,
-    scrollPosition,
+    data,
     getCurrentCell,
     setHeaderRowsHeight,
     dispatch,
   } = useStore();
+  const selectedCell = useMemo(() => {
+    if (!editingCell) return null;
+    return getCurrentCell(editingCell.row, editingCell.col);
+  }, [editingCell, getCurrentCell]);
   const { getMergeCellSize, getCellPosition } = useComputed();
-  const { getFontStyle } = useTools();
+  const { getFontStyle, getWrapContent } = useTools();
   const { cellWidth, cellHeight } = useMemo(() => {
     if (selectedCell) {
       const cellWidth = headerColsWidth[selectedCell.col];
@@ -294,13 +296,6 @@ export const CellInput = forwardRef<
     setHeaderRowsHeight,
     headerRowsHeight,
   ]);
-  useEffect(() => {
-    if (!currentFocusCell.current) return;
-    if (isFocused) {
-      setMinSize({ width: cellWidth, height: cellHeight });
-      setInputStyle(currentFocusCell.current.row, currentFocusCell.current.col);
-    }
-  }, [scrollPosition, isFocused, cellWidth, cellHeight, setInputStyle]);
   useImperativeHandle(ref, () => ({
     focus(rowIndex: number, colIndex: number) {
       const currentCell = getCurrentCell(rowIndex, colIndex);
@@ -308,6 +303,8 @@ export const CellInput = forwardRef<
       currentFocusCell.current = currentCell;
       setSelectionText(null);
       dispatch({ isFocused: true });
+      setMinSize({ width: cellWidth, height: cellHeight });
+      setInputStyle(currentFocusCell.current.row, currentFocusCell.current.col);
     },
     blur() {
       handleBlur();
@@ -343,7 +340,7 @@ export const CellInput = forwardRef<
       y,
       cell: selectedCell,
     });
-    const contents = value.split("\n");
+    let contents = value.split("\n");
     let globalStart = 0;
     // 绘制选中
     for (let lineIndex = 0; lineIndex < contents.length; lineIndex++) {
@@ -386,6 +383,12 @@ export const CellInput = forwardRef<
       if (textAlign === "right") return cellWidth - 5.5;
       return 5.5;
     })();
+    if (selectedCell.style.wrap) {
+      contents = getWrapContent(ctx, {
+        cell: selectedCell,
+        cellWidth,
+      });
+    }
     // 绘制文本
     for (let i = 0; i < contents.length; i++) {
       const text = contents[i];
@@ -405,11 +408,11 @@ export const CellInput = forwardRef<
     selectionText,
     config.inputSelectionColor,
     cellWidth,
+    getWrapContent,
   ]);
   useEffect(() => {
     if (!canvasRef.current || !selectedCell) return;
     rafId.current = requestAnimationFrame(() => {
-      console.log("draw");
       drawInput();
     });
     return () => {
@@ -424,6 +427,7 @@ export const CellInput = forwardRef<
     getCellPosition,
     getFontStyle,
     drawInput,
+    data,
   ]);
   useEffect(() => {
     if (currentFocusCell.current && editingCell) {

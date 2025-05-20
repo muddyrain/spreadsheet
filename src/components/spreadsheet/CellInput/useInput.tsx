@@ -2,7 +2,7 @@ import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 
 export const useInput = ({
   currentFocusCell,
@@ -23,8 +23,9 @@ export const useInput = ({
 }) => {
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
-  const { selectedCell, getCurrentCell } = useStore();
-  const { getFontStyle, getFontSize } = useTools();
+  const { isFocused, scrollPosition, selectedCell, getCurrentCell } =
+    useStore();
+  const { getFontStyle, getFontSize, getWrapContent } = useTools();
   const { getCellPosition } = useComputed();
   // 更新输入框大小
   const updateInputSize = useCallback(
@@ -47,15 +48,21 @@ export const useInput = ({
         y: 0,
         cell: selectedCell,
       });
-      const lines = value.split("\n");
+      let lines = value.split("\n");
+      if (selectedCell.style.wrap) {
+        const wrappedContents = getWrapContent(ctx, {
+          cell: selectedCell,
+          cellWidth,
+        });
+        lines = wrappedContents;
+      }
       const maxLineWidth = Math.max(
         ...lines.map((line) => ctx.measureText(line).width),
       );
       const width = Math.max(maxLineWidth + 8, minSize.width);
       lastWidth.current = Math.ceil(width);
       const fontSize = getFontSize(selectedCell);
-      const height =
-        Math.ceil(fontSize * 1.3333 + fontSize / 2) * value.split("\n").length;
+      const height = Math.ceil(fontSize * 1.3333 + fontSize / 2) * lines.length;
       lastHeight.current = Math.ceil(height);
       return {
         width: lastWidth.current,
@@ -64,8 +71,10 @@ export const useInput = ({
     },
     [
       canvasRef,
+      cellWidth,
       getFontSize,
       getFontStyle,
+      getWrapContent,
       minSize.height,
       minSize.width,
       selectedCell,
@@ -119,6 +128,19 @@ export const useInput = ({
       value,
     ],
   );
+  useEffect(() => {
+    if (!currentFocusCell.current) return;
+    if (isFocused) {
+      setInputStyle(currentFocusCell.current.row, currentFocusCell.current.col);
+    }
+  }, [
+    scrollPosition,
+    isFocused,
+    cellWidth,
+    cellHeight,
+    currentFocusCell,
+    setInputStyle,
+  ]);
   const getCursorPosByXY = useCallback(
     (x: number, y: number) => {
       if (!canvasRef.current || !selectedCell) return 0;
