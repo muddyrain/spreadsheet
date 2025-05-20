@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   TableData,
   SpreadsheetConfig,
@@ -53,10 +53,6 @@ const RootSpreadsheet: React.FC<{
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [sideLineMode, setSideLineMode] = useState<"row" | "col" | null>(null);
   const { isMac, isWindows } = getSystemInfo();
-  const data = useMemo(() => {
-    return currentSheet?.data || [];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSheet?.data, updater]);
   return (
     <SpreadsheetContext.Provider
       value={{
@@ -95,14 +91,13 @@ const RootSpreadsheet: React.FC<{
         setContainerWidth,
         containerHeight,
         setContainerHeight,
-        data,
+        data: currentSheet?.data || [],
         setData: (data) => {
           if (typeof data === "function") {
             data = data(currentSheet?.data || []);
           }
           setCurrentSheet("cutSelection", null);
           setCurrentSheet("data", data);
-          forceUpdate();
         },
         selection: currentSheet?.selection || null,
         setSelection(selection) {

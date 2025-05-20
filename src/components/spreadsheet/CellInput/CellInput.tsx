@@ -409,6 +409,7 @@ export const CellInput = forwardRef<
   useEffect(() => {
     if (!canvasRef.current || !selectedCell) return;
     rafId.current = requestAnimationFrame(() => {
+      console.log("draw");
       drawInput();
     });
     return () => {

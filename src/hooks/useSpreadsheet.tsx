@@ -13,7 +13,97 @@ export const useSpreadsheet = (
   _config?: SpreadsheetConfig,
 ): SpreadsheetType => {
   const isInitialized = useRef(false);
-  const config: Required<SpreadsheetConfig> = useMemo(() => {
+  // 配置
+  const config = useSpreadsheetConfig(_config);
+
+  const [updater, setUpdater] = useState(+new Date());
+  const {
+    sheets,
+    setSheets,
+    activeSheetId,
+    createNewSheet,
+    clearSelection,
+    deleteSheet,
+    createCopySheet,
+    setActiveSheetId,
+  } = useSheetsStore(config);
+  // 初始化
+  useEffect(() => {
+    if (isInitialized.current) return;
+    if (!sheets?.length) {
+      const sheet = createNewSheet([]);
+      setActiveSheetId(sheet.id);
+      isInitialized.current = true;
+    }
+  }, [config, createNewSheet, setActiveSheetId, sheets]);
+  // 获取当前单元格
+  const getCurrentCell = useCallback(
+    (row: number, col: number) => {
+      if (!sheets?.length) return null;
+      const data = sheets.find((sheet) => sheet.id === activeSheetId)?.data;
+      if (!data?.length) return null;
+      if (row < 0 || row >= data.length) return null;
+      return data[row][col];
+    },
+    [sheets, activeSheetId],
+  );
+  const currentSheet = useMemo(
+    () => sheets.find((sheet) => sheet.id === activeSheetId) || null,
+    [sheets, activeSheetId],
+  );
+  const currentCell: CellData | null = useMemo(() => {
+    if (!sheets?.length) return null;
+    const targetSheet = currentSheet;
+    const data = targetSheet?.data;
+    if (!data?.length) return null;
+    const selectedCell = targetSheet?.selectedCell;
+    if (!selectedCell) return null;
+    const editingCell = targetSheet?.editingCell;
+    const cell = getCurrentCell(
+      editingCell?.row ?? selectedCell?.row ?? 0,
+      editingCell?.col ?? selectedCell?.col ?? 0,
+    );
+    if (cell?.readOnly) return null;
+    return cell;
+  }, [sheets, currentSheet, getCurrentCell]);
+  const setCurrentSheet = useCallback(
+    <T extends keyof Sheet>(key: T, value: Sheet[T]) => {
+      if (!currentSheet) return;
+      setSheets((_sheets) => {
+        const idx = _sheets.findIndex((sheet) => sheet.id === activeSheetId);
+        if (idx === -1) return _sheets;
+        // 生成新的 sheet 对象
+        const newSheets = _sheets.map((sheet, i) =>
+          i === idx ? { ...sheet, [key]: value } : sheet,
+        );
+        return newSheets;
+      });
+    },
+    [activeSheetId, currentSheet, setSheets],
+  );
+  const $sheet = {
+    currentSheet,
+    sheets,
+    activeSheetId,
+    config,
+    updater,
+    currentCell,
+    forceUpdate: () => setUpdater(+new Date()),
+    clearSelection,
+    getCurrentCell,
+    setSheets,
+    setActiveSheetId,
+    createNewSheet,
+    deleteSheet,
+    createCopySheet,
+    setCurrentSheet,
+  };
+  window.$sheet = $sheet;
+  return $sheet;
+};
+
+const useSpreadsheetConfig = (_config?: SpreadsheetConfig) => {
+  return useMemo(() => {
     const { rows, cols } = limitSheetSize(
       _config?.rows || 200,
       _config?.cols || 26,
@@ -38,10 +128,12 @@ export const useSpreadsheet = (
       ..._config,
       rows,
       cols,
-    };
+    } as Required<SpreadsheetConfig>;
   }, [_config]);
+};
+
+const useSheetsStore = (config: Required<SpreadsheetConfig>) => {
   const [sheets, setSheets] = useState<Sheet[]>([]);
-  const [updater, setUpdater] = useState(+new Date());
   const [activeSheetId, setActiveSheetId] = useState("");
   const createNewSheet = useCallback(
     (data?: TableData, options: Partial<Exclude<Sheet, "data">> = {}) => {
@@ -117,81 +209,22 @@ export const useSpreadsheet = (
     },
     [sheets],
   );
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     const targetSheet = sheets.find((sheet) => sheet.id === activeSheetId);
     if (targetSheet) {
       targetSheet.selectedCell = null;
       targetSheet.editingCell = null;
     }
     setSheets((_sheets) => [..._sheets]);
-  };
-  useEffect(() => {
-    if (isInitialized.current) return;
-    if (!sheets?.length) {
-      const sheet = createNewSheet([]);
-      setActiveSheetId(sheet.id);
-      isInitialized.current = true;
-    }
-  }, [config, createNewSheet, sheets]);
-  // 获取当前单元格
-  const getCurrentCell = useCallback(
-    (row: number, col: number) => {
-      if (!sheets?.length) return null;
-      const data = sheets.find((sheet) => sheet.id === activeSheetId)?.data;
-      if (!data?.length) return null;
-      if (row < 0 || row >= data.length) return null;
-      return data[row][col];
-    },
-    [sheets, activeSheetId],
-  );
-  const currentSheet = useMemo(() => {
-    if (!sheets?.length) return null;
-    const sheet = sheets.find((sheet) => sheet.id === activeSheetId);
-    return sheet || null;
-  }, [sheets, activeSheetId]);
-  const currentCell: CellData | null = useMemo(() => {
-    if (!sheets?.length) return null;
-    const targetSheet = currentSheet;
-    const data = targetSheet?.data;
-    if (!data?.length) return null;
-    const selectedCell = targetSheet?.selectedCell;
-    if (!selectedCell) return null;
-    const editingCell = targetSheet?.editingCell;
-    const cell = getCurrentCell(
-      editingCell?.row ?? selectedCell?.row ?? 0,
-      editingCell?.col ?? selectedCell?.col ?? 0,
-    );
-    if (cell?.readOnly) return null;
-    return cell;
-  }, [sheets, currentSheet, getCurrentCell]);
-  const setCurrentSheet = useCallback(
-    <T extends keyof Sheet>(key: T, value: Sheet[T]) => {
-      if (!currentSheet) return;
-      const targetSheet = sheets.find((sheet) => sheet.id === activeSheetId);
-      if (targetSheet) {
-        targetSheet[key] = value;
-      }
-      setSheets((_sheets) => [..._sheets]);
-    },
-    [sheets, activeSheetId, currentSheet],
-  );
-  const $sheet = {
-    currentSheet,
+  }, [activeSheetId, sheets]);
+  return {
     sheets,
-    activeSheetId,
-    config,
-    updater,
-    currentCell,
-    forceUpdate: () => setUpdater(+new Date()),
-    clearSelection,
-    getCurrentCell,
     setSheets,
+    activeSheetId,
     setActiveSheetId,
     createNewSheet,
     deleteSheet,
     createCopySheet,
-    setCurrentSheet,
+    clearSelection,
   };
-  window.$sheet = $sheet;
-  return $sheet;
 };

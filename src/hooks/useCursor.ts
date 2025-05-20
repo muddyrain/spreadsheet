@@ -33,13 +33,16 @@ export const useCursor = (options: {
   const [currentPosition, setCurrentPosition] = useState<
     [number, number] | null
   >(null);
-  useEffect(() => {
-    const _setCursor = (cursor: string) => {
+  const _setCursor = useCallback(
+    (cursor: string) => {
       setCursor((_cursor) => {
         if (_cursor === cursor) return _cursor;
         return cursor;
       });
-    };
+    },
+    [setCursor],
+  );
+  useEffect(() => {
     if (currentHoverCell) {
       const range = 5 * zoomSize;
       const [rowIndex, colIndex] = currentHoverCell;
@@ -127,6 +130,7 @@ export const useCursor = (options: {
     setCurrentSideLineIndex,
     setSideLineMode,
     setCursor,
+    _setCursor,
   ]);
   const clearState = useCallback(() => {
     setCurrentSideLinePosition([-1, -1]);
