@@ -209,8 +209,9 @@ export const useRenderCell = () => {
       headerColsWidth,
       headerRowsHeight,
       getFontStyle,
-      zoomSize,
       data,
+      zoomSize,
+      getWrapContent,
     ],
   );
   // 单元格绘制函数
