@@ -164,22 +164,26 @@ export const useRenderCell = () => {
         }
         let baseY = 0;
         if (verticalAlign === "start") {
-          baseY = y + fontSize + 3.5; // 顶端对齐
+          baseY = y; // 顶端对齐
         } else if (verticalAlign === "center") {
           baseY = y + cellHeight / 2 - contents.length * fontSize;
         } else if (verticalAlign === "end") {
+          // y轴 + 单元格 + (所有文本内容的高度 + 文本间距) + 基线居中=一个文本大小
           baseY =
             y +
             cellHeight -
-            (contents.length * fontSize + (contents.length - 1) * 11) -
-            3.5;
+            (contents.length * fontSize * 1.3333 +
+              fontSize +
+              (contents.length * fontSize * 1.333) / 2) +
+            fontSize;
         }
         for (let i = 0; i < contents.length; i++) {
           const text = contents[i];
           const textMetrics = ctx.measureText(text);
-          // 计算文本位置 + 起始单元格高度一半 - 边框高度  + 字体大小 + (行间距) 是为了防止文本被裁剪
+          // 文本高度 (fontSize * 1.3333)  + (由于基线居中) + ( i - fontSize) / 2
           const textY =
-            baseY + (i * fontSize * 1.3333 + fontSize + (i * fontSize) / 2);
+            baseY +
+            (i * fontSize * 1.3333 + fontSize + (i * fontSize * 1.333) / 2);
           ctx.fillText(text, textX, textY);
           const textDecoration = cell.style.textDecoration || "none";
           // 计算文本装饰线的位置

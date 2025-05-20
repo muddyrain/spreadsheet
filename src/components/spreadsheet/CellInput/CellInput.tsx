@@ -389,7 +389,9 @@ export const CellInput = forwardRef<
     // 绘制文本
     for (let i = 0; i < contents.length; i++) {
       const text = contents[i];
-      const textY = i * fontSize * 1.3333 + fontSize + (i * fontSize) / 2;
+      // 文本高度 (fontSize * 1.3333)  + (由于基线居中) + ( i - fontSize) / 2
+      const textY =
+        i * fontSize * 1.3333 + fontSize + (i * fontSize * 1.333) / 2;
       ctx.fillText(text, textX, textY);
     }
   }, [
