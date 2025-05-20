@@ -2,6 +2,7 @@ import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
+import { ptToPx } from "@/utils";
 import React, { useCallback, useEffect, useRef } from "react";
 
 export const useInput = ({
@@ -153,7 +154,7 @@ export const useInput = ({
         y: 0,
         cell: selectedCell,
       });
-      const lineHeight = fontSize * 1.3333;
+      const lineHeight = ptToPx(fontSize);
       let line = 0;
       const lines = value.split("\n");
       for (let i = 0; i < lines.length; i++) {

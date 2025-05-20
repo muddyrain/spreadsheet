@@ -13,6 +13,7 @@ import { useStore } from "@/hooks/useStore";
 import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useInput } from "./useInput";
+import { ptToPx } from "@/utils";
 
 export type CellInputRef = {
   focus: (rowIndex: number, colIndex: number) => void;
@@ -29,7 +30,7 @@ export const CellInput = forwardRef<
 >(({ onChange }, ref) => {
   const rafId = useRef<number | null>(null);
   const [value, setValue] = useState("");
-  const [cursor, setCursor] = useState(0);
+  const [cursorIndex, setCursorIndex] = useState(0);
   const isSelecting = useRef(false);
   const selectionAnchor = useRef<number | null>(null);
   const [selectionText, setSelectionText] = useState<{
@@ -39,7 +40,7 @@ export const CellInput = forwardRef<
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const [minSize, setMinSize] = useState({ width: 0, height: 0 });
+
   const currentFocusCell = useRef<CellData | null>(null);
   const [cursorStyle, setCursorStyle] = useState({
     left: 8,
@@ -57,6 +58,12 @@ export const CellInput = forwardRef<
     setHeaderRowsHeight,
     dispatch,
   } = useStore();
+  const minSize = useMemo(() => {
+    return {
+      width: config.width,
+      height: config.height,
+    };
+  }, [config]);
   const selectedCell = useMemo(() => {
     if (!editingCell) return null;
     return getCurrentCell(editingCell.row, editingCell.col);
@@ -102,7 +109,7 @@ export const CellInput = forwardRef<
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const cursorPos = getCursorPosByXY(x, y);
-      setCursor(cursorPos);
+      setCursorIndex(cursorPos);
       setSelectionText(null);
       isSelecting.current = true;
       selectionAnchor.current = cursorPos;
@@ -119,10 +126,10 @@ export const CellInput = forwardRef<
           const start = Math.min(selectionAnchor.current, moveCursor);
           const end = Math.max(selectionAnchor.current, moveCursor);
           setSelectionText({ start, end });
-          setCursor(moveCursor);
+          setCursorIndex(moveCursor);
         } else {
           setSelectionText(null);
-          setCursor(moveCursor);
+          setCursorIndex(moveCursor);
         }
       };
       const handleMouseUp = () => {
@@ -144,9 +151,10 @@ export const CellInput = forwardRef<
       e.stopPropagation();
       // 换行
       if (e.key === "Enter" && e.altKey) {
-        const newValue = value.slice(0, cursor) + "\n" + value.slice(cursor);
+        const newValue =
+          value.slice(0, cursorIndex) + "\n" + value.slice(cursorIndex);
         setValue(newValue);
-        setCursor(cursor + 1);
+        setCursorIndex(cursorIndex + 1);
         onChange?.(newValue);
       } else if (
         (e.ctrlKey || e.metaKey) &&
@@ -173,37 +181,40 @@ export const CellInput = forwardRef<
           newCursor = selectionText.start + 1;
           setSelectionText(null);
         } else {
-          newValue = value.slice(0, cursor) + e.key + value.slice(cursor);
-          newCursor = cursor + 1;
+          newValue =
+            value.slice(0, cursorIndex) + e.key + value.slice(cursorIndex);
+          newCursor = cursorIndex + 1;
         }
         setValue(newValue);
-        setCursor(newCursor);
+        setCursorIndex(newCursor);
         onChange?.(newValue);
       } else if (e.key === "Backspace") {
-        if (cursor > 0) {
-          const newValue = value.slice(0, cursor - 1) + value.slice(cursor);
+        if (cursorIndex > 0) {
+          const newValue =
+            value.slice(0, cursorIndex - 1) + value.slice(cursorIndex);
           setValue(newValue);
-          setCursor(cursor - 1);
+          setCursorIndex(cursorIndex - 1);
           onChange?.(newValue);
         }
         e.preventDefault();
       } else if (e.key === "Delete") {
-        if (cursor < value.length) {
-          const newValue = value.slice(0, cursor) + value.slice(cursor + 1);
+        if (cursorIndex < value.length) {
+          const newValue =
+            value.slice(0, cursorIndex) + value.slice(cursorIndex + 1);
           setValue(newValue);
           onChange?.(newValue);
         }
         e.preventDefault();
       } else if (e.key === "ArrowLeft") {
-        setCursor(Math.max(0, cursor - 1));
+        setCursorIndex(Math.max(0, cursorIndex - 1));
         e.preventDefault();
       } else if (e.key === "ArrowRight") {
-        setCursor(Math.min(value.length, cursor + 1));
+        setCursorIndex(Math.min(value.length, cursorIndex + 1));
         e.preventDefault();
       } else if (e.key === "ArrowUp") {
         // 上箭头：移动到上一行对应列
         const lines = value.split("\n");
-        const beforeCursor = value.slice(0, cursor);
+        const beforeCursor = value.slice(0, cursorIndex);
         const currentLine = beforeCursor.split("\n").length - 1;
         const currentCol =
           beforeCursor.length - beforeCursor.lastIndexOf("\n") - 1;
@@ -215,13 +226,13 @@ export const CellInput = forwardRef<
             newCursor += lines[i].length + 1;
           }
           newCursor += newCol;
-          setCursor(newCursor);
+          setCursorIndex(newCursor);
         }
         e.preventDefault();
       } else if (e.key === "ArrowDown") {
         // 下箭头：移动到下一行对应列
         const lines = value.split("\n");
-        const beforeCursor = value.slice(0, cursor);
+        const beforeCursor = value.slice(0, cursorIndex);
         const currentLine = beforeCursor.split("\n").length - 1;
         const currentCol =
           beforeCursor.length - beforeCursor.lastIndexOf("\n") - 1;
@@ -233,48 +244,42 @@ export const CellInput = forwardRef<
             newCursor += lines[i].length + 1;
           }
           newCursor += newCol;
-          setCursor(newCursor);
+          setCursorIndex(newCursor);
         }
         e.preventDefault();
       }
       if (e.key === "Home") {
-        setCursor(0);
+        setCursorIndex(0);
         e.preventDefault();
       } else if (e.key === "End") {
-        setCursor(value.length);
+        setCursorIndex(value.length);
         e.preventDefault();
       }
     },
-    [cursor, onChange, value, selectionText],
+    [cursorIndex, onChange, value, selectionText],
   );
   // 计算光标位置
   const updateCursorPosition = useCallback(() => {
     if (!canvasRef.current || !selectedCell) return;
     const ctx = canvasRef.current.getContext("2d");
     if (!ctx) return;
-    const { fontSize, verticalAlign } = getFontStyle(ctx, {
+    const { fontSize } = getFontStyle(ctx, {
       rowIndex: selectedCell.row,
       colIndex: selectedCell.col,
       x: 0,
       y: 0,
       cell: selectedCell,
     });
-    const beforeCursor = value.slice(0, cursor);
+    const beforeCursor = value.slice(0, cursorIndex);
     const lines = beforeCursor.split("\n");
     const cursorLine = lines.length - 1;
     const cursorColText = lines[lines.length - 1];
     const left = ctx.measureText(cursorColText).width + 5.5;
-    const lineHeight = fontSize * 1.3333;
-    let top = 0;
-    if (verticalAlign === "center") {
-      top =
-        cursorLine * lineHeight +
-        fontSize / 2 +
-        (cursorLine * fontSize) / 2 -
-        2;
-    }
+    const lineHeight = ptToPx(fontSize);
+    const top =
+      cursorLine * lineHeight + fontSize / 2 + (cursorLine * fontSize) / 2 - 2;
     setCursorStyle({ left, top: top, height: lineHeight });
-  }, [selectedCell, getFontStyle, value, cursor]);
+  }, [selectedCell, getFontStyle, value, cursorIndex]);
 
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
@@ -303,7 +308,6 @@ export const CellInput = forwardRef<
       currentFocusCell.current = currentCell;
       setSelectionText(null);
       dispatch({ isFocused: true });
-      setMinSize({ width: cellWidth, height: cellHeight });
       setInputStyle(currentFocusCell.current.row, currentFocusCell.current.col);
     },
     blur() {
@@ -311,7 +315,7 @@ export const CellInput = forwardRef<
     },
     setValue(content) {
       setValue(content);
-      setCursor(content.length);
+      setCursorIndex(content.length);
     },
   }));
   // 绘制输入框
@@ -321,8 +325,8 @@ export const CellInput = forwardRef<
     if (!ctx) return;
     if (!isFocused) return;
     if (lastWidth.current !== canvasRef.current.width) {
-      canvasRef.current.width = lastWidth.current;
-      canvasRef.current.style.width = `${lastWidth.current}px`;
+      canvasRef.current.width = Math.max(lastWidth.current, minSize.width);
+      canvasRef.current.style.width = `${Math.max(lastWidth.current, minSize.width)}px`;
     }
     if (lastHeight.current !== canvasRef.current.height) {
       canvasRef.current.height = lastHeight.current;
@@ -406,6 +410,7 @@ export const CellInput = forwardRef<
     selectedCell,
     isFocused,
     lastWidth,
+    minSize.width,
     lastHeight,
     getCellPosition,
     getFontStyle,
@@ -444,7 +449,7 @@ export const CellInput = forwardRef<
   }, [editingCell, handleBlur]);
   useLayoutEffect(() => {
     updateCursorPosition();
-  }, [value, cursor, updateCursorPosition]);
+  }, [value, cursorIndex, updateCursorPosition]);
   return (
     <div className="w-full h-full absolute top-0 left-0 pointer-events-none">
       <div
@@ -464,7 +469,7 @@ export const CellInput = forwardRef<
         <div className="relative" ref={innerRef}>
           <canvas ref={canvasRef} style={{ pointerEvents: "none" }} />
           <div
-            key={cursor}
+            key={cursorIndex}
             className="selection-cursor absolute bg-zinc-600 animate-blink"
             style={{
               left: cursorStyle.left,

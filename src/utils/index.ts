@@ -50,7 +50,10 @@ export function limitSheetSize(rows: number, cols: number, maxCells = 2000000) {
  * @param ptStr 形如 "80.25pt" 的字符串
  * @returns 对应的像素数值（number）
  */
-export function ptToPx(ptStr: string): number {
+export function ptToPx(ptStr: string | number): number {
+  if (typeof ptStr === "number") {
+    ptStr = ptStr + "pt";
+  }
   const match = ptStr?.match(/([\d.]+)pt$/i);
   if (!match) return 0;
   const pt = parseFloat(match[1]);
