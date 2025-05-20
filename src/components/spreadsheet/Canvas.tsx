@@ -41,9 +41,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     headerRowsHeight,
     containerWidth,
     containerHeight,
-    setContainerWidth,
-    setContainerHeight,
-    setCurrentSideLinePosition,
+    dispatch,
   } = useStore();
   const rafId = useRef<number | null>(null);
   const lastClickRowCol = useRef<[number, number] | null>(null);
@@ -87,7 +85,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     useSheetScroll(scrollConfig);
 
   // 单元格侧边栏 hooks - 拖拽侧边
-  const { currentPosition, setIsMouseDown, handleMouseUp } = useCursor({
+  const { currentPosition, handleMouseUp } = useCursor({
     currentHoverCell,
     canvasRef,
   });
@@ -127,8 +125,10 @@ export const Canvas: React.FC<CanvasProps> = ({
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
-        setContainerWidth(containerRef.current.clientWidth);
-        setContainerHeight(containerRef.current.clientHeight);
+        dispatch({
+          containerWidth: containerRef.current.clientWidth,
+          containerHeight: containerRef.current.clientHeight,
+        });
       }
     };
     handleResize();
@@ -136,7 +136,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [setContainerWidth, setContainerHeight]);
+  }, [dispatch]);
   useEffect(() => {
     const currentWrapper = wrapperRef.current;
     if (currentWrapper) {
@@ -255,9 +255,13 @@ export const Canvas: React.FC<CanvasProps> = ({
         const deltaY = Math.abs(moveEvent.clientY - startY);
 
         if (deltaX > minDistance || deltaY > minDistance) {
-          setIsMouseDown(true);
+          dispatch({
+            isMouseDown: true,
+          });
           if (currentPosition) {
-            setCurrentSideLinePosition(currentPosition);
+            dispatch({
+              currentSideLinePosition: currentPosition,
+            });
           }
           window.removeEventListener("mousemove", handleInitialMove);
         }
@@ -272,7 +276,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         { once: true },
       );
     },
-    [currentPosition, setIsMouseDown, setCurrentSideLinePosition],
+    [currentPosition, dispatch],
   );
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -305,14 +309,16 @@ export const Canvas: React.FC<CanvasProps> = ({
     const handleVisibilityChange = () => {
       if (document.hidden) {
         setCurrentHoverCell(null);
-        setIsMouseDown(false);
+        dispatch({
+          isMouseDown: false,
+        });
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [setIsMouseDown]);
+  }, [dispatch]);
   return (
     <>
       <div

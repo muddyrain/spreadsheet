@@ -55,9 +55,9 @@ export const CellInput = forwardRef<
     isFocused,
     editingCell,
     scrollPosition,
-    setIsFocused,
     getCurrentCell,
     setHeaderRowsHeight,
+    dispatch,
   } = useStore();
   const { getMergeCellSize, getCellPosition } = useComputed();
   const { getFontStyle } = useTools();
@@ -278,7 +278,7 @@ export const CellInput = forwardRef<
     if (containerRef.current) {
       containerRef.current.style.display = "none";
       containerRef.current.blur();
-      setIsFocused(false);
+      dispatch({ isFocused: false });
       onChange?.(value);
       const row = currentFocusCell?.current?.row;
       if (row && lastHeight.current > headerRowsHeight[row]) {
@@ -287,7 +287,7 @@ export const CellInput = forwardRef<
       }
     }
   }, [
-    setIsFocused,
+    dispatch,
     onChange,
     value,
     lastHeight,
@@ -307,7 +307,7 @@ export const CellInput = forwardRef<
       if (!currentCell) return;
       currentFocusCell.current = currentCell;
       setSelectionText(null);
-      setIsFocused(true);
+      dispatch({ isFocused: true });
     },
     blur() {
       handleBlur();

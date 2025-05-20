@@ -35,7 +35,7 @@ export const useUpdateStyle = () => {
     setData,
     getCurrentCell,
     formatBrushStyles,
-    setFormatBrushStyles,
+    dispatch,
   } = useStore();
   const { getSelectionCells } = useComputed();
   const [selectionCells, setSelectionCells] = useState<CellData[]>([]);
@@ -118,7 +118,7 @@ export const useUpdateStyle = () => {
           }
           _formatBrushStyles.push(rowStyles);
         }
-        setFormatBrushStyles(_formatBrushStyles);
+        dispatch({ formatBrushStyles: _formatBrushStyles });
         break;
       }
       case "eraser": {
@@ -304,7 +304,7 @@ export const useUpdateStyle = () => {
     (currentSelection: SelectionSheetType | null) => {
       if (!formatBrushStyles.length) return;
       if (!currentSelection) return;
-      setFormatBrushStyles([]);
+      dispatch({ formatBrushStyles: [] });
       setData((data) => {
         const { r1, c1, r2, c2 } = getAbsoluteSelection(currentSelection);
         const rows = r2 - r1 + 1;
@@ -329,7 +329,7 @@ export const useUpdateStyle = () => {
         return [...data];
       });
     },
-    [formatBrushStyles, setData, setFormatBrushStyles],
+    [formatBrushStyles, setData, dispatch],
   );
   return {
     isStyle,

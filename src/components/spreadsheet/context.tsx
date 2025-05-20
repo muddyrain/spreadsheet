@@ -13,8 +13,19 @@ import {
   CellData,
 } from "../../types/sheet";
 
+export type LocalStoreType = {
+  isFocused: boolean;
+  currentSideLineIndex: number[];
+  containerWidth: number;
+  containerHeight: number;
+  formatBrushStyles: CellStyle[][];
+  cursor: string;
+  isMouseDown: boolean;
+  sideLineMode: string | null;
+  currentSideLinePosition: number[];
+};
 export const SpreadsheetContext = React.createContext<
-  | {
+  | ({
       sheets: Sheet[];
       activeSheetId: string;
       setActiveSheetId: (activeSheetId: string) => void;
@@ -32,18 +43,6 @@ export const SpreadsheetContext = React.createContext<
       deleteSheet: (id: string) => void;
       createCopySheet: (id: string) => void;
       setUpdater: () => void;
-      cursor: string;
-      setCursor: React.Dispatch<React.SetStateAction<string>>;
-      zoomSize: number;
-      setZoomSize: React.Dispatch<React.SetStateAction<number>>;
-      isFocused: boolean;
-      setIsFocused: (isFocused: boolean) => void;
-      isMouseDown: boolean;
-      setIsMouseDown: (isFocused: boolean) => void;
-      containerWidth: number;
-      setContainerWidth: React.Dispatch<React.SetStateAction<number>>;
-      containerHeight: number;
-      setContainerHeight: React.Dispatch<React.SetStateAction<number>>;
       selection: SelectionSheetType | null;
       setSelection: React.Dispatch<
         React.SetStateAction<SelectionSheetType | null>
@@ -52,6 +51,8 @@ export const SpreadsheetContext = React.createContext<
       setCutSelection: React.Dispatch<
         React.SetStateAction<SelectionSheetType | null>
       >;
+      zoomSize: number;
+      setZoomSize: React.Dispatch<React.SetStateAction<number>>;
       headerColsWidth: number[];
       setHeaderColsWidth: React.Dispatch<React.SetStateAction<number[]>>;
       headerRowsHeight: number[];
@@ -62,23 +63,16 @@ export const SpreadsheetContext = React.createContext<
       setSelectedCell: React.Dispatch<React.SetStateAction<CellData | null>>;
       editingCell: EditingCell;
       setEditingCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
-      currentSideLineIndex: number[];
-      setCurrentSideLineIndex: React.Dispatch<React.SetStateAction<number[]>>;
-      formatBrushStyles: CellStyle[][];
-      setFormatBrushStyles: React.Dispatch<React.SetStateAction<CellStyle[][]>>;
-      currentSideLinePosition: number[];
-      setCurrentSideLinePosition: React.Dispatch<
-        React.SetStateAction<number[]>
-      >;
       sheetCellSettingsConfig: SheetCellSettingsConfig;
       setSheetCellSettingsConfig: React.Dispatch<
         React.SetStateAction<SheetCellSettingsConfig>
       >;
-      sideLineMode: "row" | "col" | null;
-      setSideLineMode: React.Dispatch<
-        React.SetStateAction<"row" | "col" | null>
-      >;
       getCurrentCell: (row: number, col: number) => CellData | null;
-    }
+      dispatch: (
+        newState:
+          | Partial<LocalStoreType>
+          | ((state: LocalStoreType) => Partial<LocalStoreType>),
+      ) => void;
+    } & LocalStoreType)
   | undefined
 >(undefined);

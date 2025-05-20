@@ -15,7 +15,6 @@ export const useSpreadsheet = (
   const isInitialized = useRef(false);
   // 配置
   const config = useSpreadsheetConfig(_config);
-
   const [updater, setUpdater] = useState(+new Date());
   const {
     sheets,

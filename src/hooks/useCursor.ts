@@ -18,13 +18,9 @@ export const useCursor = (options: {
     currentSideLinePosition,
     isMouseDown,
     zoomSize,
-    setCursor,
-    setIsMouseDown,
+    dispatch,
     setHeaderColsWidth,
     setHeaderRowsHeight,
-    setSideLineMode,
-    setCurrentSideLinePosition,
-    setCurrentSideLineIndex,
     formatBrushStyles,
   } = useStore();
   const { getLeft, getTop } = useComputed();
@@ -35,12 +31,20 @@ export const useCursor = (options: {
   >(null);
   const _setCursor = useCallback(
     (cursor: string) => {
-      setCursor((_cursor) => {
-        if (_cursor === cursor) return _cursor;
-        return cursor;
+      dispatch((state) => {
+        const _cursor = state.cursor;
+        if (_cursor === cursor)
+          return {
+            ...state,
+            cursor: _cursor,
+          };
+        return {
+          ...state,
+          cursor,
+        };
       });
     },
-    [setCursor],
+    [dispatch],
   );
   useEffect(() => {
     if (currentHoverCell) {
@@ -65,17 +69,25 @@ export const useCursor = (options: {
           // 增加边缘检测的精确度
           if (offset <= range && colIndex > 1) {
             if (!isMouseDown) {
-              setCurrentSideLineIndex(() => [-1, colIndex - 1]);
+              dispatch(() => ({
+                currentSideLineIndex: [-1, colIndex - 1],
+              }));
             }
-            setSideLineMode("col");
+            dispatch(() => ({
+              sideLineMode: "col",
+            }));
             _setCursor("col-resize");
             return;
           }
           if (offset >= cellWidth - range && offset <= cellWidth) {
             if (!isMouseDown) {
-              setCurrentSideLineIndex(() => [-1, colIndex]);
+              dispatch(() => ({
+                currentSideLineIndex: [-1, colIndex],
+              }));
             }
-            setSideLineMode("col");
+            dispatch(() => ({
+              sideLineMode: "col",
+            }));
             _setCursor("col-resize");
             return;
           }
@@ -88,17 +100,25 @@ export const useCursor = (options: {
           const offset = y - top;
           if (offset <= range && rowIndex > 1) {
             if (!isMouseDown) {
-              setCurrentSideLineIndex(() => [rowIndex - 1, -1]);
+              dispatch(() => ({
+                currentSideLineIndex: [rowIndex - 1, -1],
+              }));
             }
-            setSideLineMode("row");
+            dispatch(() => ({
+              sideLineMode: "row",
+            }));
             _setCursor("row-resize");
             return;
           }
           if (offset >= cellHeight - range && offset <= cellHeight) {
             if (!isMouseDown) {
-              setCurrentSideLineIndex(() => [rowIndex, -1]);
+              dispatch(() => ({
+                currentSideLineIndex: [rowIndex, -1],
+              }));
             }
-            setSideLineMode("row");
+            dispatch(() => ({
+              sideLineMode: "row",
+            }));
             _setCursor("row-resize");
             return;
           }
@@ -127,22 +147,17 @@ export const useCursor = (options: {
     formatBrushStyles,
     getLeft,
     getTop,
-    setCurrentSideLineIndex,
-    setSideLineMode,
-    setCursor,
+    dispatch,
     _setCursor,
   ]);
   const clearState = useCallback(() => {
-    setCurrentSideLinePosition([-1, -1]);
-    setCurrentSideLineIndex([-1, -1]);
-    setIsMouseDown(false);
-    setCursor("default");
-  }, [
-    setCurrentSideLineIndex,
-    setCurrentSideLinePosition,
-    setCursor,
-    setIsMouseDown,
-  ]);
+    dispatch(() => ({
+      isMouseDown: false,
+      cursor: "default",
+      currentSideLinePosition: [-1, -1],
+      currentSideLineIndex: [-1, -1],
+    }));
+  }, [dispatch]);
   const handleMouseUp = useCallback(() => {
     clearState();
     if (isMouseDown) {
@@ -156,8 +171,10 @@ export const useCursor = (options: {
         }
         headerColsWidth[currentColSideLineIndex] = width;
         setHeaderColsWidth([...headerColsWidth]);
-        setCurrentSideLineIndex((p) => [p[0], -1]);
-        setCurrentSideLinePosition((p) => [p[0], -1]);
+        dispatch((state) => ({
+          currentSideLineIndex: [state.currentSideLineIndex[0], -1],
+          currentSideLinePosition: [state.currentSideLinePosition[0], -1],
+        }));
       }
       if (sideLineMode === "row") {
         const currentRowSideLineIndex = currentSideLineIndex[0];
@@ -169,8 +186,10 @@ export const useCursor = (options: {
         }
         headerRowsHeight[currentRowSideLineIndex] = height;
         setHeaderRowsHeight([...headerRowsHeight]);
-        setCurrentSideLineIndex((p) => [-1, p[1]]);
-        setCurrentSideLinePosition((p) => [-1, p[1]]);
+        dispatch((state) => ({
+          currentSideLineIndex: [-1, state.currentSideLineIndex[1]],
+          currentSideLinePosition: [-1, state.currentSideLinePosition[1]],
+        }));
       }
     }
   }, [
@@ -182,8 +201,7 @@ export const useCursor = (options: {
     headerColsWidth,
     headerRowsHeight,
     isMouseDown,
-    setCurrentSideLineIndex,
-    setCurrentSideLinePosition,
+    dispatch,
     setHeaderColsWidth,
     setHeaderRowsHeight,
     sideLineMode,
@@ -222,7 +240,9 @@ export const useCursor = (options: {
               y = top + 20;
             }
           }
-          setCurrentSideLinePosition([x, y]);
+          dispatch({
+            currentSideLinePosition: [x, y],
+          });
         }
       }
     };
@@ -240,12 +260,11 @@ export const useCursor = (options: {
     getLeft,
     getTop,
     handleMouseUp,
-    setCurrentSideLinePosition,
+    dispatch,
   ]);
 
   return {
     setCurrentPosition,
-    setIsMouseDown,
     handleMouseUp,
     currentPosition,
   };

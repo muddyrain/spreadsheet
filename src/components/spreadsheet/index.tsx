@@ -1,19 +1,19 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   TableData,
   SpreadsheetConfig,
   SpreadsheetType,
   SheetCellSettingsConfig,
-  CellStyle,
 } from "../../types/sheet";
 import _ from "lodash";
 import { useSpreadsheet } from "@/hooks/useSpreadsheet";
-import { SpreadsheetContext } from "./context";
+import { LocalStoreType, SpreadsheetContext } from "./context";
 import Spreadsheet from "./Spreadsheet";
 import { getSystemInfo } from "@/utils";
 import { Toaster } from "sonner";
 import { InfoIcon } from "lucide-react";
 import { TooltipProvider } from "../ui/tooltip/tooltip";
+import { useSetState } from "@/hooks/useSetState";
 
 const RootSpreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -41,21 +41,12 @@ const RootSpreadsheet: React.FC<{
     useState<SheetCellSettingsConfig>({
       isAnchorMergePoint: false,
     });
-  const [formatBrushStyles, setFormatBrushStyles] = useState<CellStyle[][]>([]);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(0);
-  const [isFocused, setIsFocused] = useState(false);
-  const [currentSideLineIndex, setCurrentSideLineIndex] = useState([-1, -1]);
-  const [cursor, setCursor] = useState("default");
-  const [currentSideLinePosition, setCurrentSideLinePosition] = useState([
-    -1, -1,
-  ]);
-  const [isMouseDown, setIsMouseDown] = useState(false);
-  const [sideLineMode, setSideLineMode] = useState<"row" | "col" | null>(null);
+  const localState = useLocalState();
   const { isMac, isWindows } = getSystemInfo();
   return (
     <SpreadsheetContext.Provider
       value={{
+        ...localState,
         sheets,
         activeSheetId,
         setActiveSheetId,
@@ -66,8 +57,6 @@ const RootSpreadsheet: React.FC<{
         createNewSheet,
         createCopySheet,
         deleteSheet,
-        cursor,
-        setCursor,
         currentCtrlKey: isMac ? "⌘" : isWindows ? "Ctrl" : "Ctrl",
         setUpdater: forceUpdate,
         zoomSize: currentSheet?.zoomSize || 1,
@@ -83,14 +72,6 @@ const RootSpreadsheet: React.FC<{
           }
           setCurrentSheet("zoomSize", size);
         },
-        isFocused,
-        setIsFocused,
-        isMouseDown,
-        setIsMouseDown,
-        containerWidth,
-        setContainerWidth,
-        containerHeight,
-        setContainerHeight,
         data: currentSheet?.data || [],
         setData: (data) => {
           if (typeof data === "function") {
@@ -158,16 +139,8 @@ const RootSpreadsheet: React.FC<{
           }
           setCurrentSheet("editingCell", editingCell);
         },
-        currentSideLineIndex,
-        setCurrentSideLineIndex,
-        currentSideLinePosition,
-        setCurrentSideLinePosition,
         sheetCellSettingsConfig,
         setSheetCellSettingsConfig,
-        formatBrushStyles,
-        setFormatBrushStyles,
-        sideLineMode,
-        setSideLineMode,
         getCurrentCell,
       }}
     >
@@ -184,4 +157,26 @@ const RootSpreadsheet: React.FC<{
   );
 };
 
+const useLocalState = () => {
+  const initialState: LocalStoreType = {
+    isFocused: false,
+    currentSideLineIndex: [-1, -1],
+    containerWidth: 0,
+    containerHeight: 0,
+    formatBrushStyles: [],
+    cursor: "default",
+    isMouseDown: false,
+    sideLineMode: null,
+    currentSideLinePosition: [-1, -1],
+  };
+  const [state, dispatch] = useSetState(initialState);
+  const localState = useMemo(() => {
+    return {
+      ...state,
+      dispatch,
+    };
+  }, [state, dispatch]);
+
+  return localState;
+};
 export default RootSpreadsheet;

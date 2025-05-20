@@ -26,8 +26,8 @@ const Spreadsheet: React.FC<{
     setSelection,
     setEditingCell,
     setSelectedCell,
-    setIsFocused,
     getCurrentCell,
+    dispatch,
   } = useStore();
   const cellInputRef = useRef<CellInputRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -182,7 +182,7 @@ const Spreadsheet: React.FC<{
       onDirectionKeyDown("ArrowDown");
       clearSelection();
       cellInputRef.current?.blur();
-      setIsFocused(false);
+      dispatch({ isFocused: false });
     },
   });
   // 防抖更新
@@ -223,7 +223,7 @@ const Spreadsheet: React.FC<{
         cellInputRef.current?.blur();
       });
     }
-  }, [clearSelection, setIsFocused]);
+  }, [clearSelection, dispatch]);
   return (
     <div className="flex flex-col w-full h-full overflow-hidden">
       <Header
@@ -263,7 +263,7 @@ const Spreadsheet: React.FC<{
             onDirectionKeyDown("ArrowDown");
             clearSelection();
             cellInputRef.current?.blur();
-            setIsFocused(false);
+            dispatch({ isFocused: false });
           }}
         />
       </div>
