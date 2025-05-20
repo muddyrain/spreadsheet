@@ -342,16 +342,20 @@ export const CellInput = forwardRef<
     });
     let contents = value.split("\n");
     let globalStart = 0;
+
+    ctx.textBaseline = "middle";
+    const lineHeightPT = fontSize + 4;
+    const lineHeightPX = (lineHeightPT * 4) / 3;
     // 绘制选中
     for (let lineIndex = 0; lineIndex < contents.length; lineIndex++) {
       const texts = contents[lineIndex];
       const startY =
-        2 + lineIndex * fontSize * 1.3333 + (lineIndex * fontSize) / 2; // 第一行
+        1 + (lineIndex * fontSize * 4) / 3 + (lineIndex * fontSize) / 2;
       let startX = 5;
       for (let i = 0; i < texts.length; i++) {
         const text = texts[i];
         const metrics = ctx.measureText(text);
-        const width = Math.round(metrics.width); // 字符的宽度
+        const width = Math.round(metrics.width);
         const globalCharIndex = globalStart + i;
         if (
           selectionText &&
@@ -366,18 +370,13 @@ export const CellInput = forwardRef<
             x,
             y,
             width,
-            fontSize * 1.3333 + Math.ceil(fontSize / 2),
+            (fontSize * 4) / 3 + Math.ceil(fontSize / 2),
           );
         }
         startX += width;
       }
       globalStart += texts.length + 1; // +1 是因为换行符
     }
-
-    ctx.fillStyle = color;
-    ctx.textBaseline = "middle";
-    const lineHeightPT = fontSize + 4;
-    const lineHeightPX = (lineHeightPT * 4) / 3;
     // 计算文本总高度
     const totalTextHeight = contents.length * lineHeightPX;
     // 计算文本位置
@@ -393,6 +392,7 @@ export const CellInput = forwardRef<
         cellWidth,
       });
     }
+    ctx.fillStyle = color;
     // 起始位置 画布高度一半 - 文本总高度一半 + 每行高度的一半
     const startY =
       canvasRef.current.height / 2 - totalTextHeight / 2 + lineHeightPX / 2;

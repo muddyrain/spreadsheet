@@ -54,7 +54,7 @@ export function ptToPx(ptStr: string): number {
   const match = ptStr?.match(/([\d.]+)pt$/i);
   if (!match) return 0;
   const pt = parseFloat(match[1]);
-  return pt * 1.3333;
+  return (pt * 4) / 3;
 }
 /**
  * 将像素数值或字符串（如 "107px"）转换为 pt 单位，1px = 0.75pt
