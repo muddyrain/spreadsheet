@@ -166,8 +166,7 @@ export const useRenderCell = () => {
         if (verticalAlign === "start") {
           baseY = y + fontSize + 3.5 * zoomSize; // 顶端对齐
         } else if (verticalAlign === "center") {
-          baseY =
-            y + cellHeight / 2 - (contents.length - 1) * fontSize * zoomSize;
+          baseY = y + cellHeight / 2 - contents.length * fontSize * zoomSize;
         } else if (verticalAlign === "end") {
           baseY =
             y +
@@ -180,7 +179,9 @@ export const useRenderCell = () => {
           const text = contents[i];
           const textMetrics = ctx.measureText(text);
           // 计算文本位置 + 起始单元格高度一半 - 边框高度  + 字体大小 + (行间距) 是为了防止文本被裁剪
-          const textY = baseY + i * fontSize + i * 11 * zoomSize;
+          const textY =
+            baseY +
+            (i * fontSize * 1.3333 + fontSize + (i * fontSize) / 2) * zoomSize;
           ctx.fillText(text, textX, textY);
           const textDecoration = cell.style.textDecoration || "none";
           // 计算文本装饰线的位置

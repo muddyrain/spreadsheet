@@ -1,20 +1,31 @@
+import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useStore } from "@/hooks/useStore";
+import { CellData } from "@/types/sheet";
 import React, { useCallback, useRef } from "react";
 
 export const useInput = ({
+  currentFocusCell,
+  containerRef,
   canvasRef,
   value,
   minSize,
+  cellWidth,
+  cellHeight,
 }: {
+  currentFocusCell: React.RefObject<CellData | null>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   value: string;
   minSize: { width: number; height: number };
+  cellWidth: number;
+  cellHeight: number;
 }) => {
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
-  const { zoomSize, selectedCell } = useStore();
+  const { zoomSize, selectedCell, getCurrentCell } = useStore();
   const { getFontStyle, getFontSize } = useTools();
+  const { getCellPosition } = useComputed();
   // 更新输入框大小
   const updateInputSize = useCallback(
     (value: string) => {
@@ -41,9 +52,7 @@ export const useInput = ({
         ...lines.map((line) => ctx.measureText(line).width),
       );
       const width = Math.max(maxLineWidth + 8, minSize.width);
-      if (width > lastWidth.current) {
-        lastWidth.current = Math.ceil(width);
-      }
+      lastWidth.current = Math.ceil(width);
       const fontSize = getFontSize(selectedCell);
       const height =
         Math.ceil((fontSize * 1.3333 + fontSize / 2) * zoomSize) *
@@ -62,6 +71,54 @@ export const useInput = ({
       minSize.width,
       selectedCell,
       zoomSize,
+    ],
+  );
+  // 设置 input 样式
+  const setInputStyle = useCallback(
+    (rowIndex: number, colIndex: number) => {
+      const currentCell = getCurrentCell(rowIndex, colIndex);
+      if (!currentCell) return;
+      currentFocusCell.current = currentCell;
+      const ctx = canvasRef.current?.getContext("2d");
+      if (!ctx) return;
+      if (containerRef.current) {
+        const { x, y } = getCellPosition(currentCell);
+        const { verticalAlign } = getFontStyle(ctx, {
+          rowIndex: currentCell.row,
+          colIndex: currentCell.col,
+          x,
+          y,
+          cell: currentCell,
+        });
+        containerRef.current.style.display = "flex";
+        containerRef.current.style.alignItems = verticalAlign;
+        containerRef.current.style.minWidth = `${cellWidth + 4}px`;
+        containerRef.current.style.minHeight = `${cellHeight + 4}px`;
+        containerRef.current.style.left = `${x - 2}px`;
+        containerRef.current.style.top = `${y - 2}px`;
+        const { width, height } = updateInputSize(value);
+        containerRef.current.style.width = `${width + 4}px`;
+        containerRef.current.style.height = `${height + 4}px`;
+        setTimeout(() => {
+          containerRef.current?.focus();
+        }, 0);
+        if (canvasRef.current) {
+          canvasRef.current.width = cellWidth;
+          canvasRef.current.style.width = `${cellWidth}px`;
+        }
+      }
+    },
+    [
+      getCurrentCell,
+      currentFocusCell,
+      canvasRef,
+      containerRef,
+      getCellPosition,
+      getFontStyle,
+      cellWidth,
+      cellHeight,
+      updateInputSize,
+      value,
     ],
   );
   const getCursorPosByXY = useCallback(
@@ -108,5 +165,11 @@ export const useInput = ({
     },
     [canvasRef, selectedCell, getFontStyle, value, zoomSize],
   );
-  return { lastWidth, lastHeight, getCursorPosByXY, updateInputSize };
+  return {
+    lastWidth,
+    lastHeight,
+    setInputStyle,
+    getCursorPosByXY,
+    updateInputSize,
+  };
 };
