@@ -49,7 +49,6 @@ export const CellInput = forwardRef<
 
   const {
     config,
-    zoomSize,
     headerColsWidth,
     headerRowsHeight,
     selectedCell,
@@ -262,8 +261,7 @@ export const CellInput = forwardRef<
     const lines = beforeCursor.split("\n");
     const cursorLine = lines.length - 1;
     const cursorColText = lines[lines.length - 1];
-    const left =
-      ctx.measureText(cursorColText).width + (fontSize / 2) * zoomSize;
+    const left = ctx.measureText(cursorColText).width + 5.5;
     const lineHeight = fontSize * 1.3333;
     let top = 0;
     if (verticalAlign === "center") {
@@ -273,8 +271,8 @@ export const CellInput = forwardRef<
         (cursorLine * fontSize) / 2 -
         2;
     }
-    setCursorStyle({ left, top: top * zoomSize, height: lineHeight });
-  }, [selectedCell, getFontStyle, zoomSize, value, cursor]);
+    setCursorStyle({ left, top: top, height: lineHeight });
+  }, [selectedCell, getFontStyle, value, cursor]);
 
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
@@ -365,13 +363,13 @@ export const CellInput = forwardRef<
         ) {
           // 绘制选中的文本样式
           ctx.fillStyle = config.inputSelectionColor;
-          const x = startX * zoomSize;
-          const y = startY * zoomSize;
+          const x = startX;
+          const y = startY;
           ctx.fillRect(
             x,
             y,
             width,
-            (fontSize * 1.3333 + Math.ceil(fontSize / 2)) * zoomSize,
+            fontSize * 1.3333 + Math.ceil(fontSize / 2),
           );
         }
         startX += width;
@@ -385,14 +383,13 @@ export const CellInput = forwardRef<
     const textX = (() => {
       if (textAlign === "left" && cellWidth <= minWidth) return 0;
       if (textAlign === "center") return cellWidth / 2;
-      if (textAlign === "right") return cellWidth - 5.5 * zoomSize;
-      return 5.5 * zoomSize;
+      if (textAlign === "right") return cellWidth - 5.5;
+      return 5.5;
     })();
     // 绘制文本
     for (let i = 0; i < contents.length; i++) {
       const text = contents[i];
-      const textY =
-        (i * fontSize * 1.3333 + fontSize + (i * fontSize) / 2) * zoomSize;
+      const textY = i * fontSize * 1.3333 + fontSize + (i * fontSize) / 2;
       ctx.fillText(text, textX, textY);
     }
   }, [
@@ -405,7 +402,6 @@ export const CellInput = forwardRef<
     value,
     selectionText,
     config.inputSelectionColor,
-    zoomSize,
     cellWidth,
   ]);
   useEffect(() => {

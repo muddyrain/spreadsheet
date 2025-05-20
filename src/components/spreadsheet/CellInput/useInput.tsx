@@ -23,7 +23,7 @@ export const useInput = ({
 }) => {
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
-  const { zoomSize, selectedCell, getCurrentCell } = useStore();
+  const { selectedCell, getCurrentCell } = useStore();
   const { getFontStyle, getFontSize } = useTools();
   const { getCellPosition } = useComputed();
   // 更新输入框大小
@@ -55,8 +55,7 @@ export const useInput = ({
       lastWidth.current = Math.ceil(width);
       const fontSize = getFontSize(selectedCell);
       const height =
-        Math.ceil((fontSize * 1.3333 + fontSize / 2) * zoomSize) *
-        value.split("\n").length;
+        Math.ceil(fontSize * 1.3333 + fontSize / 2) * value.split("\n").length;
       lastHeight.current = Math.ceil(height);
       return {
         width: lastWidth.current,
@@ -70,7 +69,6 @@ export const useInput = ({
       minSize.height,
       minSize.width,
       selectedCell,
-      zoomSize,
     ],
   );
   // 设置 input 样式
@@ -137,9 +135,8 @@ export const useInput = ({
       let line = 0;
       const lines = value.split("\n");
       for (let i = 0; i < lines.length; i++) {
-        const lineTop = (2 + i * lineHeight + (i * fontSize) / 2) * zoomSize;
-        const lineBottom =
-          (2 + (i + 1) * lineHeight + ((i + 1) * fontSize) / 2) * zoomSize;
+        const lineTop = 2 + i * lineHeight + (i * fontSize) / 2;
+        const lineBottom = 2 + (i + 1) * lineHeight + ((i + 1) * fontSize) / 2;
         if (y >= lineTop && y < lineBottom) {
           line = i;
           break;
@@ -163,7 +160,7 @@ export const useInput = ({
       cursorPos += idx;
       return cursorPos;
     },
-    [canvasRef, selectedCell, getFontStyle, value, zoomSize],
+    [canvasRef, selectedCell, getFontStyle, value],
   );
   return {
     lastWidth,
