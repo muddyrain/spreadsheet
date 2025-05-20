@@ -141,28 +141,22 @@ export const useRenderCell = () => {
           });
           contents = wrappedContents;
         }
+        const lineHeightPT = fontSize + 4;
+        const lineHeightPX = (lineHeightPT * 4) / 3;
+        // 计算文本总高度
+        const totalTextHeight = contents.length * lineHeightPX;
         let baseY = 0;
         if (verticalAlign === "start") {
-          baseY = y; // 顶端对齐
+          baseY = y + lineHeightPX / 2;
         } else if (verticalAlign === "center") {
-          baseY = y + cellHeight / 2 - contents.length * fontSize;
+          baseY = y + cellHeight / 2 - totalTextHeight / 2 + lineHeightPX / 2;
         } else if (verticalAlign === "end") {
-          // y轴 + 单元格 + (所有文本内容的高度 + 文本间距) + 基线居中=一个文本大小
-          baseY =
-            y +
-            cellHeight -
-            (contents.length * fontSize * 1.3333 +
-              fontSize +
-              (contents.length * fontSize * 1.333) / 2) +
-            fontSize;
+          baseY = y + cellHeight - totalTextHeight + lineHeightPX / 2 - 2;
         }
         for (let i = 0; i < contents.length; i++) {
           const text = contents[i];
           const textMetrics = ctx.measureText(text);
-          // 文本高度 (fontSize * 1.3333)  + (由于基线居中) + ( i - fontSize) / 2
-          const textY =
-            baseY +
-            (i * fontSize * 1.3333 + fontSize + (i * fontSize * 1.333) / 2);
+          const textY = baseY + i * lineHeightPX;
           ctx.fillText(text, textX, textY);
           const textDecoration = cell.style.textDecoration || "none";
           // 计算文本装饰线的位置

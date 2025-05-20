@@ -376,6 +376,10 @@ export const CellInput = forwardRef<
 
     ctx.fillStyle = color;
     ctx.textBaseline = "middle";
+    const lineHeightPT = fontSize + 4;
+    const lineHeightPX = (lineHeightPT * 4) / 3;
+    // 计算文本总高度
+    const totalTextHeight = contents.length * lineHeightPX;
     // 计算文本位置
     const textX = (() => {
       if (textAlign === "left" && cellWidth <= minWidth) return 0;
@@ -389,12 +393,13 @@ export const CellInput = forwardRef<
         cellWidth,
       });
     }
+    // 起始位置 画布高度一半 - 文本总高度一半 + 每行高度的一半
+    const startY =
+      canvasRef.current.height / 2 - totalTextHeight / 2 + lineHeightPX / 2;
     // 绘制文本
     for (let i = 0; i < contents.length; i++) {
       const text = contents[i];
-      // 文本高度 (fontSize * 1.3333)  + (由于基线居中) + ( i - fontSize) / 2
-      const textY =
-        i * fontSize * 1.3333 + fontSize + (i * fontSize * 1.333) / 2;
+      const textY = startY + i * lineHeightPX;
       ctx.fillText(text, textX, textY);
     }
   }, [
