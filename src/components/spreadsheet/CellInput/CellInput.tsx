@@ -155,8 +155,7 @@ export const CellInput = forwardRef<
       const key = e.key;
       // 刷新操作
       if ((e.ctrlKey || e.metaKey) && key === "r") return;
-      // 复制
-      if ((e.ctrlKey || e.metaKey) && key === "c") {
+      const copy = () => {
         e.preventDefault();
         e.stopPropagation();
         const selectedText =
@@ -164,8 +163,21 @@ export const CellInput = forwardRef<
         if (selectedText) {
           navigator.clipboard.writeText(selectedText);
         }
+      };
+      if ((e.ctrlKey || e.metaKey) && key === "x") {
+        copy();
+        if (selectionText) {
+          const content =
+            value.slice(0, selectionText.start) +
+            value.slice(selectionText.end);
+          setValue(content);
+          const newCursor = selectionText.start;
+          setCursorIndex(newCursor);
+          setSelectionText(null);
+        }
+      } else if ((e.ctrlKey || e.metaKey) && key === "c") {
+        copy();
       } else if ((e.ctrlKey || e.metaKey) && key === "v") {
-        // 粘贴
         e.preventDefault();
         e.stopPropagation();
         navigator.clipboard.readText().then((clipboardText) => {
@@ -233,22 +245,34 @@ export const CellInput = forwardRef<
       } else if (e.key === "Backspace") {
         e.preventDefault();
         e.stopPropagation();
-        if (cursorIndex > 0) {
+        if (selectionText) {
+          const newValue =
+            value.slice(0, selectionText.start) +
+            value.slice(selectionText.end);
+          setValue(newValue);
+          setCursorIndex(selectionText.start);
+          setSelectionText(null);
+        } else if (cursorIndex > 0) {
           const newValue =
             value.slice(0, cursorIndex - 1) + value.slice(cursorIndex);
           setValue(newValue);
           setCursorIndex(cursorIndex - 1);
         }
-        e.preventDefault();
       } else if (e.key === "Delete") {
         e.preventDefault();
         e.stopPropagation();
-        if (cursorIndex < value.length) {
+        if (selectionText) {
+          const newValue =
+            value.slice(0, selectionText.start) +
+            value.slice(selectionText.end);
+          setValue(newValue);
+          setCursorIndex(selectionText.start);
+          setSelectionText(null);
+        } else if (cursorIndex < value.length) {
           const newValue =
             value.slice(0, cursorIndex) + value.slice(cursorIndex + 1);
           setValue(newValue);
         }
-        e.preventDefault();
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         e.stopPropagation();
@@ -340,12 +364,11 @@ export const CellInput = forwardRef<
     const canvasWidth = canvasRef.current.width;
     let left = 0;
     if (textAlign === "left") {
-      left = beforeTextWidth + fontSize / 2;
+      left = beforeTextWidth + 4;
     } else if (textAlign === "center") {
       left = canvasWidth / 2 - currentLineWidth / 2 + beforeTextWidth;
     } else if (textAlign === "right") {
-      left =
-        canvasWidth - currentLineWidth - fontSize / 2 + beforeTextWidth + 1;
+      left = canvasWidth - currentLineWidth - 4 + beforeTextWidth;
     }
     const lineHeight = ptToPx(fontSize);
     const top =
