@@ -373,7 +373,12 @@ export const CellInput = forwardRef<
     }
     const lineHeightPT = fontSize + 4;
     const lineHeightPX = (lineHeightPT * 4) / 3;
-    const top = cursorLine * lineHeightPX;
+    const totalTextHeight = value.split("\n").length * lineHeightPX;
+    // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
+    const top =
+      canvasRef.current.height / 2 -
+      totalTextHeight / 2 +
+      cursorLine * lineHeightPX;
     setCursorStyle({ left, top: top, height: lineHeightPX });
   }, [config.inputPadding, selectedCell, getFontStyle, value, cursorIndex]);
 
@@ -470,8 +475,11 @@ export const CellInput = forwardRef<
     // 绘制选中
     for (let lineIndex = 0; lineIndex < contents.length; lineIndex++) {
       const texts = contents[lineIndex];
+      // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
       const startY =
-        1 + (lineIndex * fontSize * 4) / 3 + (lineIndex * fontSize) / 2;
+        canvasRef.current.height / 2 -
+        totalTextHeight / 2 +
+        lineIndex * lineHeightPX;
       let startX = config.inputPadding;
       if (textAlign === "center") {
         startX = canvasWidth / 2 - ctx.measureText(texts).width / 2 - 1;
