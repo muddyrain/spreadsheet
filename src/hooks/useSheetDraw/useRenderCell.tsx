@@ -18,14 +18,8 @@ export interface RenderOptions {
 }
 
 export const useRenderCell = () => {
-  const {
-    data,
-    selection,
-    zoomSize,
-    config,
-    headerColsWidth,
-    headerRowsHeight,
-  } = useStore();
+  const { data, selection, config, headerColsWidth, headerRowsHeight } =
+    useStore();
   const { getMergeCellSize } = useComputed();
   const { getFontStyle, getWrapContent } = useTools();
   const { drawBorderMap } = useDynamicRender();
@@ -118,15 +112,15 @@ export const useRenderCell = () => {
       if (cell.mergeSpan && cellWidth > minWidth) {
         // 设置剪裁区域
         ctx.beginPath();
-        ctx.rect(x + 6.5 * zoomSize, y, cellWidth - 13 * zoomSize, cellHeight);
+        ctx.rect(x + 6.5, y, cellWidth - 13, cellHeight);
         ctx.clip();
       }
       // 计算文本位置
       const textX = (() => {
         if (textAlign === "left" && cellWidth <= minWidth) return x;
         if (textAlign === "center") return x + cellWidth / 2;
-        if (textAlign === "right") return x + cellWidth - 5.5 * zoomSize;
-        return x + 5.5 * zoomSize;
+        if (textAlign === "right") return x + cellWidth - fontSize / 2;
+        return x + fontSize / 2;
       })();
 
       if (cell.readOnly) {
@@ -177,7 +171,7 @@ export const useRenderCell = () => {
           // 绘制装饰线
           const drawLine = (startX: number, endX: number, y: number) => {
             ctx.strokeStyle = cell.style.color || "#000";
-            ctx.lineWidth = 1 * zoomSize;
+            ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(startX, y);
             ctx.lineTo(endX, y);
@@ -197,7 +191,7 @@ export const useRenderCell = () => {
             }
 
             if (textDecoration.includes("underline")) {
-              drawLine(lineStartX, lineEndX, textY + fontSize / (2 * zoomSize));
+              drawLine(lineStartX, lineEndX, textY + fontSize / 2);
             }
           }
         }
@@ -210,7 +204,6 @@ export const useRenderCell = () => {
       headerRowsHeight,
       getFontStyle,
       data,
-      zoomSize,
       getWrapContent,
     ],
   );
@@ -302,7 +295,7 @@ export const useRenderCell = () => {
 
       // 绘制边框
       const borderColor = cell.style.borderColor || config.borderColor;
-      ctx.lineWidth = 1 * zoomSize;
+      ctx.lineWidth = 1;
       ctx.strokeStyle = borderColor;
       if (!cell.mergeParent) {
         // 绘制上边框
@@ -331,7 +324,6 @@ export const useRenderCell = () => {
       getMergeCellSize,
       headerColsWidth,
       headerRowsHeight,
-      zoomSize,
     ],
   );
   return {

@@ -61,7 +61,10 @@ export const useInput = ({
       const maxLineWidth = Math.max(
         ...lines.map((line) => ctx.measureText(line).width),
       );
-      const width = Math.max(maxLineWidth + 8, minSize.width);
+      const width = Math.max(
+        maxLineWidth + config.inputPadding * 2,
+        minSize.width,
+      );
       lastWidth.current = Math.ceil(width);
       const fontSize = getFontSize(selectedCell);
       const height = Math.ceil(fontSize * 1.3333 + fontSize / 2) * lines.length;
@@ -80,6 +83,7 @@ export const useInput = ({
       getWrapContent,
       minSize.height,
       minSize.width,
+      config.inputPadding,
     ],
   );
   // 设置 input 样式
@@ -101,15 +105,15 @@ export const useInput = ({
         });
         containerRef.current.style.display = "flex";
         containerRef.current.style.alignItems = verticalAlign;
-        containerRef.current.style.minWidth = `${cellWidth + 4}px`;
-        containerRef.current.style.minHeight = `${cellHeight + 4}px`;
+        containerRef.current.style.minWidth = `${cellWidth + config.inputPadding}px`;
+        containerRef.current.style.minHeight = `${cellHeight + config.inputPadding}px`;
         const { width, height, maxLineWidth } = updateInputSize(
           value,
           currentCell,
         );
         if (textAlign === "right") {
-          // -8 是左右的 padding
-          if (maxLineWidth >= cellWidth - 8) {
+          // 减的是左右的 padding
+          if (maxLineWidth >= cellWidth - config.inputPadding * 2) {
             const left = x + cellWidth - width - 2;
             containerRef.current.style.left = `${left}px`;
           } else {
@@ -119,8 +123,8 @@ export const useInput = ({
           containerRef.current.style.left = `${x - 2}px`;
         }
         containerRef.current.style.top = `${y - 2}px`;
-        containerRef.current.style.width = `${width + 4}px`;
-        containerRef.current.style.height = `${height + 4}px`;
+        containerRef.current.style.width = `${width + config.inputPadding}px`;
+        containerRef.current.style.height = `${height + config.inputPadding}px`;
         setTimeout(() => {
           containerRef.current?.focus();
         }, 0);
@@ -135,6 +139,7 @@ export const useInput = ({
       }
     },
     [
+      config.inputPadding,
       getCurrentCell,
       currentFocusCell,
       canvasRef,
@@ -189,11 +194,11 @@ export const useInput = ({
       const lineWidth = ctx.measureText(lines[line]).width;
       let offsetX = 0;
       if (textAlign === "left") {
-        offsetX = 4;
+        offsetX = config.inputPadding;
       } else if (textAlign === "center") {
         offsetX = (canvasWidth - lineWidth) / 2;
       } else if (textAlign === "right") {
-        offsetX = canvasWidth - lineWidth - 4;
+        offsetX = canvasWidth - lineWidth - config.inputPadding;
       }
       for (let i = 0; i <= lines[line].length; i++) {
         const textWidth = ctx.measureText(lines[line].slice(0, i)).width;
@@ -213,10 +218,9 @@ export const useInput = ({
         cursorPos += lines[l].length + 1;
       }
       cursorPos += idx;
-      // console.log(cursorPos);
       return cursorPos;
     },
-    [canvasRef, getFontStyle, value, config.textAlign],
+    [canvasRef, getFontStyle, value, config.textAlign, config.inputPadding],
   );
   return {
     lastWidth,

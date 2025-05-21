@@ -199,6 +199,11 @@ export type SpreadsheetConfig = {
    */
   height?: number;
   /**
+   * @description 输入框间距
+   * @default 4
+   */
+  inputPadding?: number;
+  /**
    * @description 默认文本对齐方式
    * @default 'left'
    */

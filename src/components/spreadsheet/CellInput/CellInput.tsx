@@ -13,7 +13,6 @@ import { useStore } from "@/hooks/useStore";
 import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useInput } from "./useInput";
-import { ptToPx } from "@/utils";
 
 export type CellInputRef = {
   focus: (rowIndex: number, colIndex: number) => void;
@@ -43,7 +42,7 @@ export const CellInput = forwardRef<
 
   const currentFocusCell = useRef<CellData | null>(null);
   const [cursorStyle, setCursorStyle] = useState({
-    left: 8,
+    left: 0,
     top: 0,
     height: 20,
   });
@@ -54,16 +53,17 @@ export const CellInput = forwardRef<
     isFocused,
     editingCell,
     data,
+    zoomSize,
     getCurrentCell,
     setHeaderRowsHeight,
     dispatch,
   } = useStore();
   const minSize = useMemo(() => {
     return {
-      width: config.width,
-      height: config.height,
+      width: config.width * zoomSize,
+      height: config.height * zoomSize,
     };
-  }, [config]);
+  }, [config, zoomSize]);
   const selectedCell = useMemo(() => {
     if (!editingCell) return null;
     return getCurrentCell(editingCell.row, editingCell.col);
@@ -364,17 +364,18 @@ export const CellInput = forwardRef<
     const canvasWidth = canvasRef.current.width;
     let left = 0;
     if (textAlign === "left") {
-      left = beforeTextWidth + 4;
+      left = beforeTextWidth + config.inputPadding;
     } else if (textAlign === "center") {
       left = canvasWidth / 2 - currentLineWidth / 2 + beforeTextWidth;
     } else if (textAlign === "right") {
-      left = canvasWidth - currentLineWidth - 4 + beforeTextWidth;
+      left =
+        canvasWidth - currentLineWidth - config.inputPadding + beforeTextWidth;
     }
-    const lineHeight = ptToPx(fontSize);
-    const top =
-      cursorLine * lineHeight + fontSize / 2 + (cursorLine * fontSize) / 2 - 2;
-    setCursorStyle({ left, top: top, height: lineHeight });
-  }, [selectedCell, getFontStyle, value, cursorIndex]);
+    const lineHeightPT = fontSize + 4;
+    const lineHeightPX = (lineHeightPT * 4) / 3;
+    const top = cursorLine * lineHeightPX;
+    setCursorStyle({ left, top: top, height: lineHeightPX });
+  }, [config.inputPadding, selectedCell, getFontStyle, value, cursorIndex]);
 
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
@@ -452,18 +453,36 @@ export const CellInput = forwardRef<
     let globalStart = 0;
 
     ctx.textBaseline = "middle";
+    // 行高间距 4pt
     const lineHeightPT = fontSize + 4;
     const lineHeightPX = (lineHeightPT * 4) / 3;
+    // 计算文本总高度
+    const totalTextHeight = contents.length * lineHeightPX;
+    const canvasWidth = canvasRef.current.width;
+    // 计算文本位置
+    const textX = (() => {
+      if (textAlign === "left" && canvasWidth <= minWidth) return 0;
+      if (textAlign === "center") return canvasWidth / 2;
+      if (textAlign === "right") return canvasWidth - config.inputPadding;
+      return config.inputPadding;
+    })();
+
     // 绘制选中
     for (let lineIndex = 0; lineIndex < contents.length; lineIndex++) {
       const texts = contents[lineIndex];
       const startY =
         1 + (lineIndex * fontSize * 4) / 3 + (lineIndex * fontSize) / 2;
-      let startX = 4;
+      let startX = config.inputPadding;
+      if (textAlign === "center") {
+        startX = canvasWidth / 2 - ctx.measureText(texts).width / 2 - 1;
+      } else if (textAlign === "right") {
+        startX =
+          canvasWidth - config.inputPadding - ctx.measureText(texts).width - 1;
+      }
       for (let i = 0; i < texts.length; i++) {
         const text = texts[i];
         const metrics = ctx.measureText(text);
-        const width = Math.ceil(metrics.width);
+        const width = metrics.width;
         const globalCharIndex = globalStart + i;
         if (
           selectionText &&
@@ -474,27 +493,13 @@ export const CellInput = forwardRef<
           ctx.fillStyle = config.inputSelectionColor;
           const x = startX;
           const y = startY;
-          ctx.fillRect(
-            x,
-            y,
-            width,
-            (fontSize * 4) / 3 + Math.ceil(fontSize / 2),
-          );
+          ctx.fillRect(x, y, width + 0.5, lineHeightPX + 0.5);
         }
         startX += width;
       }
       globalStart += texts.length + 1; // +1 是因为换行符
     }
-    // 计算文本总高度
-    const totalTextHeight = contents.length * lineHeightPX;
-    const canvasWidth = canvasRef.current.width;
-    // 计算文本位置
-    const textX = (() => {
-      if (textAlign === "left" && canvasWidth <= minWidth) return 0;
-      if (textAlign === "center") return canvasWidth / 2;
-      if (textAlign === "right") return canvasWidth - 4;
-      return 4;
-    })();
+
     if (selectedCell.style.wrap) {
       contents = getWrapContent(ctx, {
         cell: selectedCell,
@@ -523,6 +528,7 @@ export const CellInput = forwardRef<
     selectionText,
     config.inputSelectionColor,
     getWrapContent,
+    config.inputPadding,
   ]);
   useEffect(() => {
     if (!canvasRef.current || !selectedCell) return;

@@ -115,6 +115,7 @@ const useSpreadsheetConfig = (_config?: SpreadsheetConfig) => {
       height: 30,
       textAlign: "left",
       verticalAlign: "center",
+      inputPadding: 4,
       inputSelectionColor: "#ABC1FF",
       selectionBorderColor: "rgba(60, 112, 255, 1)",
       selectionBackgroundColor: "rgba(60, 112, 255, 0.15)",
