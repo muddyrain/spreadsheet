@@ -24,13 +24,12 @@ export const useInput = ({
 }) => {
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
-  const { config, isFocused, scrollPosition, selectedCell, getCurrentCell } =
-    useStore();
+  const { config, isFocused, scrollPosition, getCurrentCell } = useStore();
   const { getFontStyle, getFontSize, getWrapContent } = useTools();
   const { getCellPosition } = useComputed();
   // 更新输入框大小
   const updateInputSize = useCallback(
-    (value: string) => {
+    (value: string, selectedCell: CellData | null) => {
       if (!canvasRef.current)
         return {
           width: minSize.width,
@@ -68,8 +67,8 @@ export const useInput = ({
       const height = Math.ceil(fontSize * 1.3333 + fontSize / 2) * lines.length;
       lastHeight.current = Math.ceil(height);
       return {
-        width: lastWidth.current,
-        height: lastHeight.current,
+        width: Math.ceil(width),
+        height: Math.ceil(height),
         maxLineWidth,
       };
     },
@@ -81,7 +80,6 @@ export const useInput = ({
       getWrapContent,
       minSize.height,
       minSize.width,
-      selectedCell,
     ],
   );
   // 设置 input 样式
@@ -105,7 +103,10 @@ export const useInput = ({
         containerRef.current.style.alignItems = verticalAlign;
         containerRef.current.style.minWidth = `${cellWidth + 4}px`;
         containerRef.current.style.minHeight = `${cellHeight + 4}px`;
-        const { width, height, maxLineWidth } = updateInputSize(value);
+        const { width, height, maxLineWidth } = updateInputSize(
+          value,
+          currentCell,
+        );
         if (textAlign === "right") {
           // -8 是左右的 padding
           if (maxLineWidth >= cellWidth - 8) {
@@ -127,6 +128,10 @@ export const useInput = ({
           canvasRef.current.width = cellWidth;
           canvasRef.current.style.width = `${cellWidth}px`;
         }
+        return {
+          width,
+          height,
+        };
       }
     },
     [
@@ -156,7 +161,7 @@ export const useInput = ({
     setInputStyle,
   ]);
   const getCursorPosByXY = useCallback(
-    (x: number, y: number, canvasWidth: number) => {
+    (x: number, y: number, canvasWidth: number, selectedCell: CellData) => {
       if (!canvasRef.current || !selectedCell) return 0;
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return 0;
@@ -206,7 +211,7 @@ export const useInput = ({
       // console.log(cursorPos);
       return cursorPos;
     },
-    [canvasRef, selectedCell, getFontStyle, value, config.textAlign],
+    [canvasRef, getFontStyle, value, config.textAlign],
   );
   return {
     lastWidth,

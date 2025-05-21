@@ -109,7 +109,7 @@ export const CellInput = forwardRef<
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const canvasWidth = canvasRef.current.width;
-      const cursorPos = getCursorPosByXY(x, y, canvasWidth);
+      const cursorPos = getCursorPosByXY(x, y, canvasWidth, selectedCell);
       setCursorIndex(cursorPos);
       setSelectionText(null);
       isSelecting.current = true;
@@ -119,7 +119,12 @@ export const CellInput = forwardRef<
         if (!isSelecting.current) return;
         const moveX = moveEvent.clientX - rect.left;
         const moveY = moveEvent.clientY - rect.top;
-        const moveCursor = getCursorPosByXY(moveX, moveY, canvasWidth);
+        const moveCursor = getCursorPosByXY(
+          moveX,
+          moveY,
+          canvasWidth,
+          selectedCell,
+        );
         if (
           selectionAnchor.current !== null &&
           moveCursor !== selectionAnchor.current
@@ -326,7 +331,16 @@ export const CellInput = forwardRef<
       currentFocusCell.current = currentCell;
       setSelectionText(null);
       dispatch({ isFocused: true });
-      setInputStyle(currentFocusCell.current.row, currentFocusCell.current.col);
+      const size = setInputStyle(
+        currentFocusCell.current.row,
+        currentFocusCell.current.col,
+      );
+      if (size && canvasRef.current) {
+        canvasRef.current.width = size.width;
+        canvasRef.current.height = size.height;
+        canvasRef.current.style.width = `${size.width}px`;
+        canvasRef.current.style.height = `${size.height}px`;
+      }
     },
     blur() {
       handleBlur();
