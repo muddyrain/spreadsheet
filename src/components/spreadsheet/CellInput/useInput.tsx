@@ -204,6 +204,10 @@ export const useInput = ({
           break;
         }
       }
+      // 如果点击位置在文本宽度之外，将光标设置为行末
+      if (x > lineWidth + offsetX) {
+        idx = lines[line].length;
+      }
       let cursorPos = 0;
       for (let l = 0; l < line; l++) {
         cursorPos += lines[l].length + 1;
