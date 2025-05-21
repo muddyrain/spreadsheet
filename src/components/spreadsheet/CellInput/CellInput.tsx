@@ -153,10 +153,44 @@ export const CellInput = forwardRef<
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const key = e.key;
-      e.preventDefault();
-      e.stopPropagation();
-      // 换行
-      if (e.key === "Enter" && e.altKey) {
+      // 刷新操作
+      if ((e.ctrlKey || e.metaKey) && key === "r") return;
+      // 复制
+      if ((e.ctrlKey || e.metaKey) && key === "c") {
+        e.preventDefault();
+        e.stopPropagation();
+        const selectedText =
+          selectionText && value.slice(selectionText.start, selectionText.end);
+        if (selectedText) {
+          navigator.clipboard.writeText(selectedText);
+        }
+      } else if ((e.ctrlKey || e.metaKey) && key === "v") {
+        // 粘贴
+        e.preventDefault();
+        e.stopPropagation();
+        navigator.clipboard.readText().then((clipboardText) => {
+          let newValue =
+            value.slice(0, cursorIndex) +
+            clipboardText +
+            value.slice(cursorIndex);
+          let newCursor = cursorIndex + clipboardText.length;
+          if (selectionText) {
+            // 有选区，替换选中内容
+            newValue =
+              value.slice(0, selectionText.start) +
+              clipboardText +
+              value.slice(selectionText.end);
+            newCursor = selectionText.start + clipboardText.length;
+            setSelectionText(null);
+          }
+          setValue(newValue);
+          setCursorIndex(newCursor);
+        });
+        return;
+      } else if (e.key === "Enter" && e.altKey) {
+        // 换行
+        e.preventDefault();
+        e.stopPropagation();
         const newValue =
           value.slice(0, cursorIndex) + "\n" + value.slice(cursorIndex);
         setValue(newValue);
@@ -165,6 +199,8 @@ export const CellInput = forwardRef<
         (e.ctrlKey || e.metaKey) &&
         e.key.toLocaleUpperCase() === "A"
       ) {
+        e.preventDefault();
+        e.stopPropagation();
         setSelectionText({
           start: 0,
           end: value.length,
@@ -174,6 +210,8 @@ export const CellInput = forwardRef<
         (/[a-zA-Z0-9]/.test(key) || // 字母数字
           /[~!@#$%^&*()_+\-=[\]{};':"|,.<>\\/?`]/.test(key)) // 常见符号
       ) {
+        e.preventDefault();
+        e.stopPropagation();
         // 普通字符输入
         let newValue;
         let newCursor: number;
@@ -193,6 +231,8 @@ export const CellInput = forwardRef<
         setValue(newValue);
         setCursorIndex(newCursor);
       } else if (e.key === "Backspace") {
+        e.preventDefault();
+        e.stopPropagation();
         if (cursorIndex > 0) {
           const newValue =
             value.slice(0, cursorIndex - 1) + value.slice(cursorIndex);
@@ -201,6 +241,8 @@ export const CellInput = forwardRef<
         }
         e.preventDefault();
       } else if (e.key === "Delete") {
+        e.preventDefault();
+        e.stopPropagation();
         if (cursorIndex < value.length) {
           const newValue =
             value.slice(0, cursorIndex) + value.slice(cursorIndex + 1);
@@ -208,12 +250,18 @@ export const CellInput = forwardRef<
         }
         e.preventDefault();
       } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        e.stopPropagation();
         setCursorIndex(Math.max(0, cursorIndex - 1));
         e.preventDefault();
       } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        e.stopPropagation();
         setCursorIndex(Math.min(value.length, cursorIndex + 1));
         e.preventDefault();
       } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
         // 上箭头：移动到上一行对应列
         const lines = value.split("\n");
         const beforeCursor = value.slice(0, cursorIndex);
@@ -232,6 +280,8 @@ export const CellInput = forwardRef<
         }
         e.preventDefault();
       } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        e.stopPropagation();
         // 下箭头：移动到下一行对应列
         const lines = value.split("\n");
         const beforeCursor = value.slice(0, cursorIndex);
@@ -249,11 +299,14 @@ export const CellInput = forwardRef<
           setCursorIndex(newCursor);
         }
         e.preventDefault();
-      }
-      if (e.key === "Home") {
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        e.stopPropagation();
         setCursorIndex(0);
         e.preventDefault();
       } else if (e.key === "End") {
+        e.preventDefault();
+        e.stopPropagation();
         setCursorIndex(value.length);
         e.preventDefault();
       }
@@ -292,11 +345,7 @@ export const CellInput = forwardRef<
       left = canvasWidth / 2 - currentLineWidth / 2 + beforeTextWidth;
     } else if (textAlign === "right") {
       left =
-        canvasWidth -
-        currentLineWidth -
-        fontSize / 2 +
-        beforeTextWidth +
-        fontSize / 2;
+        canvasWidth - currentLineWidth - fontSize / 2 + beforeTextWidth + 1;
     }
     const lineHeight = ptToPx(fontSize);
     const top =
@@ -387,11 +436,11 @@ export const CellInput = forwardRef<
       const texts = contents[lineIndex];
       const startY =
         1 + (lineIndex * fontSize * 4) / 3 + (lineIndex * fontSize) / 2;
-      let startX = 5;
+      let startX = 4;
       for (let i = 0; i < texts.length; i++) {
         const text = texts[i];
         const metrics = ctx.measureText(text);
-        const width = Math.round(metrics.width);
+        const width = Math.ceil(metrics.width);
         const globalCharIndex = globalStart + i;
         if (
           selectionText &&
@@ -420,8 +469,8 @@ export const CellInput = forwardRef<
     const textX = (() => {
       if (textAlign === "left" && canvasWidth <= minWidth) return 0;
       if (textAlign === "center") return canvasWidth / 2;
-      if (textAlign === "right") return canvasWidth;
-      return fontSize / 2;
+      if (textAlign === "right") return canvasWidth - 4;
+      return 4;
     })();
     if (selectedCell.style.wrap) {
       contents = getWrapContent(ctx, {

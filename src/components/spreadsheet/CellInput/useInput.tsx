@@ -185,23 +185,24 @@ export const useInput = ({
       }
       line = Math.max(0, Math.min(line, lines.length - 1));
       let idx = 0;
-      const accWidth = 8;
       const textAlign = selectedCell.style?.textAlign || config.textAlign;
       const lineWidth = ctx.measureText(lines[line]).width;
       let offsetX = 0;
-      if (textAlign === "center") {
+      if (textAlign === "left") {
+        offsetX = 4;
+      } else if (textAlign === "center") {
         offsetX = (canvasWidth - lineWidth) / 2;
       } else if (textAlign === "right") {
-        offsetX = canvasWidth - lineWidth;
+        offsetX = canvasWidth - lineWidth - 4;
       }
       for (let i = 0; i <= lines[line].length; i++) {
-        const w =
-          ctx.measureText(lines[line].slice(0, i)).width + accWidth + offsetX;
-        if (x < w) {
+        const textWidth = ctx.measureText(lines[line].slice(0, i)).width;
+        const nextCharWidth = ctx.measureText(lines[line].charAt(i)).width;
+        const halfCharWidth = nextCharWidth / 2;
+        if (x < textWidth + offsetX + halfCharWidth) {
           idx = i;
           break;
         }
-        idx = i;
       }
       let cursorPos = 0;
       for (let l = 0; l < line; l++) {
