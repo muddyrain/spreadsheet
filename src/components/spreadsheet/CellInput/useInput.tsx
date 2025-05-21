@@ -35,12 +35,14 @@ export const useInput = ({
         return {
           width: minSize.width,
           height: minSize.height,
+          maxLineWidth: 0,
         };
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx || !selectedCell)
         return {
           width: minSize.width,
           height: minSize.height,
+          maxLineWidth: 0,
         };
       getFontStyle(ctx, {
         rowIndex: selectedCell?.row || 0,
@@ -68,6 +70,7 @@ export const useInput = ({
       return {
         width: lastWidth.current,
         height: lastHeight.current,
+        maxLineWidth,
       };
     },
     [
@@ -91,7 +94,7 @@ export const useInput = ({
       if (!ctx) return;
       if (containerRef.current) {
         const { x, y } = getCellPosition(currentCell);
-        const { verticalAlign } = getFontStyle(ctx, {
+        const { verticalAlign, textAlign } = getFontStyle(ctx, {
           rowIndex: currentCell.row,
           colIndex: currentCell.col,
           x,
@@ -102,9 +105,19 @@ export const useInput = ({
         containerRef.current.style.alignItems = verticalAlign;
         containerRef.current.style.minWidth = `${cellWidth + 4}px`;
         containerRef.current.style.minHeight = `${cellHeight + 4}px`;
-        containerRef.current.style.left = `${x - 2}px`;
+        const { width, height, maxLineWidth } = updateInputSize(value);
+        if (textAlign === "right") {
+          // -8 是左右的 padding
+          if (maxLineWidth >= cellWidth - 8) {
+            const left = x + cellWidth - width - 2;
+            containerRef.current.style.left = `${left}px`;
+          } else {
+            containerRef.current.style.left = `${x - 2}px`;
+          }
+        } else {
+          containerRef.current.style.left = `${x - 2}px`;
+        }
         containerRef.current.style.top = `${y - 2}px`;
-        const { width, height } = updateInputSize(value);
         containerRef.current.style.width = `${width + 4}px`;
         containerRef.current.style.height = `${height + 4}px`;
         setTimeout(() => {
@@ -143,7 +156,7 @@ export const useInput = ({
     setInputStyle,
   ]);
   const getCursorPosByXY = useCallback(
-    (x: number, y: number) => {
+    (x: number, y: number, canvasWidth: number) => {
       if (!canvasRef.current || !selectedCell) return 0;
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return 0;
@@ -172,9 +185,9 @@ export const useInput = ({
       const lineWidth = ctx.measureText(lines[line]).width;
       let offsetX = 0;
       if (textAlign === "center") {
-        offsetX = (cellWidth - lineWidth) / 2;
+        offsetX = (canvasWidth - lineWidth) / 2;
       } else if (textAlign === "right") {
-        offsetX = cellWidth - lineWidth;
+        offsetX = canvasWidth - lineWidth;
       }
       for (let i = 0; i <= lines[line].length; i++) {
         const w =
@@ -190,9 +203,10 @@ export const useInput = ({
         cursorPos += lines[l].length + 1;
       }
       cursorPos += idx;
+      // console.log(cursorPos);
       return cursorPos;
     },
-    [canvasRef, selectedCell, getFontStyle, value, config.textAlign, cellWidth],
+    [canvasRef, selectedCell, getFontStyle, value, config.textAlign],
   );
   return {
     lastWidth,

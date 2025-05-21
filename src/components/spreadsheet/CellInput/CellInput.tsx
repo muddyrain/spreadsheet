@@ -108,7 +108,8 @@ export const CellInput = forwardRef<
       if (!rect) return;
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const cursorPos = getCursorPosByXY(x, y);
+      const canvasWidth = canvasRef.current.width;
+      const cursorPos = getCursorPosByXY(x, y, canvasWidth);
       setCursorIndex(cursorPos);
       setSelectionText(null);
       isSelecting.current = true;
@@ -118,7 +119,7 @@ export const CellInput = forwardRef<
         if (!isSelecting.current) return;
         const moveX = moveEvent.clientX - rect.left;
         const moveY = moveEvent.clientY - rect.top;
-        const moveCursor = getCursorPosByXY(moveX, moveY);
+        const moveCursor = getCursorPosByXY(moveX, moveY, canvasWidth);
         if (
           selectionAnchor.current !== null &&
           moveCursor !== selectionAnchor.current
@@ -155,7 +156,6 @@ export const CellInput = forwardRef<
           value.slice(0, cursorIndex) + "\n" + value.slice(cursorIndex);
         setValue(newValue);
         setCursorIndex(cursorIndex + 1);
-        onChange?.(newValue);
       } else if (
         (e.ctrlKey || e.metaKey) &&
         e.key.toLocaleUpperCase() === "A"
@@ -187,14 +187,12 @@ export const CellInput = forwardRef<
         }
         setValue(newValue);
         setCursorIndex(newCursor);
-        onChange?.(newValue);
       } else if (e.key === "Backspace") {
         if (cursorIndex > 0) {
           const newValue =
             value.slice(0, cursorIndex - 1) + value.slice(cursorIndex);
           setValue(newValue);
           setCursorIndex(cursorIndex - 1);
-          onChange?.(newValue);
         }
         e.preventDefault();
       } else if (e.key === "Delete") {
@@ -202,7 +200,6 @@ export const CellInput = forwardRef<
           const newValue =
             value.slice(0, cursorIndex) + value.slice(cursorIndex + 1);
           setValue(newValue);
-          onChange?.(newValue);
         }
         e.preventDefault();
       } else if (e.key === "ArrowLeft") {
@@ -256,7 +253,7 @@ export const CellInput = forwardRef<
         e.preventDefault();
       }
     },
-    [cursorIndex, onChange, value, selectionText],
+    [cursorIndex, value, selectionText],
   );
   // 计算光标位置
   const updateCursorPosition = useCallback(() => {
@@ -282,14 +279,15 @@ export const CellInput = forwardRef<
       currentLineEnd === -1 ? value.length : currentLineEnd,
     );
     const currentLineWidth = ctx.measureText(currentLineContent).width;
+    const canvasWidth = canvasRef.current.width;
     let left = 0;
     if (textAlign === "left") {
       left = beforeTextWidth + fontSize / 2;
     } else if (textAlign === "center") {
-      left = cellWidth / 2 - currentLineWidth / 2 + beforeTextWidth;
+      left = canvasWidth / 2 - currentLineWidth / 2 + beforeTextWidth;
     } else if (textAlign === "right") {
       left =
-        cellWidth -
+        canvasWidth -
         currentLineWidth -
         fontSize / 2 +
         beforeTextWidth +
@@ -299,7 +297,7 @@ export const CellInput = forwardRef<
     const top =
       cursorLine * lineHeight + fontSize / 2 + (cursorLine * fontSize) / 2 - 2;
     setCursorStyle({ left, top: top, height: lineHeight });
-  }, [selectedCell, getFontStyle, value, cursorIndex, cellWidth]);
+  }, [selectedCell, getFontStyle, value, cursorIndex]);
 
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
@@ -403,17 +401,18 @@ export const CellInput = forwardRef<
     }
     // 计算文本总高度
     const totalTextHeight = contents.length * lineHeightPX;
+    const canvasWidth = canvasRef.current.width;
     // 计算文本位置
     const textX = (() => {
-      if (textAlign === "left" && cellWidth <= minWidth) return 0;
-      if (textAlign === "center") return cellWidth / 2;
-      if (textAlign === "right") return cellWidth;
+      if (textAlign === "left" && canvasWidth <= minWidth) return 0;
+      if (textAlign === "center") return canvasWidth / 2;
+      if (textAlign === "right") return canvasWidth;
       return fontSize / 2;
     })();
     if (selectedCell.style.wrap) {
       contents = getWrapContent(ctx, {
         cell: selectedCell,
-        cellWidth,
+        cellWidth: canvasWidth,
       });
     }
     ctx.fillStyle = color;
@@ -432,7 +431,6 @@ export const CellInput = forwardRef<
     lastWidth,
     minSize.width,
     lastHeight,
-    cellWidth,
     getCellPosition,
     getFontStyle,
     value,
