@@ -24,7 +24,7 @@ export const useInput = ({
 }) => {
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
-  const { isFocused, scrollPosition, selectedCell, getCurrentCell } =
+  const { config, isFocused, scrollPosition, selectedCell, getCurrentCell } =
     useStore();
   const { getFontStyle, getFontSize, getWrapContent } = useTools();
   const { getCellPosition } = useComputed();
@@ -168,8 +168,17 @@ export const useInput = ({
       line = Math.max(0, Math.min(line, lines.length - 1));
       let idx = 0;
       const accWidth = 8;
+      const textAlign = selectedCell.style?.textAlign || config.textAlign;
+      const lineWidth = ctx.measureText(lines[line]).width;
+      let offsetX = 0;
+      if (textAlign === "center") {
+        offsetX = (cellWidth - lineWidth) / 2;
+      } else if (textAlign === "right") {
+        offsetX = cellWidth - lineWidth;
+      }
       for (let i = 0; i <= lines[line].length; i++) {
-        const w = ctx.measureText(lines[line].slice(0, i)).width + accWidth;
+        const w =
+          ctx.measureText(lines[line].slice(0, i)).width + accWidth + offsetX;
         if (x < w) {
           idx = i;
           break;
@@ -183,7 +192,7 @@ export const useInput = ({
       cursorPos += idx;
       return cursorPos;
     },
-    [canvasRef, selectedCell, getFontStyle, value],
+    [canvasRef, selectedCell, getFontStyle, value, config.textAlign, cellWidth],
   );
   return {
     lastWidth,

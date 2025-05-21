@@ -263,7 +263,7 @@ export const CellInput = forwardRef<
     if (!canvasRef.current || !selectedCell) return;
     const ctx = canvasRef.current.getContext("2d");
     if (!ctx) return;
-    const { fontSize } = getFontStyle(ctx, {
+    const { fontSize, textAlign } = getFontStyle(ctx, {
       rowIndex: selectedCell.row,
       colIndex: selectedCell.col,
       x: 0,
@@ -274,12 +274,32 @@ export const CellInput = forwardRef<
     const lines = beforeCursor.split("\n");
     const cursorLine = lines.length - 1;
     const cursorColText = lines[lines.length - 1];
-    const left = ctx.measureText(cursorColText).width + 5.5;
+    const beforeTextWidth = ctx.measureText(cursorColText).width;
+    const currentLineStart = beforeCursor.lastIndexOf("\n") + 1;
+    const currentLineEnd = value.indexOf("\n", cursorIndex);
+    const currentLineContent = value.slice(
+      currentLineStart,
+      currentLineEnd === -1 ? value.length : currentLineEnd,
+    );
+    const currentLineWidth = ctx.measureText(currentLineContent).width;
+    let left = 0;
+    if (textAlign === "left") {
+      left = beforeTextWidth + fontSize / 2;
+    } else if (textAlign === "center") {
+      left = cellWidth / 2 - currentLineWidth / 2 + beforeTextWidth;
+    } else if (textAlign === "right") {
+      left =
+        cellWidth -
+        currentLineWidth -
+        fontSize / 2 +
+        beforeTextWidth +
+        fontSize / 2;
+    }
     const lineHeight = ptToPx(fontSize);
     const top =
       cursorLine * lineHeight + fontSize / 2 + (cursorLine * fontSize) / 2 - 2;
     setCursorStyle({ left, top: top, height: lineHeight });
-  }, [selectedCell, getFontStyle, value, cursorIndex]);
+  }, [selectedCell, getFontStyle, value, cursorIndex, cellWidth]);
 
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
@@ -387,8 +407,8 @@ export const CellInput = forwardRef<
     const textX = (() => {
       if (textAlign === "left" && cellWidth <= minWidth) return 0;
       if (textAlign === "center") return cellWidth / 2;
-      if (textAlign === "right") return cellWidth - 5.5;
-      return 5.5;
+      if (textAlign === "right") return cellWidth;
+      return fontSize / 2;
     })();
     if (selectedCell.style.wrap) {
       contents = getWrapContent(ctx, {
@@ -412,12 +432,12 @@ export const CellInput = forwardRef<
     lastWidth,
     minSize.width,
     lastHeight,
+    cellWidth,
     getCellPosition,
     getFontStyle,
     value,
     selectionText,
     config.inputSelectionColor,
-    cellWidth,
     getWrapContent,
   ]);
   useEffect(() => {
