@@ -3,7 +3,6 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -29,7 +28,7 @@ export const CellInput = forwardRef<
 >(({ onChange }, ref) => {
   const rafId = useRef<number | null>(null);
   const [value, setValue] = useState("");
-  const [cursorIndex, setCursorIndex] = useState(0);
+
   const isSelecting = useRef(false);
   const selectionAnchor = useRef<number | null>(null);
   const [selectionText, setSelectionText] = useState<{
@@ -39,13 +38,8 @@ export const CellInput = forwardRef<
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-
   const currentFocusCell = useRef<CellData | null>(null);
-  const [cursorStyle, setCursorStyle] = useState({
-    left: 0,
-    top: 0,
-    height: 20,
-  });
+
   const {
     config,
     headerColsWidth,
@@ -90,7 +84,14 @@ export const CellInput = forwardRef<
       };
     }
   }, [getMergeCellSize, headerColsWidth, headerRowsHeight, selectedCell]);
-  const { lastWidth, lastHeight, getCursorPosByXY, setInputStyle } = useInput({
+  const {
+    lastWidth,
+    lastHeight,
+    cursorIndex,
+    cursorStyle,
+    getCursorPosByXY,
+    setCursorIndex,
+  } = useInput({
     currentFocusCell,
     canvasRef,
     containerRef,
@@ -147,7 +148,7 @@ export const CellInput = forwardRef<
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     },
-    [canvasRef, selectedCell, getCursorPosByXY],
+    [selectedCell, getCursorPosByXY, setCursorIndex],
   );
   // 处理键盘输入
   const handleKeyDown = useCallback(
@@ -335,52 +336,8 @@ export const CellInput = forwardRef<
         e.preventDefault();
       }
     },
-    [cursorIndex, value, selectionText],
+    [selectionText, value, setCursorIndex, cursorIndex],
   );
-  // 计算光标位置
-  const updateCursorPosition = useCallback(() => {
-    if (!canvasRef.current || !selectedCell) return;
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-    const { fontSize, textAlign } = getFontStyle(ctx, {
-      rowIndex: selectedCell.row,
-      colIndex: selectedCell.col,
-      x: 0,
-      y: 0,
-      cell: selectedCell,
-    });
-    const beforeCursor = value.slice(0, cursorIndex);
-    const lines = beforeCursor.split("\n");
-    const cursorLine = lines.length - 1;
-    const cursorColText = lines[lines.length - 1];
-    const beforeTextWidth = ctx.measureText(cursorColText).width;
-    const currentLineStart = beforeCursor.lastIndexOf("\n") + 1;
-    const currentLineEnd = value.indexOf("\n", cursorIndex);
-    const currentLineContent = value.slice(
-      currentLineStart,
-      currentLineEnd === -1 ? value.length : currentLineEnd,
-    );
-    const currentLineWidth = ctx.measureText(currentLineContent).width;
-    const canvasWidth = canvasRef.current.width;
-    let left = 0;
-    if (textAlign === "left") {
-      left = beforeTextWidth + config.inputPadding;
-    } else if (textAlign === "center") {
-      left = canvasWidth / 2 - currentLineWidth / 2 + beforeTextWidth;
-    } else if (textAlign === "right") {
-      left =
-        canvasWidth - currentLineWidth - config.inputPadding + beforeTextWidth;
-    }
-    const lineHeightPT = fontSize + 4;
-    const lineHeightPX = (lineHeightPT * 4) / 3;
-    const totalTextHeight = value.split("\n").length * lineHeightPX;
-    // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
-    const top =
-      canvasRef.current.height / 2 -
-      totalTextHeight / 2 +
-      cursorLine * lineHeightPX;
-    setCursorStyle({ left, top: top, height: lineHeightPX });
-  }, [config.inputPadding, selectedCell, getFontStyle, value, cursorIndex]);
 
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
@@ -409,16 +366,6 @@ export const CellInput = forwardRef<
       currentFocusCell.current = currentCell;
       setSelectionText(null);
       dispatch({ isFocused: true });
-      const size = setInputStyle(
-        currentFocusCell.current.row,
-        currentFocusCell.current.col,
-      );
-      if (size && canvasRef.current) {
-        canvasRef.current.width = size.width;
-        canvasRef.current.height = size.height;
-        canvasRef.current.style.width = `${size.width}px`;
-        canvasRef.current.style.height = `${size.height}px`;
-      }
     },
     blur() {
       handleBlur();
@@ -461,9 +408,15 @@ export const CellInput = forwardRef<
     // 行高间距 4pt
     const lineHeightPT = fontSize + 4;
     const lineHeightPX = (lineHeightPT * 4) / 3;
+    const canvasWidth = canvasRef.current.width;
+    if (selectedCell.style.wrap) {
+      contents = getWrapContent(ctx, {
+        cell: selectedCell,
+        cellWidth: canvasWidth,
+      });
+    }
     // 计算文本总高度
     const totalTextHeight = contents.length * lineHeightPX;
-    const canvasWidth = canvasRef.current.width;
     // 计算文本位置
     const textX = (() => {
       if (textAlign === "left" && canvasWidth <= minWidth) return 0;
@@ -471,7 +424,6 @@ export const CellInput = forwardRef<
       if (textAlign === "right") return canvasWidth - config.inputPadding;
       return config.inputPadding;
     })();
-
     // 绘制选中
     for (let lineIndex = 0; lineIndex < contents.length; lineIndex++) {
       const texts = contents[lineIndex];
@@ -507,13 +459,6 @@ export const CellInput = forwardRef<
       }
       globalStart += texts.length + 1; // +1 是因为换行符
     }
-
-    if (selectedCell.style.wrap) {
-      contents = getWrapContent(ctx, {
-        cell: selectedCell,
-        cellWidth: canvasWidth,
-      });
-    }
     ctx.fillStyle = color;
     // 起始位置 画布高度一半 - 文本总高度一半 + 每行高度的一半
     const startY =
@@ -528,15 +473,15 @@ export const CellInput = forwardRef<
     selectedCell,
     isFocused,
     lastWidth,
-    minSize.width,
     lastHeight,
     getCellPosition,
     getFontStyle,
     value,
-    selectionText,
-    config.inputSelectionColor,
+    minSize.width,
     getWrapContent,
     config.inputPadding,
+    config.inputSelectionColor,
+    selectionText,
   ]);
   useEffect(() => {
     if (!canvasRef.current || !selectedCell) return;
@@ -565,9 +510,6 @@ export const CellInput = forwardRef<
       }
     }
   }, [editingCell, handleBlur]);
-  useLayoutEffect(() => {
-    updateCursorPosition();
-  }, [value, cursorIndex, updateCursorPosition]);
   return (
     <div className="w-full h-full absolute top-0 left-0 pointer-events-none">
       <div

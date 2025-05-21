@@ -3,7 +3,7 @@ import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
 import { ptToPx } from "@/utils";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export const useInput = ({
   currentFocusCell,
@@ -24,9 +24,95 @@ export const useInput = ({
 }) => {
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
+  const [cursorIndex, setCursorIndex] = useState(0);
   const { config, isFocused, scrollPosition, getCurrentCell } = useStore();
   const { getFontStyle, getFontSize, getWrapContent } = useTools();
+  const [cursorStyle, setCursorStyle] = useState({
+    left: 0,
+    top: 0,
+    height: 20,
+  });
   const { getCellPosition } = useComputed();
+  // 计算光标位置
+  const updateCursorPosition = useCallback(
+    (selectedCell: CellData | null) => {
+      if (!canvasRef.current || !selectedCell) return;
+      const ctx = canvasRef.current.getContext("2d");
+      if (!ctx) return;
+      const { fontSize, textAlign } = getFontStyle(ctx, {
+        rowIndex: selectedCell.row,
+        colIndex: selectedCell.col,
+        x: 0,
+        y: 0,
+        cell: selectedCell,
+      });
+      const canvasWidth = canvasRef.current.width;
+      let contents = value.split("\n");
+      if (selectedCell.style.wrap) {
+        contents = getWrapContent(ctx, {
+          cell: selectedCell,
+          cellWidth: canvasWidth,
+        });
+      }
+      // 重新计算光标所在的行数
+      let cursorLine = 0;
+      let charCount = 0;
+      for (let i = 0; i < contents.length; i++) {
+        charCount += contents[i].length + 1; // +1 for the newline character
+        if (charCount > cursorIndex) {
+          cursorLine = i;
+          break;
+        }
+      }
+      let cursorColText = "";
+      let charCount2 = 0;
+      for (let i = 0; i < contents.length; i++) {
+        for (let j = 0; j <= contents[i].length; j++) {
+          if (charCount2 === cursorIndex) {
+            cursorColText = contents[i].slice(0, j);
+          }
+          charCount2++;
+        }
+      }
+      const beforeTextWidth = ctx.measureText(cursorColText).width;
+      const currentLineStart = cursorColText.lastIndexOf("\n") + 1;
+      const currentLineEnd = value.indexOf("\n", cursorIndex);
+      const currentLineContent = value.slice(
+        currentLineStart,
+        currentLineEnd === -1 ? value.length : currentLineEnd,
+      );
+      const currentLineWidth = ctx.measureText(currentLineContent).width;
+      let left = 0;
+      if (textAlign === "left") {
+        left = beforeTextWidth + config.inputPadding;
+      } else if (textAlign === "center") {
+        left = canvasWidth / 2 - currentLineWidth / 2 + beforeTextWidth;
+      } else if (textAlign === "right") {
+        left =
+          canvasWidth -
+          currentLineWidth -
+          config.inputPadding +
+          beforeTextWidth;
+      }
+      const lineHeightPT = fontSize + 4;
+      const lineHeightPX = (lineHeightPT * 4) / 3;
+      const totalTextHeight = contents.length * lineHeightPX;
+      // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
+      const top =
+        lastHeight.current / 2 -
+        totalTextHeight / 2 +
+        cursorLine * lineHeightPX;
+      setCursorStyle({ left, top: top, height: lineHeightPX });
+    },
+    [
+      canvasRef,
+      getFontStyle,
+      value,
+      cursorIndex,
+      getWrapContent,
+      config.inputPadding,
+    ],
+  );
   // 更新输入框大小
   const updateInputSize = useCallback(
     (value: string, selectedCell: CellData | null) => {
@@ -111,6 +197,7 @@ export const useInput = ({
           value,
           currentCell,
         );
+        updateCursorPosition(currentCell);
         if (textAlign === "right") {
           // 减的是左右的 padding
           if (maxLineWidth >= cellWidth - config.inputPadding * 2) {
@@ -128,10 +215,6 @@ export const useInput = ({
         setTimeout(() => {
           containerRef.current?.focus();
         }, 0);
-        if (canvasRef.current) {
-          canvasRef.current.width = cellWidth;
-          canvasRef.current.style.width = `${cellWidth}px`;
-        }
         return {
           width,
           height,
@@ -139,7 +222,6 @@ export const useInput = ({
       }
     },
     [
-      config.inputPadding,
       getCurrentCell,
       currentFocusCell,
       canvasRef,
@@ -147,9 +229,11 @@ export const useInput = ({
       getCellPosition,
       getFontStyle,
       cellWidth,
+      config.inputPadding,
       cellHeight,
       updateInputSize,
       value,
+      updateCursorPosition,
     ],
   );
   useEffect(() => {
@@ -179,7 +263,13 @@ export const useInput = ({
       });
       const lineHeight = ptToPx(fontSize);
       let line = 0;
-      const lines = value.split("\n");
+      let lines = value.split("\n");
+      if (selectedCell.style.wrap) {
+        lines = getWrapContent(ctx, {
+          cell: selectedCell,
+          cellWidth: canvasWidth,
+        });
+      }
       for (let i = 0; i < lines.length; i++) {
         const lineTop = 2 + i * lineHeight + (i * fontSize) / 2;
         const lineBottom = 2 + (i + 1) * lineHeight + ((i + 1) * fontSize) / 2;
@@ -220,13 +310,23 @@ export const useInput = ({
       cursorPos += idx;
       return cursorPos;
     },
-    [canvasRef, getFontStyle, value, config.textAlign, config.inputPadding],
+    [
+      canvasRef,
+      getFontStyle,
+      value,
+      config.textAlign,
+      config.inputPadding,
+      getWrapContent,
+    ],
   );
   return {
     lastWidth,
     lastHeight,
+    cursorStyle,
+    cursorIndex,
     setInputStyle,
     getCursorPosByXY,
     updateInputSize,
+    setCursorIndex,
   };
 };
