@@ -28,7 +28,7 @@ export const CellInput = forwardRef<
 >(({ onChange }, ref) => {
   const rafId = useRef<number | null>(null);
   const [value, setValue] = useState("");
-
+  const [contents, setContents] = useState<string[]>([]);
   const isSelecting = useRef(false);
   const selectionAnchor = useRef<number | null>(null);
   const [selectionText, setSelectionText] = useState<{
@@ -38,8 +38,8 @@ export const CellInput = forwardRef<
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  const isFirstFocus = useRef(true);
   const currentFocusCell = useRef<CellData | null>(null);
-
   const {
     config,
     headerColsWidth,
@@ -64,26 +64,29 @@ export const CellInput = forwardRef<
   }, [editingCell, getCurrentCell]);
   const { getMergeCellSize, getCellPosition } = useComputed();
   const { getFontStyle, getWrapContent } = useTools();
+  const getCellWidthHeight = useCallback(
+    (selectedCell?: CellData | null) => {
+      if (selectedCell) {
+        const cellWidth = headerColsWidth[selectedCell.col];
+        const cellHeight = headerRowsHeight[selectedCell.row];
+        const { width: computedWidth, height: computedHeight } =
+          getMergeCellSize(selectedCell, cellWidth, cellHeight);
+        return {
+          cellWidth: computedWidth,
+          cellHeight: computedHeight,
+        };
+      } else {
+        return {
+          cellWidth: 0,
+          cellHeight: 0,
+        };
+      }
+    },
+    [getMergeCellSize, headerColsWidth, headerRowsHeight],
+  );
   const { cellWidth, cellHeight } = useMemo(() => {
-    if (selectedCell) {
-      const cellWidth = headerColsWidth[selectedCell.col];
-      const cellHeight = headerRowsHeight[selectedCell.row];
-      const { width: computedWidth, height: computedHeight } = getMergeCellSize(
-        selectedCell,
-        cellWidth,
-        cellHeight,
-      );
-      return {
-        cellWidth: computedWidth,
-        cellHeight: computedHeight,
-      };
-    } else {
-      return {
-        cellWidth: 0,
-        cellHeight: 0,
-      };
-    }
-  }, [getMergeCellSize, headerColsWidth, headerRowsHeight, selectedCell]);
+    return getCellWidthHeight(selectedCell);
+  }, [getCellWidthHeight, selectedCell]);
   const {
     lastWidth,
     lastHeight,
@@ -96,11 +99,30 @@ export const CellInput = forwardRef<
     canvasRef,
     containerRef,
     value,
+    contents,
     minSize,
     cellWidth,
     cellHeight,
   });
-
+  useEffect(() => {
+    const ctx = canvasRef.current?.getContext("2d");
+    let contents = value.split("\n");
+    if (ctx && selectedCell?.style.wrap) {
+      contents = getWrapContent(ctx, {
+        cell: selectedCell,
+        cellWidth: cellWidth,
+      });
+    }
+    if (isFirstFocus.current) {
+      if (selectedCell?.style.wrap) {
+        setCursorIndex(() => value.length + (contents.length - 1));
+      } else {
+        setCursorIndex(() => value.length);
+      }
+      isFirstFocus.current = false;
+    }
+    setContents(contents);
+  }, [selectedCell, cellWidth, getWrapContent, value, setCursorIndex]);
   // 监听鼠标按下事件
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -338,7 +360,6 @@ export const CellInput = forwardRef<
     },
     [selectionText, value, setCursorIndex, cursorIndex],
   );
-
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
       containerRef.current.style.display = "none";
@@ -366,13 +387,13 @@ export const CellInput = forwardRef<
       currentFocusCell.current = currentCell;
       setSelectionText(null);
       dispatch({ isFocused: true });
+      isFirstFocus.current = true;
     },
     blur() {
       handleBlur();
     },
     setValue(content) {
       setValue(content);
-      setCursorIndex(content.length);
     },
   }));
   // 绘制输入框
@@ -401,7 +422,6 @@ export const CellInput = forwardRef<
       y,
       cell: selectedCell,
     });
-    let contents = value.split("\n");
     let globalStart = 0;
 
     ctx.textBaseline = "middle";
@@ -409,12 +429,6 @@ export const CellInput = forwardRef<
     const lineHeightPT = fontSize + 4;
     const lineHeightPX = (lineHeightPT * 4) / 3;
     const canvasWidth = canvasRef.current.width;
-    if (selectedCell.style.wrap) {
-      contents = getWrapContent(ctx, {
-        cell: selectedCell,
-        cellWidth,
-      });
-    }
     // 计算文本总高度
     const totalTextHeight = contents.length * lineHeightPX;
     // 计算文本位置
@@ -470,16 +484,14 @@ export const CellInput = forwardRef<
       ctx.fillText(text, textX, textY);
     }
   }, [
+    contents,
     selectedCell,
     isFocused,
     lastWidth,
     lastHeight,
     getCellPosition,
     getFontStyle,
-    value,
     minSize.width,
-    getWrapContent,
-    cellWidth,
     config.inputPadding,
     config.inputSelectionColor,
     selectionText,
@@ -527,7 +539,7 @@ export const CellInput = forwardRef<
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
       >
-        <div className="relative" ref={innerRef}>
+        <div className="relative overflow-hidden" ref={innerRef}>
           <canvas ref={canvasRef} style={{ pointerEvents: "none" }} />
           <div
             key={cursorIndex}
