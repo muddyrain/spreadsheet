@@ -51,7 +51,7 @@ export const useInput = ({
       if (selectedCell.style.wrap) {
         contents = getWrapContent(ctx, {
           cell: selectedCell,
-          cellWidth: canvasWidth,
+          cellWidth: cellWidth,
         });
       }
       // 重新计算光标所在的行数
@@ -267,7 +267,7 @@ export const useInput = ({
       if (selectedCell.style.wrap) {
         lines = getWrapContent(ctx, {
           cell: selectedCell,
-          cellWidth: canvasWidth,
+          cellWidth,
         });
       }
       for (let i = 0; i < lines.length; i++) {
@@ -317,6 +317,7 @@ export const useInput = ({
       config.textAlign,
       config.inputPadding,
       getWrapContent,
+      cellWidth,
     ],
   );
   return {

@@ -412,7 +412,7 @@ export const CellInput = forwardRef<
     if (selectedCell.style.wrap) {
       contents = getWrapContent(ctx, {
         cell: selectedCell,
-        cellWidth: canvasWidth,
+        cellWidth,
       });
     }
     // 计算文本总高度
@@ -479,6 +479,7 @@ export const CellInput = forwardRef<
     value,
     minSize.width,
     getWrapContent,
+    cellWidth,
     config.inputPadding,
     config.inputSelectionColor,
     selectionText,
