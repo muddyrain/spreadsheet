@@ -53,6 +53,24 @@ export const useTools = () => {
       getFontSize,
     ],
   );
+  const wrapText = useCallback(
+    (ctx: CanvasRenderingContext2D, text: string, maxWidth: number) => {
+      const lines: string[] = [];
+      let currentLine = "";
+      for (const char of text) {
+        const testLine = currentLine + char;
+        if (ctx.measureText(testLine).width > maxWidth && currentLine !== "") {
+          lines.push(currentLine);
+          currentLine = char;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+      return lines;
+    },
+    [],
+  );
   const getWrapContent = useCallback(
     (
       ctx: CanvasRenderingContext2D,
@@ -60,28 +78,10 @@ export const useTools = () => {
     ) => {
       if (cell.style?.wrap) {
         const contents = cell.value?.split("\n");
-        const wrapText = (text: string, maxWidth: number) => {
-          const lines: string[] = [];
-          let currentLine = "";
-          for (const char of text) {
-            const testLine = currentLine + char;
-            if (
-              ctx.measureText(testLine).width > maxWidth &&
-              currentLine !== ""
-            ) {
-              lines.push(currentLine);
-              currentLine = char;
-            } else {
-              currentLine = testLine;
-            }
-          }
-          if (currentLine) lines.push(currentLine);
-          return lines;
-        };
         let wrappedContents: string[] = [];
         for (let i = 0; i < contents.length; i++) {
           wrappedContents = wrappedContents.concat(
-            wrapText(contents[i], cellWidth - config.inputPadding * 2),
+            wrapText(ctx, contents[i], cellWidth - config.inputPadding * 2),
           );
         }
         return wrappedContents;
@@ -89,7 +89,7 @@ export const useTools = () => {
         return [];
       }
     },
-    [config.inputPadding],
+    [config.inputPadding, wrapText],
   );
-  return { getFontStyle, getFontSize, getWrapContent };
+  return { getFontStyle, getFontSize, getWrapContent, wrapText };
 };

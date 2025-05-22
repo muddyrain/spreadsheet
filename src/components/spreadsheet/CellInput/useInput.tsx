@@ -9,8 +9,7 @@ export const useInput = ({
   currentFocusCell,
   containerRef,
   canvasRef,
-  value,
-  contents,
+  lines,
   minSize,
   cellWidth,
   cellHeight,
@@ -19,7 +18,7 @@ export const useInput = ({
   containerRef: React.RefObject<HTMLDivElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   value: string;
-  contents: string[];
+  lines: { content: string; startIndex: number }[];
   minSize: { width: number; height: number };
   cellWidth: number;
   cellHeight: number;
@@ -50,33 +49,31 @@ export const useInput = ({
         cell: selectedCell,
       });
       const canvasWidth = canvasRef.current.width;
-      // 重新计算光标所在的行数
+
+      // 重新计算光标所在的行数和列数
       let cursorLine = 0;
+      let cursorCol = 0;
       let charCount = 0;
-      for (let i = 0; i < contents.length; i++) {
-        charCount += contents[i].length + 1; // +1 for the newline character
-        if (charCount > cursorIndex) {
-          cursorLine = i;
+
+      for (let i = 0; i < lines.length; i++) {
+        for (let j = 0; j <= lines[i].content?.length; j++) {
+          if (charCount === cursorIndex) {
+            cursorLine = i;
+            cursorCol = j;
+            break;
+          }
+          charCount++;
+        }
+        if (charCount === cursorIndex) {
           break;
         }
       }
-      let cursorColText = "";
-      let charCount2 = 0;
-      for (let i = 0; i < contents.length; i++) {
-        for (let j = 0; j <= contents[i].length; j++) {
-          if (charCount2 === cursorIndex) {
-            cursorColText = contents[i].slice(0, j);
-          }
-          charCount2++;
-        }
-      }
-      const beforeTextWidth = ctx.measureText(cursorColText).width;
-      const currentLineStart = cursorColText.lastIndexOf("\n") + 1;
-      const currentLineEnd = value.indexOf("\n", cursorIndex);
-      const currentLineContent = value.slice(
-        currentLineStart,
-        currentLineEnd === -1 ? value.length : currentLineEnd,
+      const cursorColText = (lines[cursorLine] || "")?.content?.slice(
+        0,
+        cursorCol,
       );
+      const beforeTextWidth = ctx.measureText(cursorColText).width;
+      const currentLineContent = lines[cursorLine].content;
       const currentLineWidth = ctx.measureText(currentLineContent).width;
       let left = 0;
       if (textAlign === "left") {
@@ -90,24 +87,20 @@ export const useInput = ({
           config.inputPadding +
           beforeTextWidth;
       }
+
       const lineHeightPT = fontSize + 4;
       const lineHeightPX = (lineHeightPT * 4) / 3;
-      const totalTextHeight = contents.length * lineHeightPX;
+      const totalTextHeight = lines.length * lineHeightPX;
+
       // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
       const top =
         lastHeight.current / 2 -
         totalTextHeight / 2 +
         cursorLine * lineHeightPX;
-      setCursorStyle({ left, top: top, height: lineHeightPX });
+
+      setCursorStyle({ left, top, height: lineHeightPX });
     },
-    [
-      canvasRef,
-      getFontStyle,
-      contents,
-      value,
-      cursorIndex,
-      config.inputPadding,
-    ],
+    [canvasRef, getFontStyle, lines, cursorIndex, config.inputPadding],
   );
   // 更新输入框大小
   const updateInputSize = useCallback(
@@ -133,7 +126,7 @@ export const useInput = ({
         cell: selectedCell,
       });
       const maxLineWidth = Math.max(
-        ...contents.map((line) => ctx.measureText(line).width),
+        ...lines.map((line) => ctx.measureText(line.content).width),
       );
       const width = Math.max(
         maxLineWidth + config.inputPadding * 2,
@@ -141,8 +134,7 @@ export const useInput = ({
       );
       lastWidth.current = Math.ceil(width);
       const fontSize = getFontSize(selectedCell);
-      const height =
-        Math.ceil(fontSize * 1.3333 + fontSize / 2) * contents.length;
+      const height = Math.ceil(fontSize * 1.3333 + fontSize / 2) * lines.length;
       lastHeight.current = Math.ceil(height);
       return {
         width: Math.ceil(width),
@@ -151,7 +143,7 @@ export const useInput = ({
       };
     },
     [
-      contents,
+      lines,
       canvasRef,
       getFontSize,
       getFontStyle,
@@ -247,7 +239,7 @@ export const useInput = ({
       });
       const lineHeight = ptToPx(fontSize);
       let line = 0;
-      for (let i = 0; i < contents.length; i++) {
+      for (let i = 0; i < lines.length; i++) {
         const lineTop = 2 + i * lineHeight + (i * fontSize) / 2;
         const lineBottom = 2 + (i + 1) * lineHeight + ((i + 1) * fontSize) / 2;
         if (y >= lineTop && y < lineBottom) {
@@ -255,10 +247,10 @@ export const useInput = ({
           break;
         }
       }
-      line = Math.max(0, Math.min(line, contents.length - 1));
+      line = Math.max(0, Math.min(line, lines.length - 1));
       let idx = 0;
       const textAlign = selectedCell.style?.textAlign || config.textAlign;
-      const lineWidth = ctx.measureText(contents[line]).width;
+      const lineWidth = ctx.measureText(lines[line].content).width;
       let offsetX = 0;
       if (textAlign === "left") {
         offsetX = config.inputPadding;
@@ -267,9 +259,13 @@ export const useInput = ({
       } else if (textAlign === "right") {
         offsetX = canvasWidth - lineWidth - config.inputPadding;
       }
-      for (let i = 0; i <= contents[line].length; i++) {
-        const textWidth = ctx.measureText(contents[line].slice(0, i)).width;
-        const nextCharWidth = ctx.measureText(contents[line].charAt(i)).width;
+      for (let i = 0; i <= lines[line]?.content?.length; i++) {
+        const textWidth = ctx.measureText(
+          lines[line]?.content.slice(0, i),
+        ).width;
+        const nextCharWidth = ctx.measureText(
+          lines[line]?.content.charAt(i),
+        ).width;
         const halfCharWidth = nextCharWidth / 2;
         if (x < textWidth + offsetX + halfCharWidth) {
           idx = i;
@@ -278,16 +274,16 @@ export const useInput = ({
       }
       // 如果点击位置在文本宽度之外，将光标设置为行末
       if (x > lineWidth + offsetX) {
-        idx = contents[line].length;
+        idx = lines[line]?.content.length;
       }
       let cursorPos = 0;
       for (let l = 0; l < line; l++) {
-        cursorPos += contents[l].length + 1;
+        cursorPos += lines[l]?.content.length + 1;
       }
       cursorPos += idx;
       return cursorPos;
     },
-    [canvasRef, getFontStyle, contents, config.textAlign, config.inputPadding],
+    [canvasRef, getFontStyle, lines, config.textAlign, config.inputPadding],
   );
   return {
     lastWidth,

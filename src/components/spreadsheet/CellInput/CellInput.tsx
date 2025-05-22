@@ -28,13 +28,16 @@ export const CellInput = forwardRef<
 >(({ onChange }, ref) => {
   const rafId = useRef<number | null>(null);
   const [value, setValue] = useState("");
-  const [contents, setContents] = useState<string[]>([]);
+  const [lines, setLines] = useState<{ startIndex: number; content: string }[]>(
+    [],
+  );
   const isSelecting = useRef(false);
   const selectionAnchor = useRef<number | null>(null);
   const [selectionText, setSelectionText] = useState<{
     start: number;
     end: number;
   } | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -99,7 +102,7 @@ export const CellInput = forwardRef<
     canvasRef,
     containerRef,
     value,
-    contents,
+    lines,
     minSize,
     cellWidth,
     cellHeight,
@@ -108,20 +111,22 @@ export const CellInput = forwardRef<
     const ctx = canvasRef.current?.getContext("2d");
     let contents = value.split("\n");
     if (ctx && selectedCell?.style.wrap) {
-      contents = getWrapContent(ctx, {
+      selectedCell.value = value;
+      // 获取换行后的内容，但不添加实际的换行符
+      const wrappedContents = getWrapContent(ctx, {
         cell: selectedCell,
         cellWidth: cellWidth,
       });
+      contents = wrappedContents;
     }
-    if (isFirstFocus.current) {
-      if (selectedCell?.style.wrap) {
-        setCursorIndex(() => value.length + (contents.length - 1));
-      } else {
-        setCursorIndex(() => value.length);
-      }
-      isFirstFocus.current = false;
-    }
-    setContents(contents);
+    setLines(
+      contents.map((content, index) => ({
+        startIndex: contents
+          .slice(0, index)
+          .reduce((acc, cur) => acc + cur.length + 1, 0),
+        content,
+      })),
+    );
   }, [selectedCell, cellWidth, getWrapContent, value, setCursorIndex]);
   // 监听鼠标按下事件
   const handleMouseDown = useCallback(
@@ -248,8 +253,8 @@ export const CellInput = forwardRef<
         e.preventDefault();
         e.stopPropagation();
         // 普通字符输入
-        let newValue;
-        let newCursor: number;
+        let newValue = "";
+        let newCursor = 0;
         if (selectionText) {
           // 有选区，替换选中内容
           newValue =
@@ -422,6 +427,7 @@ export const CellInput = forwardRef<
       y,
       cell: selectedCell,
     });
+
     let globalStart = 0;
 
     ctx.textBaseline = "middle";
@@ -430,7 +436,7 @@ export const CellInput = forwardRef<
     const lineHeightPX = (lineHeightPT * 4) / 3;
     const canvasWidth = canvasRef.current.width;
     // 计算文本总高度
-    const totalTextHeight = contents.length * lineHeightPX;
+    const totalTextHeight = lines.length * lineHeightPX;
     // 计算文本位置
     const textX = (() => {
       if (textAlign === "left" && canvasWidth <= minWidth) return 0;
@@ -439,8 +445,8 @@ export const CellInput = forwardRef<
       return config.inputPadding;
     })();
     // 绘制选中
-    for (let lineIndex = 0; lineIndex < contents.length; lineIndex++) {
-      const texts = contents[lineIndex];
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      const texts = lines[lineIndex].content;
       // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
       const startY =
         canvasRef.current.height / 2 -
@@ -478,19 +484,19 @@ export const CellInput = forwardRef<
     const startY =
       canvasRef.current.height / 2 - totalTextHeight / 2 + lineHeightPX / 2;
     // 绘制文本
-    for (let i = 0; i < contents.length; i++) {
-      const text = contents[i];
+    for (let i = 0; i < lines.length; i++) {
+      const text = lines[i].content;
       const textY = startY + i * lineHeightPX;
       ctx.fillText(text, textX, textY);
     }
   }, [
-    contents,
     selectedCell,
     isFocused,
     lastWidth,
     lastHeight,
     getCellPosition,
     getFontStyle,
+    lines,
     minSize.width,
     config.inputPadding,
     config.inputSelectionColor,
