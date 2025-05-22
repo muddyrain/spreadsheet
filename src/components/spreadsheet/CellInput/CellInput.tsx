@@ -28,9 +28,9 @@ export const CellInput = forwardRef<
 >(({ onChange }, ref) => {
   const rafId = useRef<number | null>(null);
   const [value, setValue] = useState("");
-  const [lines, setLines] = useState<{ startIndex: number; content: string }[]>(
-    [],
-  );
+  const [lines, setLines] = useState<
+    { startIndex: number; endIndex: number; content: string }[]
+  >([]);
   const isSelecting = useRef(false);
   const selectionAnchor = useRef<number | null>(null);
   const [selectionText, setSelectionText] = useState<{
@@ -120,12 +120,16 @@ export const CellInput = forwardRef<
       contents = wrappedContents;
     }
     setLines(
-      contents.map((content, index) => ({
-        startIndex: contents
+      contents.map((content, index) => {
+        const startIndex = contents
           .slice(0, index)
-          .reduce((acc, cur) => acc + cur.length + 1, 0),
-        content,
-      })),
+          .reduce((acc, cur) => acc + cur.length + 1, 0);
+        return {
+          startIndex,
+          endIndex: startIndex + content.length,
+          content,
+        };
+      }),
     );
   }, [selectedCell, cellWidth, getWrapContent, value, setCursorIndex]);
   // 监听鼠标按下事件

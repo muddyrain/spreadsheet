@@ -18,7 +18,7 @@ export const useInput = ({
   containerRef: React.RefObject<HTMLDivElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   value: string;
-  lines: { content: string; startIndex: number }[];
+  lines: { content: string; startIndex: number; endIndex: number }[];
   minSize: { width: number; height: number };
   cellWidth: number;
   cellHeight: number;
@@ -41,6 +41,7 @@ export const useInput = ({
       if (!canvasRef.current || !selectedCell) return;
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return;
+      if (lines.length === 0) return;
       const { fontSize, textAlign } = getFontStyle(ctx, {
         rowIndex: selectedCell.row,
         colIndex: selectedCell.col,
@@ -49,31 +50,20 @@ export const useInput = ({
         cell: selectedCell,
       });
       const canvasWidth = canvasRef.current.width;
-
       // 重新计算光标所在的行数和列数
       let cursorLine = 0;
       let cursorCol = 0;
-      let charCount = 0;
-
       for (let i = 0; i < lines.length; i++) {
-        for (let j = 0; j <= lines[i].content?.length; j++) {
-          if (charCount === cursorIndex) {
-            cursorLine = i;
-            cursorCol = j;
-            break;
-          }
-          charCount++;
-        }
-        if (charCount === cursorIndex) {
+        const line = lines[i];
+        if (cursorIndex >= line.startIndex && cursorIndex <= line.endIndex) {
+          cursorLine = i;
+          cursorCol = cursorIndex - line.startIndex;
           break;
         }
       }
-      const cursorColText = (lines[cursorLine] || "")?.content?.slice(
-        0,
-        cursorCol,
-      );
+      const currentLineContent = (lines[cursorLine] || "")?.content;
+      const cursorColText = currentLineContent?.slice(0, cursorCol);
       const beforeTextWidth = ctx.measureText(cursorColText).width;
-      const currentLineContent = lines[cursorLine].content;
       const currentLineWidth = ctx.measureText(currentLineContent).width;
       let left = 0;
       if (textAlign === "left") {
@@ -87,17 +77,14 @@ export const useInput = ({
           config.inputPadding +
           beforeTextWidth;
       }
-
       const lineHeightPT = fontSize + 4;
       const lineHeightPX = (lineHeightPT * 4) / 3;
       const totalTextHeight = lines.length * lineHeightPX;
-
-      // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
+      // // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
       const top =
         lastHeight.current / 2 -
         totalTextHeight / 2 +
         cursorLine * lineHeightPX;
-
       setCursorStyle({ left, top, height: lineHeightPX });
     },
     [canvasRef, getFontStyle, lines, cursorIndex, config.inputPadding],
@@ -230,6 +217,7 @@ export const useInput = ({
       if (!canvasRef.current || !selectedCell) return 0;
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return 0;
+      if (lines.length === 0) return 0;
       const { fontSize } = getFontStyle(ctx, {
         rowIndex: selectedCell.row,
         colIndex: selectedCell.col,
