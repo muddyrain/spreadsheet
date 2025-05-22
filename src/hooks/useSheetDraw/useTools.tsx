@@ -17,6 +17,19 @@ export const useTools = () => {
     },
     [config.fontSize, zoomSize],
   );
+  const getTextAlign = useCallback(
+    (cell: CellData) => {
+      return (cell.style.textAlign || config.textAlign) as CanvasTextAlign;
+    },
+    [config.textAlign],
+  );
+  const getVerticalAlign = useCallback(
+    (cell: CellData) => {
+      return (cell.style.verticalAlign ||
+        config.verticalAlign) as CanvasTextBaseline;
+    },
+    [config.verticalAlign],
+  );
   const getFontStyle = useCallback(
     (ctx: CanvasRenderingContext2D, options: RenderOptions) => {
       const { cell } = options;
@@ -91,5 +104,12 @@ export const useTools = () => {
     },
     [config.inputPadding, wrapText],
   );
-  return { getFontStyle, getFontSize, getWrapContent, wrapText };
+  return {
+    getFontStyle,
+    getFontSize,
+    getTextAlign,
+    getVerticalAlign,
+    getWrapContent,
+    wrapText,
+  };
 };

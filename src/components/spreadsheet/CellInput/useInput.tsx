@@ -26,8 +26,9 @@ export const useInput = ({
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
   const [cursorIndex, setCursorIndex] = useState(0);
+  const [cursorLine, setCursorLine] = useState(0);
   const { config, isFocused, scrollPosition, getCurrentCell } = useStore();
-  const { getFontStyle, getFontSize } = useTools();
+  const { getFontSize, getTextAlign, getVerticalAlign } = useTools();
   const [cursorStyle, setCursorStyle] = useState({
     left: 0,
     top: 0,
@@ -42,13 +43,8 @@ export const useInput = ({
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return;
       if (lines.length === 0) return;
-      const { fontSize, textAlign } = getFontStyle(ctx, {
-        rowIndex: selectedCell.row,
-        colIndex: selectedCell.col,
-        x: 0,
-        y: 0,
-        cell: selectedCell,
-      });
+      const fontSize = getFontSize(selectedCell);
+      const textAlign = getTextAlign(selectedCell);
       const canvasWidth = canvasRef.current.width;
       // 重新计算光标所在的行数和列数
       let cursorLine = 0;
@@ -62,6 +58,7 @@ export const useInput = ({
         }
       }
       const currentLineContent = (lines[cursorLine] || "")?.content;
+      setCursorLine(cursorLine);
       const cursorColText = currentLineContent?.slice(0, cursorCol);
       const beforeTextWidth = ctx.measureText(cursorColText).width;
       const currentLineWidth = ctx.measureText(currentLineContent).width;
@@ -87,7 +84,14 @@ export const useInput = ({
         cursorLine * lineHeightPX;
       setCursorStyle({ left, top, height: lineHeightPX });
     },
-    [canvasRef, getFontStyle, lines, cursorIndex, config.inputPadding],
+    [
+      canvasRef,
+      getFontSize,
+      getTextAlign,
+      lines,
+      cursorIndex,
+      config.inputPadding,
+    ],
   );
   // 更新输入框大小
   const updateInputSize = useCallback(
@@ -105,13 +109,6 @@ export const useInput = ({
           height: minSize.height,
           maxLineWidth: 0,
         };
-      getFontStyle(ctx, {
-        rowIndex: selectedCell?.row || 0,
-        colIndex: selectedCell?.col || 0,
-        x: 0,
-        y: 0,
-        cell: selectedCell,
-      });
       const maxLineWidth = Math.max(
         ...lines.map((line) => ctx.measureText(line.content).width),
       );
@@ -133,7 +130,6 @@ export const useInput = ({
       lines,
       canvasRef,
       getFontSize,
-      getFontStyle,
       minSize.height,
       minSize.width,
       config.inputPadding,
@@ -149,13 +145,8 @@ export const useInput = ({
       if (!ctx) return;
       if (containerRef.current) {
         const { x, y } = getCellPosition(currentCell);
-        const { verticalAlign, textAlign } = getFontStyle(ctx, {
-          rowIndex: currentCell.row,
-          colIndex: currentCell.col,
-          x,
-          y,
-          cell: currentCell,
-        });
+        const verticalAlign = getVerticalAlign(currentCell);
+        const textAlign = getTextAlign(currentCell);
         containerRef.current.style.display = "flex";
         containerRef.current.style.alignItems = verticalAlign;
         containerRef.current.style.minWidth = `${cellWidth + config.inputPadding}px`;
@@ -191,7 +182,8 @@ export const useInput = ({
       canvasRef,
       containerRef,
       getCellPosition,
-      getFontStyle,
+      getVerticalAlign,
+      getTextAlign,
       cellWidth,
       config.inputPadding,
       cellHeight,
@@ -218,13 +210,7 @@ export const useInput = ({
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return 0;
       if (lines.length === 0) return 0;
-      const { fontSize } = getFontStyle(ctx, {
-        rowIndex: selectedCell.row,
-        colIndex: selectedCell.col,
-        x: 0,
-        y: 0,
-        cell: selectedCell,
-      });
+      const fontSize = getFontSize(selectedCell);
       const lineHeight = ptToPx(fontSize);
       let line = 0;
       for (let i = 0; i < lines.length; i++) {
@@ -271,13 +257,15 @@ export const useInput = ({
       cursorPos += idx;
       return cursorPos;
     },
-    [canvasRef, getFontStyle, lines, config.textAlign, config.inputPadding],
+    [canvasRef, lines, getFontSize, config.textAlign, config.inputPadding],
   );
   return {
     lastWidth,
     lastHeight,
     cursorStyle,
     cursorIndex,
+    cursorLine,
+    setCursorLine,
     setInputStyle,
     getCursorPosByXY,
     updateInputSize,

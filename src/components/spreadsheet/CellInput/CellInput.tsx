@@ -41,7 +41,6 @@ export const CellInput = forwardRef<
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const isFirstFocus = useRef(true);
   const currentFocusCell = useRef<CellData | null>(null);
   const {
     config,
@@ -95,6 +94,8 @@ export const CellInput = forwardRef<
     lastHeight,
     cursorIndex,
     cursorStyle,
+    cursorLine,
+    setCursorLine,
     getCursorPosByXY,
     setCursorIndex,
   } = useInput({
@@ -107,20 +108,20 @@ export const CellInput = forwardRef<
     cellWidth,
     cellHeight,
   });
-  useEffect(() => {
-    const ctx = canvasRef.current?.getContext("2d");
-    let contents = value.split("\n");
-    if (ctx && selectedCell?.style.wrap) {
-      selectedCell.value = value;
-      // 获取换行后的内容，但不添加实际的换行符
-      const wrappedContents = getWrapContent(ctx, {
-        cell: selectedCell,
-        cellWidth: cellWidth,
-      });
-      contents = wrappedContents;
-    }
-    setLines(
-      contents.map((content, index) => {
+  const getLines = useCallback(
+    (value: string) => {
+      const ctx = canvasRef.current?.getContext("2d");
+      let contents = value.split("\n");
+      if (ctx && selectedCell?.style.wrap) {
+        selectedCell.value = value;
+        // 获取换行后的内容，但不添加实际的换行符
+        const wrappedContents = getWrapContent(ctx, {
+          cell: selectedCell,
+          cellWidth: cellWidth,
+        });
+        contents = wrappedContents;
+      }
+      const lines = contents.map((content, index) => {
         const startIndex = contents
           .slice(0, index)
           .reduce((acc, cur) => acc + cur.length + 1, 0);
@@ -129,9 +130,22 @@ export const CellInput = forwardRef<
           endIndex: startIndex + content.length,
           content,
         };
-      }),
-    );
-  }, [selectedCell, cellWidth, getWrapContent, value, setCursorIndex]);
+      });
+      return lines;
+    },
+    [cellWidth, getWrapContent, selectedCell],
+  );
+  useEffect(() => {
+    if (!isFocused) return;
+  }, [
+    isFocused,
+    selectedCell,
+    cellWidth,
+    getWrapContent,
+    value,
+    setCursorIndex,
+    getLines,
+  ]);
   // 监听鼠标按下事件
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -258,22 +272,29 @@ export const CellInput = forwardRef<
         e.stopPropagation();
         // 普通字符输入
         let newValue = "";
-        let newCursor = 0;
-        if (selectionText) {
-          // 有选区，替换选中内容
-          newValue =
-            value.slice(0, selectionText.start) +
-            e.key +
-            value.slice(selectionText.end);
-          newCursor = selectionText.start + 1;
-          setSelectionText(null);
-        } else {
-          newValue =
-            value.slice(0, cursorIndex) + e.key + value.slice(cursorIndex);
-          newCursor = cursorIndex + 1;
-        }
+        newValue =
+          value.slice(0, cursorIndex - cursorLine) +
+          e.key +
+          value.slice(cursorIndex - cursorLine);
+        const lines = getLines(newValue);
         setValue(newValue);
-        setCursorIndex(newCursor);
+        const newCursor = cursorIndex + 1;
+        // 找到当前光标所在的行
+        const currentLineIndex = lines.findIndex(
+          (line) => newCursor >= line.startIndex && newCursor <= line.endIndex,
+        );
+        if (cursorLine === currentLineIndex) {
+          setCursorIndex(newCursor);
+        } else {
+          const currentLine = lines[currentLineIndex];
+          if (newCursor + 1 > currentLine?.endIndex) {
+            setCursorIndex(currentLine.endIndex);
+          } else {
+            setCursorIndex(newCursor + 1);
+          }
+          setCursorLine(currentLineIndex);
+        }
+        setLines(lines);
       } else if (e.key === "Backspace") {
         e.preventDefault();
         e.stopPropagation();
@@ -367,7 +388,15 @@ export const CellInput = forwardRef<
         e.preventDefault();
       }
     },
-    [selectionText, value, setCursorIndex, cursorIndex],
+    [
+      selectionText,
+      value,
+      cursorLine,
+      setCursorLine,
+      getLines,
+      setCursorIndex,
+      cursorIndex,
+    ],
   );
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
@@ -396,7 +425,9 @@ export const CellInput = forwardRef<
       currentFocusCell.current = currentCell;
       setSelectionText(null);
       dispatch({ isFocused: true });
-      isFirstFocus.current = true;
+      const lines = getLines(currentCell.value);
+      setLines(lines);
+      setCursorIndex(lines[lines.length - 1]?.endIndex || 0);
     },
     blur() {
       handleBlur();
