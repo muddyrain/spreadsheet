@@ -2,7 +2,6 @@ import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
-import { ptToPx } from "@/utils";
 import React, { useCallback, useRef, useState } from "react";
 import { LineType } from "./CellInput";
 
@@ -16,7 +15,7 @@ export const useInput = ({
   containerRef: React.RefObject<HTMLDivElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   value: string;
-  lines: { content: string; startIndex: number; endIndex: number }[];
+  lines: LineType[];
   minSize: { width: number; height: number };
 }) => {
   const lastWidth = useRef(0);
@@ -60,18 +59,10 @@ export const useInput = ({
       const textAlign = getTextAlign(selectedCell);
       const canvasWidth = canvasRef.current.width;
       // 重新计算光标所在的行数和列数
-      let _cursorLine = 0;
-      let cursorCol = 0;
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (cursorIndex >= line.startIndex && cursorIndex <= line.endIndex) {
-          _cursorLine = i;
-          cursorCol = cursorIndex - line.startIndex;
-          break;
-        }
-      }
-      const currentLineContent = (lines[_cursorLine] || "")?.content || "";
-      cursorLine.current = _cursorLine;
+      const _cursorLine = cursorLine.current;
+      const currentLine = lines[_cursorLine];
+      const currentLineContent = currentLine?.content || "";
+      const cursorCol = Math.max(0, cursorIndex - currentLine?.startIndex || 0);
       const cursorColText = currentLineContent?.slice(0, cursorCol);
       const beforeTextWidth = ctx.measureText(cursorColText).width;
       const currentLineWidth = ctx.measureText(currentLineContent).width;
@@ -101,10 +92,7 @@ export const useInput = ({
   );
   // 更新输入框大小
   const updateInputSize = useCallback(
-    (
-      selectedCell: CellData | null,
-      lines: { content: string; startIndex: number; endIndex: number }[],
-    ) => {
+    (selectedCell: CellData | null, lines: LineType[]) => {
       if (!canvasRef.current)
         return {
           width: minSize.width,
@@ -211,56 +199,58 @@ export const useInput = ({
       selectedCell: CellData,
       lines: LineType[],
     ) => {
-      if (!canvasRef.current || !selectedCell) return 0;
+      if (!canvasRef.current || !selectedCell)
+        return {
+          cursorIndex: 0,
+          cursorLine: 0,
+        };
       const ctx = canvasRef.current.getContext("2d");
-      if (!ctx) return 0;
-      if (lines.length === 0) return 0;
+      if (!ctx || lines.length === 0)
+        return {
+          cursorIndex: 0,
+          cursorLine: 0,
+        };
+      const value = selectedCell.value;
       const fontSize = getFontSize(selectedCell);
-      const lineHeight = ptToPx(fontSize);
-      let line = 0;
-      for (let i = 0; i < lines.length; i++) {
-        const lineTop = 2 + i * lineHeight + (i * fontSize) / 2;
-        const lineBottom = 2 + (i + 1) * lineHeight + ((i + 1) * fontSize) / 2;
-        if (y >= lineTop && y < lineBottom) {
-          line = i;
-          break;
+      const lineHeightPT = fontSize + 4;
+      const lineHeightPX = (lineHeightPT * 4) / 3;
+      // 调整坐标，考虑内边距和滚动
+      const adjustedX = x - config.inputPadding;
+      const adjustedY = y - config.inputPadding;
+      // 计算点击的行号
+      const lineIndex = Math.floor(adjustedY / lineHeightPX);
+      // 确保行号在有效范围内
+      if (lineIndex < 0)
+        return {
+          cursorIndex: 0,
+          cursorLine: 0,
+        };
+      if (lineIndex >= lines.length)
+        return {
+          cursorIndex: value.length,
+          cursorLine: lines.length - 1,
+        };
+      // 获取当前行的文本和信息
+      const line = lines[lineIndex];
+      const startIndex = line.startIndex;
+      const endIndex = Math.min(startIndex + line.content.length, value.length);
+      // 找到最接近的字符位置
+      let bestIndex = startIndex;
+      let minDistance = Infinity;
+      for (let i = startIndex; i <= endIndex; i++) {
+        const textBefore = value.substring(startIndex, i);
+        const textWidth = ctx.measureText(textBefore).width;
+        const distance = Math.abs(textWidth - adjustedX);
+        if (distance < minDistance) {
+          minDistance = distance;
+          bestIndex = i;
         }
       }
-      line = Math.max(0, Math.min(line, lines.length - 1));
-      let idx = 0;
-      const textAlign = selectedCell.style?.textAlign || config.textAlign;
-      const lineWidth = ctx.measureText(lines[line].content).width;
-      let offsetX = 0;
-      if (textAlign === "left") {
-        offsetX = config.inputPadding;
-      } else if (textAlign === "center") {
-        offsetX = (canvasWidth - lineWidth) / 2;
-      } else if (textAlign === "right") {
-        offsetX = canvasWidth - lineWidth - config.inputPadding;
-      }
-      for (let i = 0; i <= lines[line]?.content?.length; i++) {
-        const textWidth = ctx.measureText(
-          lines[line]?.content.slice(0, i),
-        ).width;
-        const nextCharWidth = ctx.measureText(
-          lines[line]?.content.charAt(i),
-        ).width;
-        const halfCharWidth = nextCharWidth / 2;
-        if (x < textWidth + offsetX + halfCharWidth) {
-          idx = i;
-          break;
-        }
-      }
-      // 如果点击位置在文本宽度之外，将光标设置为行末
-      if (x > lineWidth + offsetX) {
-        idx = lines[line]?.content.length;
-      }
-      let cursorPos = 0;
-      for (let l = 0; l < line; l++) {
-        cursorPos += lines[l]?.content.length + 1;
-      }
-      cursorPos += idx;
-      return cursorPos;
+      cursorLine.current = lineIndex;
+      return {
+        cursorIndex: bestIndex,
+        cursorLine: lineIndex,
+      };
     },
     [canvasRef, getFontSize, config.textAlign, config.inputPadding],
   );

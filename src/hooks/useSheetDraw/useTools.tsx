@@ -84,6 +84,12 @@ export const useTools = () => {
     },
     [],
   );
+  const isOverflowMaxWidth = useCallback(
+    (ctx: CanvasRenderingContext2D, text: string, maxWidth: number) => {
+      return ctx.measureText(text).width > maxWidth - config.inputPadding * 2;
+    },
+    [config.inputPadding],
+  );
   const getWrapContent = useCallback(
     (
       ctx: CanvasRenderingContext2D,
@@ -104,6 +110,7 @@ export const useTools = () => {
     },
     [config.inputPadding, wrapText],
   );
+
   return {
     getFontStyle,
     getFontSize,
@@ -111,5 +118,6 @@ export const useTools = () => {
     getVerticalAlign,
     getWrapContent,
     wrapText,
+    isOverflowMaxWidth,
   };
 };

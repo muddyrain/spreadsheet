@@ -21,7 +21,9 @@ export type CellInputRef = {
 export type LineType = {
   startIndex: number;
   endIndex: number;
+  hardLineIndex: number;
   content: string;
+  lineIndex: number;
 };
 export const CellInput = forwardRef<
   CellInputRef,
@@ -65,7 +67,7 @@ export const CellInput = forwardRef<
     };
   }, [config, zoomSize]);
   const { getCellPosition } = useComputed();
-  const { getFontStyle, getWrapContent } = useTools();
+  const { getFontStyle, isOverflowMaxWidth } = useTools();
 
   const {
     lastWidth,
@@ -85,33 +87,93 @@ export const CellInput = forwardRef<
     minSize,
   });
   const getLines = useCallback(
-    (selectedCell: CellData) => {
+    (selectedCell: CellData): LineType[] => {
       const ctx = canvasRef.current?.getContext("2d");
       const value = selectedCell.value;
-      let contents = value.split("\n");
-      if (ctx && selectedCell?.style.wrap) {
-        selectedCell.value = value;
-        const { cellWidth } = getCellWidthHeight(selectedCell);
-        // 获取换行后的内容，但不添加实际的换行符
-        const wrappedContents = getWrapContent(ctx, {
-          cell: selectedCell,
-          cellWidth: cellWidth,
+      if (!ctx) return [];
+      if (!selectedCell?.style.wrap) {
+        // 不启用自动换行，只按硬换行分割
+        const hardLines = value.split("\n");
+        let startIndex = 0;
+        return hardLines.map((line, index) => {
+          const result = {
+            content: line,
+            startIndex: startIndex,
+            lineIndex: index,
+            hardLineIndex: index,
+            endIndex: startIndex + line.length,
+          };
+          startIndex += line.length + 1; // +1 是为了计算换行符
+          return result;
         });
-        contents = wrappedContents;
       }
-      const lines = contents.map((content, index) => {
-        const startIndex = contents
-          .slice(0, index)
-          .reduce((acc, cur) => acc + cur.length + 1, 0);
-        return {
-          startIndex,
-          endIndex: startIndex + content.length,
-          content,
-        };
+
+      // 启用自动换行，需要同时考虑硬换行和软换行
+      const allLines: LineType[] = [];
+      const hardLines = value.split("\n");
+      let currentStartIndex = 0;
+
+      hardLines.forEach((hardLine, hardLineIndex) => {
+        // 如果是空行，直接添加
+        if (hardLine.length === 0) {
+          allLines.push({
+            content: "",
+            startIndex: currentStartIndex,
+            lineIndex: hardLineIndex,
+            hardLineIndex: hardLineIndex,
+            endIndex: currentStartIndex + hardLine.length,
+          });
+          currentStartIndex++; // 空行只包含一个换行符
+          return;
+        }
+
+        // 处理当前硬行的软换行
+        let currentLineStartIndex = currentStartIndex;
+        let remainingText = hardLine;
+
+        while (remainingText.length > 0) {
+          // 找到可以在当前行放置的最长文本
+          let bestLength = 0;
+
+          for (let i = remainingText.length; i >= 0; i--) {
+            const testText = remainingText.substring(0, i);
+            const width = ctx.measureText(testText).width;
+            const { cellWidth } = getCellWidthHeight(selectedCell);
+            // 否则，更新最佳长度和宽度
+            bestLength = i;
+            if (width <= cellWidth - config.inputPadding * 2) {
+              bestLength = i;
+              break;
+            }
+          }
+
+          // 如果找不到合适的长度，强制放置至少一个字符
+          if (bestLength === 0 && remainingText.length > 0) {
+            bestLength = 1;
+          }
+
+          // 添加当前行
+          const lineText = remainingText.substring(0, bestLength);
+          allLines.push({
+            content: lineText,
+            startIndex: currentLineStartIndex,
+            hardLineIndex: hardLineIndex,
+            lineIndex: allLines.length,
+            endIndex: currentLineStartIndex + lineText.length,
+          });
+
+          // 更新剩余文本和起始索引
+          remainingText = remainingText.substring(bestLength);
+          currentLineStartIndex += bestLength;
+        }
+
+        // 更新总起始索引（包括换行符）
+        currentStartIndex += hardLine.length + 1;
       });
-      return lines;
+
+      return allLines;
     },
-    [getCellWidthHeight, getWrapContent],
+    [config.inputPadding, getCellWidthHeight],
   );
   // 监听鼠标按下事件
   const handleMouseDown = useCallback(
@@ -123,24 +185,24 @@ export const CellInput = forwardRef<
       const y = e.clientY - rect.top;
       const canvasWidth = canvasRef.current.width;
       const lines = getLines(selectedCell);
-      const cursorPos = getCursorPosByXY(
+      const { cursorIndex } = getCursorPosByXY(
         x,
         y,
         canvasWidth,
         selectedCell,
         lines,
       );
-      setCursorIndex(cursorPos);
-      updateCursorPosition(selectedCell, lines, cursorPos);
+      setCursorIndex(cursorIndex);
+      updateCursorPosition(selectedCell, lines, cursorIndex);
       setSelectionText(null);
       isSelecting.current = true;
-      selectionAnchor.current = cursorPos;
+      selectionAnchor.current = cursorIndex;
       // 监听 mousemove 和 mouseup
       const handleMouseMove = (moveEvent: MouseEvent) => {
         if (!isSelecting.current) return;
         const moveX = moveEvent.clientX - rect.left;
         const moveY = moveEvent.clientY - rect.top;
-        const moveCursor = getCursorPosByXY(
+        const { cursorIndex } = getCursorPosByXY(
           moveX,
           moveY,
           canvasWidth,
@@ -149,15 +211,15 @@ export const CellInput = forwardRef<
         );
         if (
           selectionAnchor.current !== null &&
-          moveCursor !== selectionAnchor.current
+          cursorIndex !== selectionAnchor.current
         ) {
-          const start = Math.min(selectionAnchor.current, moveCursor);
-          const end = Math.max(selectionAnchor.current, moveCursor);
+          const start = Math.min(selectionAnchor.current, cursorIndex);
+          const end = Math.max(selectionAnchor.current, cursorIndex);
           setSelectionText({ start, end });
-          setCursorIndex(moveCursor);
+          setCursorIndex(cursorIndex);
         } else {
           setSelectionText(null);
-          setCursorIndex(moveCursor);
+          setCursorIndex(cursorIndex);
         }
       };
       const handleMouseUp = () => {
@@ -182,6 +244,10 @@ export const CellInput = forwardRef<
     (e: React.KeyboardEvent) => {
       const key = e.key;
       if (!selectedCell) return;
+      const ctx = canvasRef.current?.getContext("2d");
+      if (!ctx) return;
+      const { cellWidth } = getCellWidthHeight(selectedCell);
+      const wrap = selectedCell.style.wrap;
       // 刷新操作
       if ((e.ctrlKey || e.metaKey) && key === "r") return;
       const copy = () => {
@@ -236,6 +302,7 @@ export const CellInput = forwardRef<
           value.slice(0, cursorIndex) + "\n" + value.slice(cursorIndex);
         setValue(newValue);
         setCursorIndex(cursorIndex + 1);
+        cursorLine.current += 1;
         selectedCell.value = newValue;
         const lines = getLines(selectedCell);
         setLines(lines);
@@ -261,27 +328,27 @@ export const CellInput = forwardRef<
         // 普通字符输入
         let newValue = "";
         newValue =
-          value.slice(0, cursorIndex - cursorLine.current) +
-          e.key +
-          value.slice(cursorIndex - cursorLine.current);
+          value.slice(0, cursorIndex) + e.key + value.slice(cursorIndex);
+        const originLines = getLines(selectedCell);
+        const currentLine = originLines[cursorLine.current];
+        // 当前光标是当前行的最后一个字符 且 输入的字符会导致当前行溢出
+        if (cursorIndex === currentLine?.endIndex && wrap) {
+          const isOverflow = isOverflowMaxWidth(
+            ctx,
+            currentLine.content + e.key,
+            cellWidth,
+          );
+          if (isOverflow) {
+            cursorLine.current += 1;
+          }
+        }
         const lines = getLines({
           ...selectedCell,
           value: newValue,
         });
+
         setValue(newValue);
-        let newCursor = cursorIndex + 1;
-        // 找到当前光标所在的行
-        const currentLineIndex = lines.findIndex(
-          (line) => newCursor >= line.startIndex && newCursor <= line.endIndex,
-        );
-        if (cursorLine.current !== currentLineIndex) {
-          const currentLine = lines[currentLineIndex];
-          if (newCursor + 1 >= currentLine?.endIndex) {
-            newCursor = currentLine.endIndex;
-          } else {
-            newCursor = cursorIndex + 1;
-          }
-        }
+        const newCursor = cursorIndex + 1;
         setCursorIndex(newCursor);
         setLines(lines);
         setInputStyle(selectedCell, lines, newCursor);
@@ -381,6 +448,7 @@ export const CellInput = forwardRef<
     },
     [
       selectedCell,
+      getCellWidthHeight,
       selectionText,
       value,
       cursorIndex,
@@ -388,6 +456,7 @@ export const CellInput = forwardRef<
       setInputStyle,
       onChange,
       cursorLine,
+      isOverflowMaxWidth,
     ],
   );
   const handleBlur = useCallback(() => {
@@ -419,8 +488,8 @@ export const CellInput = forwardRef<
       dispatch({ isFocused: true });
       const lines = getLines(currentCell);
       setLines(lines);
-      setCursorIndex(lines[lines.length - 1]?.endIndex || 0);
-      setInputStyle(currentCell, lines, lines[lines.length - 1]?.endIndex || 0);
+      setCursorIndex(currentCell.value.length);
+      setInputStyle(currentCell, lines, currentCell.value.length);
     },
     blur() {
       handleBlur();
