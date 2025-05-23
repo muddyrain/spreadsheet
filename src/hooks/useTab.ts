@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useStore } from "./useStore";
 import { useComputed } from "./useComputed";
-import { CellInputRef } from "@/components/spreadsheet/CellInput";
 import { MergeSpanType } from "@/types/sheet";
 
-export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
+export const useTab = () => {
   const {
     isFocused,
     selection,
     selectedCell,
+    cellInputActions,
     setEditingCell,
     getCurrentCell,
     setSelectedCell,
@@ -46,7 +46,7 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
     fitCellViewPort(cell.row, cell.col);
 
     if (isFocused) {
-      cellInputRef.current?.blur();
+      cellInputActions?.blur();
       setEditingCell(null);
     }
   }, [
@@ -55,7 +55,7 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
     updateSelectionAndCell,
     fitCellViewPort,
     isFocused,
-    cellInputRef,
+    cellInputActions,
     setEditingCell,
   ]);
 
@@ -182,7 +182,7 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
       // 处理编辑状态
       if (isFocused && cell) {
         setEditingCell({ row, col });
-        cellInputRef.current?.setValue(cell.value);
+        cellInputActions?.setValue(cell.value);
       }
     }
   }, [
@@ -193,7 +193,7 @@ export const useTab = (cellInputRef: React.RefObject<CellInputRef | null>) => {
     setSelectedCell,
     isFocused,
     setEditingCell,
-    cellInputRef,
+    cellInputActions,
     alreadySelectedCell,
     isFindAlreadySelected,
     fitCellViewPort,

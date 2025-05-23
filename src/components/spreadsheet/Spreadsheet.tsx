@@ -154,7 +154,7 @@ const Spreadsheet: React.FC<{
     }
     cellInputRef.current?.focus(rowIndex, colIndex);
   };
-  const { onTabKeyDown } = useTab(cellInputRef);
+  const { onTabKeyDown } = useTab();
   const { onDirectionKeyDown } = useDirection();
   // 键盘 hooks
   useKeyDown({
