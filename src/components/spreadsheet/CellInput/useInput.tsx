@@ -20,7 +20,8 @@ export const useInput = ({
   const lastHeight = useRef(0);
   const cursorLine = useRef(0);
   const { config, selectedCell } = useStore();
-  const { getFontSize, getTextAlign, getVerticalAlign } = useTools();
+  const { getFontSize, getTextAlign, getVerticalAlign, setFontStyle } =
+    useTools();
   const [cursorStyle, setCursorStyle] = useState({
     left: 0,
     top: 0,
@@ -91,18 +92,20 @@ export const useInput = ({
           height: minSize.height,
           maxLineWidth: 0,
         };
+      setFontStyle(ctx, selectedCell);
       const maxLineWidth = Math.max(
         ...lines.map((line) => ctx.measureText(line.content).width),
       );
-      const width = Math.max(
-        maxLineWidth + config.inputPadding * 2,
-        minSize.width,
+      const width = Math.ceil(
+        Math.max(maxLineWidth + config.inputPadding * 2, minSize.width),
       );
       lastWidth.current = width;
       const fontSize = getFontSize(selectedCell);
       const lineHeightPT = fontSize + 4;
       const lineHeightPX = (lineHeightPT * 4) / 3;
-      const height = Math.max(lineHeightPX * lines.length, minSize.height);
+      const height = Math.ceil(
+        Math.max(lineHeightPX * lines.length, minSize.height),
+      );
       lastHeight.current = height;
       return {
         width: width,
@@ -112,10 +115,11 @@ export const useInput = ({
     },
     [
       canvasRef,
-      getFontSize,
-      minSize.height,
       minSize.width,
+      minSize.height,
+      setFontStyle,
       config.inputPadding,
+      getFontSize,
     ],
   );
   // 获取输入框高度 - 真实高度 不包含缩放
@@ -235,7 +239,7 @@ export const useInput = ({
       const endIndex = Math.min(startIndex + line.content.length, value.length);
       const textAlign = getTextAlign(selectedCell);
       const lineWidth = ctx.measureText(line.content).width;
-      let adjustedTextX = adjustedX;
+      let adjustedTextX = adjustedX - config.inputPadding;
       // 根据文本对齐方式调整点击位置
       if (textAlign === "center") {
         const lineStartX =

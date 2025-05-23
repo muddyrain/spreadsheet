@@ -13,9 +13,9 @@ export const useTools = () => {
   }, []);
   const getFontSize = useCallback(
     (cell: CellData, isZoomSize: boolean = true) => {
-      return (
-        (cell.style.fontSize || config.fontSize) * (isZoomSize ? zoomSize : 1)
-      );
+      const fontSize =
+        (cell.style.fontSize || config.fontSize) * (isZoomSize ? zoomSize : 1);
+      return fontSize;
     },
     [config.fontSize, zoomSize],
   );
@@ -32,6 +32,22 @@ export const useTools = () => {
     },
     [config.verticalAlign],
   );
+  const setFontStyle = useCallback(
+    (ctx: CanvasRenderingContext2D, cell: CellData) => {
+      // 设置字体样式
+      const fontWeight = cell.style.fontWeight || "normal";
+      const fontStyle = cell.style.fontStyle || "normal";
+      const fontSize = getFontSize(cell);
+      // 获取 CSS 变量定义的字体
+      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}pt ${fontFamily}`;
+      return {
+        fontWeight,
+        fontStyle,
+        fontSize,
+      };
+    },
+    [fontFamily, getFontSize],
+  );
   const getFontStyle = useCallback(
     (ctx: CanvasRenderingContext2D, options: RenderOptions) => {
       const { cell } = options;
@@ -41,11 +57,7 @@ export const useTools = () => {
       const verticalAlign = cell.style.verticalAlign || config.verticalAlign;
       const color = cell.style.color || config.color || "#000000";
       // 设置字体样式
-      const fontWeight = cell.style.fontWeight || "normal";
-      const fontStyle = cell.style.fontStyle || "normal";
-      const fontSize = getFontSize(cell);
-      // 获取 CSS 变量定义的字体
-      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}pt ${fontFamily}`;
+      const { fontWeight, fontStyle, fontSize } = setFontStyle(ctx, cell);
       // 设置文本对齐
       ctx.textAlign = (cell.style.textAlign as CanvasTextAlign) || "left";
       ctx.textBaseline = "middle";
@@ -63,9 +75,8 @@ export const useTools = () => {
       config.color,
       config.textAlign,
       config.verticalAlign,
-      fontFamily,
       zoomSize,
-      getFontSize,
+      setFontStyle,
     ],
   );
   const wrapText = useCallback(
@@ -117,6 +128,7 @@ export const useTools = () => {
     getFontStyle,
     getFontSize,
     getTextAlign,
+    setFontStyle,
     getVerticalAlign,
     getWrapContent,
     wrapText,
