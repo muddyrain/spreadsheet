@@ -18,6 +18,11 @@ export type CellInputRef = {
   blur: () => void;
   setValue: (value: string) => void;
 };
+export type LineType = {
+  startIndex: number;
+  endIndex: number;
+  content: string;
+};
 export const CellInput = forwardRef<
   CellInputRef,
   {
@@ -28,9 +33,8 @@ export const CellInput = forwardRef<
 >(({ onChange }, ref) => {
   const rafId = useRef<number | null>(null);
   const [value, setValue] = useState("");
-  const [lines, setLines] = useState<
-    { startIndex: number; endIndex: number; content: string }[]
-  >([]);
+  const [cursorIndex, setCursorIndex] = useState(0);
+  const [lines, setLines] = useState<LineType[]>([]);
   const isSelecting = useRef(false);
   const selectionAnchor = useRef<number | null>(null);
   const [selectionText, setSelectionText] = useState<{
@@ -44,12 +48,12 @@ export const CellInput = forwardRef<
   const currentFocusCell = useRef<CellData | null>(null);
   const {
     config,
-    headerColsWidth,
     headerRowsHeight,
     isFocused,
     editingCell,
     data,
     zoomSize,
+    selectedCell,
     getCurrentCell,
     setHeaderRowsHeight,
     dispatch,
@@ -60,44 +64,18 @@ export const CellInput = forwardRef<
       height: config.height * zoomSize,
     };
   }, [config, zoomSize]);
-  const selectedCell = useMemo(() => {
-    if (!editingCell) return null;
-    return getCurrentCell(editingCell.row, editingCell.col);
-  }, [editingCell, getCurrentCell]);
-  const { getMergeCellSize, getCellPosition } = useComputed();
+  const { getCellPosition } = useComputed();
   const { getFontStyle, getWrapContent } = useTools();
-  const getCellWidthHeight = useCallback(
-    (selectedCell?: CellData | null) => {
-      if (selectedCell) {
-        const cellWidth = headerColsWidth[selectedCell.col];
-        const cellHeight = headerRowsHeight[selectedCell.row];
-        const { width: computedWidth, height: computedHeight } =
-          getMergeCellSize(selectedCell, cellWidth, cellHeight);
-        return {
-          cellWidth: computedWidth,
-          cellHeight: computedHeight,
-        };
-      } else {
-        return {
-          cellWidth: 0,
-          cellHeight: 0,
-        };
-      }
-    },
-    [getMergeCellSize, headerColsWidth, headerRowsHeight],
-  );
-  const { cellWidth, cellHeight } = useMemo(() => {
-    return getCellWidthHeight(selectedCell);
-  }, [getCellWidthHeight, selectedCell]);
+
   const {
     lastWidth,
     lastHeight,
-    cursorIndex,
     cursorStyle,
     cursorLine,
-    setCursorLine,
+    setInputStyle,
     getCursorPosByXY,
-    setCursorIndex,
+    getCellWidthHeight,
+    updateCursorPosition,
   } = useInput({
     currentFocusCell,
     canvasRef,
@@ -105,15 +83,15 @@ export const CellInput = forwardRef<
     value,
     lines,
     minSize,
-    cellWidth,
-    cellHeight,
   });
   const getLines = useCallback(
-    (value: string) => {
+    (selectedCell: CellData) => {
       const ctx = canvasRef.current?.getContext("2d");
+      const value = selectedCell.value;
       let contents = value.split("\n");
       if (ctx && selectedCell?.style.wrap) {
         selectedCell.value = value;
+        const { cellWidth } = getCellWidthHeight(selectedCell);
         // 获取换行后的内容，但不添加实际的换行符
         const wrappedContents = getWrapContent(ctx, {
           cell: selectedCell,
@@ -133,19 +111,8 @@ export const CellInput = forwardRef<
       });
       return lines;
     },
-    [cellWidth, getWrapContent, selectedCell],
+    [getCellWidthHeight, getWrapContent],
   );
-  useEffect(() => {
-    if (!isFocused) return;
-  }, [
-    isFocused,
-    selectedCell,
-    cellWidth,
-    getWrapContent,
-    value,
-    setCursorIndex,
-    getLines,
-  ]);
   // 监听鼠标按下事件
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -155,8 +122,16 @@ export const CellInput = forwardRef<
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const canvasWidth = canvasRef.current.width;
-      const cursorPos = getCursorPosByXY(x, y, canvasWidth, selectedCell);
+      const lines = getLines(selectedCell);
+      const cursorPos = getCursorPosByXY(
+        x,
+        y,
+        canvasWidth,
+        selectedCell,
+        lines,
+      );
       setCursorIndex(cursorPos);
+      updateCursorPosition(selectedCell, lines, cursorPos);
       setSelectionText(null);
       isSelecting.current = true;
       selectionAnchor.current = cursorPos;
@@ -170,6 +145,7 @@ export const CellInput = forwardRef<
           moveY,
           canvasWidth,
           selectedCell,
+          lines,
         );
         if (
           selectionAnchor.current !== null &&
@@ -193,12 +169,19 @@ export const CellInput = forwardRef<
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     },
-    [selectedCell, getCursorPosByXY, setCursorIndex],
+    [
+      selectedCell,
+      getCursorPosByXY,
+      updateCursorPosition,
+      setCursorIndex,
+      getLines,
+    ],
   );
   // 处理键盘输入
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const key = e.key;
+      if (!selectedCell) return;
       // 刷新操作
       if ((e.ctrlKey || e.metaKey) && key === "r") return;
       const copy = () => {
@@ -253,6 +236,11 @@ export const CellInput = forwardRef<
           value.slice(0, cursorIndex) + "\n" + value.slice(cursorIndex);
         setValue(newValue);
         setCursorIndex(cursorIndex + 1);
+        selectedCell.value = newValue;
+        const lines = getLines(selectedCell);
+        setLines(lines);
+        setInputStyle(selectedCell, lines, cursorIndex + 1);
+        onChange(newValue, selectedCell);
       } else if (
         (e.ctrlKey || e.metaKey) &&
         e.key.toLocaleUpperCase() === "A"
@@ -273,28 +261,31 @@ export const CellInput = forwardRef<
         // 普通字符输入
         let newValue = "";
         newValue =
-          value.slice(0, cursorIndex - cursorLine) +
+          value.slice(0, cursorIndex - cursorLine.current) +
           e.key +
-          value.slice(cursorIndex - cursorLine);
-        const lines = getLines(newValue);
+          value.slice(cursorIndex - cursorLine.current);
+        const lines = getLines({
+          ...selectedCell,
+          value: newValue,
+        });
         setValue(newValue);
-        const newCursor = cursorIndex + 1;
+        let newCursor = cursorIndex + 1;
         // 找到当前光标所在的行
         const currentLineIndex = lines.findIndex(
           (line) => newCursor >= line.startIndex && newCursor <= line.endIndex,
         );
-        if (cursorLine === currentLineIndex) {
-          setCursorIndex(newCursor);
-        } else {
+        if (cursorLine.current !== currentLineIndex) {
           const currentLine = lines[currentLineIndex];
-          if (newCursor + 1 > currentLine?.endIndex) {
-            setCursorIndex(currentLine.endIndex);
+          if (newCursor + 1 >= currentLine?.endIndex) {
+            newCursor = currentLine.endIndex;
           } else {
-            setCursorIndex(newCursor + 1);
+            newCursor = cursorIndex + 1;
           }
-          setCursorLine(currentLineIndex);
         }
+        setCursorIndex(newCursor);
         setLines(lines);
+        setInputStyle(selectedCell, lines, newCursor);
+        onChange(newValue, selectedCell);
       } else if (e.key === "Backspace") {
         e.preventDefault();
         e.stopPropagation();
@@ -389,13 +380,14 @@ export const CellInput = forwardRef<
       }
     },
     [
+      selectedCell,
       selectionText,
       value,
-      cursorLine,
-      setCursorLine,
-      getLines,
-      setCursorIndex,
       cursorIndex,
+      getLines,
+      setInputStyle,
+      onChange,
+      cursorLine,
     ],
   );
   const handleBlur = useCallback(() => {
@@ -425,9 +417,10 @@ export const CellInput = forwardRef<
       currentFocusCell.current = currentCell;
       setSelectionText(null);
       dispatch({ isFocused: true });
-      const lines = getLines(currentCell.value);
+      const lines = getLines(currentCell);
       setLines(lines);
       setCursorIndex(lines[lines.length - 1]?.endIndex || 0);
+      setInputStyle(currentCell, lines, lines[lines.length - 1]?.endIndex || 0);
     },
     blur() {
       handleBlur();
@@ -547,15 +540,7 @@ export const CellInput = forwardRef<
         cancelAnimationFrame(rafId.current);
       }
     };
-  }, [
-    value,
-    cellHeight,
-    selectedCell,
-    getCellPosition,
-    getFontStyle,
-    drawInput,
-    data,
-  ]);
+  }, [value, selectedCell, getCellPosition, getFontStyle, drawInput, data]);
   useEffect(() => {
     if (currentFocusCell.current && editingCell) {
       const { row, col } = currentFocusCell.current;

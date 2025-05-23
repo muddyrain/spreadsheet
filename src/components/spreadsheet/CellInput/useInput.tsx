@@ -3,16 +3,14 @@ import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
 import { ptToPx } from "@/utils";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
+import { LineType } from "./CellInput";
 
 export const useInput = ({
   currentFocusCell,
   containerRef,
   canvasRef,
-  lines,
   minSize,
-  cellWidth,
-  cellHeight,
 }: {
   currentFocusCell: React.RefObject<CellData | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -20,45 +18,60 @@ export const useInput = ({
   value: string;
   lines: { content: string; startIndex: number; endIndex: number }[];
   minSize: { width: number; height: number };
-  cellWidth: number;
-  cellHeight: number;
 }) => {
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
-  const [cursorIndex, setCursorIndex] = useState(0);
-  const [cursorLine, setCursorLine] = useState(0);
-  const { config, isFocused, scrollPosition, getCurrentCell } = useStore();
+  const cursorLine = useRef(0);
+  const { config, headerColsWidth, headerRowsHeight } = useStore();
   const { getFontSize, getTextAlign, getVerticalAlign } = useTools();
   const [cursorStyle, setCursorStyle] = useState({
     left: 0,
     top: 0,
     height: 20,
   });
-  const { getCellPosition } = useComputed();
-
+  const { getCellPosition, getMergeCellSize } = useComputed();
+  const getCellWidthHeight = useCallback(
+    (selectedCell?: CellData | null) => {
+      if (selectedCell) {
+        const cellWidth = headerColsWidth[selectedCell.col];
+        const cellHeight = headerRowsHeight[selectedCell.row];
+        const { width: computedWidth, height: computedHeight } =
+          getMergeCellSize(selectedCell, cellWidth, cellHeight);
+        return {
+          cellWidth: computedWidth,
+          cellHeight: computedHeight,
+        };
+      } else {
+        return {
+          cellWidth: 0,
+          cellHeight: 0,
+        };
+      }
+    },
+    [getMergeCellSize, headerColsWidth, headerRowsHeight],
+  );
   // 计算光标位置
   const updateCursorPosition = useCallback(
-    (selectedCell: CellData | null) => {
+    (selectedCell: CellData | null, lines: LineType[], cursorIndex: number) => {
       if (!canvasRef.current || !selectedCell) return;
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return;
-      if (lines.length === 0) return;
       const fontSize = getFontSize(selectedCell);
       const textAlign = getTextAlign(selectedCell);
       const canvasWidth = canvasRef.current.width;
       // 重新计算光标所在的行数和列数
-      let cursorLine = 0;
+      let _cursorLine = 0;
       let cursorCol = 0;
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         if (cursorIndex >= line.startIndex && cursorIndex <= line.endIndex) {
-          cursorLine = i;
+          _cursorLine = i;
           cursorCol = cursorIndex - line.startIndex;
           break;
         }
       }
-      const currentLineContent = (lines[cursorLine] || "")?.content;
-      setCursorLine(cursorLine);
+      const currentLineContent = (lines[_cursorLine] || "")?.content || "";
+      cursorLine.current = _cursorLine;
       const cursorColText = currentLineContent?.slice(0, cursorCol);
       const beforeTextWidth = ctx.measureText(cursorColText).width;
       const currentLineWidth = ctx.measureText(currentLineContent).width;
@@ -76,26 +89,22 @@ export const useInput = ({
       }
       const lineHeightPT = fontSize + 4;
       const lineHeightPX = (lineHeightPT * 4) / 3;
-      const totalTextHeight = lines.length * lineHeightPX;
+      const totalTextHeight = Math.max(lines.length, 1) * lineHeightPX;
       // // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
       const top =
         lastHeight.current / 2 -
         totalTextHeight / 2 +
-        cursorLine * lineHeightPX;
+        _cursorLine * lineHeightPX;
       setCursorStyle({ left, top, height: lineHeightPX });
     },
-    [
-      canvasRef,
-      getFontSize,
-      getTextAlign,
-      lines,
-      cursorIndex,
-      config.inputPadding,
-    ],
+    [canvasRef, getFontSize, getTextAlign, config.inputPadding],
   );
   // 更新输入框大小
   const updateInputSize = useCallback(
-    (selectedCell: CellData | null) => {
+    (
+      selectedCell: CellData | null,
+      lines: { content: string; startIndex: number; endIndex: number }[],
+    ) => {
       if (!canvasRef.current)
         return {
           width: minSize.width,
@@ -118,7 +127,10 @@ export const useInput = ({
       );
       lastWidth.current = Math.ceil(width);
       const fontSize = getFontSize(selectedCell);
-      const height = Math.ceil(fontSize * 1.3333 + fontSize / 2) * lines.length;
+      const height = Math.max(
+        Math.ceil(fontSize * 1.3333 + fontSize / 2) * lines.length,
+        minSize.height,
+      );
       lastHeight.current = Math.ceil(height);
       return {
         width: Math.ceil(width),
@@ -127,7 +139,6 @@ export const useInput = ({
       };
     },
     [
-      lines,
       canvasRef,
       getFontSize,
       minSize.height,
@@ -137,13 +148,13 @@ export const useInput = ({
   );
   // 设置 input 样式
   const setInputStyle = useCallback(
-    (rowIndex: number, colIndex: number) => {
-      const currentCell = getCurrentCell(rowIndex, colIndex);
+    (currentCell: CellData | null, lines: LineType[], cursorIndex: number) => {
       if (!currentCell) return;
       currentFocusCell.current = currentCell;
       const ctx = canvasRef.current?.getContext("2d");
       if (!ctx) return;
       if (containerRef.current) {
+        const { cellWidth, cellHeight } = getCellWidthHeight(currentCell);
         const { x, y } = getCellPosition(currentCell);
         const verticalAlign = getVerticalAlign(currentCell);
         const textAlign = getTextAlign(currentCell);
@@ -151,8 +162,11 @@ export const useInput = ({
         containerRef.current.style.alignItems = verticalAlign;
         containerRef.current.style.minWidth = `${cellWidth + config.inputPadding}px`;
         containerRef.current.style.minHeight = `${cellHeight + config.inputPadding}px`;
-        const { width, height, maxLineWidth } = updateInputSize(currentCell);
-        updateCursorPosition(currentCell);
+        const { width, height, maxLineWidth } = updateInputSize(
+          currentCell,
+          lines,
+        );
+        updateCursorPosition(currentCell, lines, cursorIndex);
         if (textAlign === "right") {
           // 减的是左右的 padding
           if (maxLineWidth >= cellWidth - config.inputPadding * 2) {
@@ -177,35 +191,26 @@ export const useInput = ({
       }
     },
     [
-      getCurrentCell,
       currentFocusCell,
       canvasRef,
       containerRef,
+      getCellWidthHeight,
       getCellPosition,
       getVerticalAlign,
       getTextAlign,
-      cellWidth,
       config.inputPadding,
-      cellHeight,
       updateInputSize,
       updateCursorPosition,
     ],
   );
-  useEffect(() => {
-    if (!currentFocusCell.current) return;
-    if (isFocused) {
-      setInputStyle(currentFocusCell.current.row, currentFocusCell.current.col);
-    }
-  }, [
-    scrollPosition,
-    isFocused,
-    cellWidth,
-    cellHeight,
-    currentFocusCell,
-    setInputStyle,
-  ]);
   const getCursorPosByXY = useCallback(
-    (x: number, y: number, canvasWidth: number, selectedCell: CellData) => {
+    (
+      x: number,
+      y: number,
+      canvasWidth: number,
+      selectedCell: CellData,
+      lines: LineType[],
+    ) => {
       if (!canvasRef.current || !selectedCell) return 0;
       const ctx = canvasRef.current.getContext("2d");
       if (!ctx) return 0;
@@ -257,18 +262,17 @@ export const useInput = ({
       cursorPos += idx;
       return cursorPos;
     },
-    [canvasRef, lines, getFontSize, config.textAlign, config.inputPadding],
+    [canvasRef, getFontSize, config.textAlign, config.inputPadding],
   );
   return {
     lastWidth,
     lastHeight,
     cursorStyle,
-    cursorIndex,
     cursorLine,
-    setCursorLine,
     setInputStyle,
     getCursorPosByXY,
+    updateCursorPosition,
     updateInputSize,
-    setCursorIndex,
+    getCellWidthHeight,
   };
 };
