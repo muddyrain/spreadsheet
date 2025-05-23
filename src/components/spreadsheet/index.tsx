@@ -155,6 +155,7 @@ const useLocalState = () => {
     isMouseDown: false,
     sideLineMode: null,
     currentSideLinePosition: [-1, -1],
+    cellInputActions: null,
   };
   const [state, dispatch] = useSetState(initialState);
   const localState = useMemo(() => {

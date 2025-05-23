@@ -6,7 +6,13 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { SheetTabs } from "./SheetTabs";
 
 export const Footer: FC = () => {
-  const { zoomSize, currentCtrlKey, setZoomSize } = useStore();
+  const {
+    zoomSize,
+    selectedCell,
+    cellInputActions,
+    currentCtrlKey,
+    setZoomSize,
+  } = useStore();
   return (
     <div className="relative flex gap-x-1 bg-zinc-50 px-6 h-10 z-[1]">
       <SheetTabs />
@@ -17,6 +23,9 @@ export const Footer: FC = () => {
             size={"sm"}
             onClick={() => {
               setZoomSize(zoomSize - 0.1);
+              if (selectedCell) {
+                cellInputActions?.updateInputSize(selectedCell);
+              }
             }}
           >
             <Minus />
@@ -27,6 +36,9 @@ export const Footer: FC = () => {
             className="text-sm w-16 text-center cursor-pointer select-none"
             onClick={() => {
               setZoomSize(1);
+              if (selectedCell) {
+                cellInputActions?.updateInputSize(selectedCell);
+              }
             }}
           >
             {parseInt((zoomSize * 100).toString())}%
@@ -38,6 +50,9 @@ export const Footer: FC = () => {
             size={"sm"}
             onClick={() => {
               setZoomSize(zoomSize + 0.1);
+              if (selectedCell) {
+                cellInputActions?.updateInputSize(selectedCell);
+              }
             }}
           >
             <Plus />

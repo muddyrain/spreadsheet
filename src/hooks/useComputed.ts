@@ -427,6 +427,26 @@ export const useComputed = () => {
       setScrollPosition,
     ],
   );
+  const getCellWidthHeight = useCallback(
+    (selectedCell?: CellData | null) => {
+      if (selectedCell) {
+        const cellWidth = headerColsWidth[selectedCell.col];
+        const cellHeight = headerRowsHeight[selectedCell.row];
+        const { width: computedWidth, height: computedHeight } =
+          getMergeCellSize(selectedCell, cellWidth, cellHeight);
+        return {
+          cellWidth: computedWidth,
+          cellHeight: computedHeight,
+        };
+      } else {
+        return {
+          cellWidth: 0,
+          cellHeight: 0,
+        };
+      }
+    },
+    [getMergeCellSize, headerColsWidth, headerRowsHeight],
+  );
   return {
     findIndexByAccumulate,
     getMergeCellSize,
@@ -445,5 +465,6 @@ export const useComputed = () => {
     getLeft,
     getTop,
     getRight,
+    getCellWidthHeight,
   };
 };

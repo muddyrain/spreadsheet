@@ -8,8 +8,14 @@ export const useSheetScroll = (config: {
   viewportWidth: number;
   viewportHeight: number;
 }) => {
-  const { zoomSize, scrollPosition, setZoomSize, setScrollPosition } =
-    useStore();
+  const {
+    selectedCell,
+    zoomSize,
+    cellInputActions,
+    scrollPosition,
+    setZoomSize,
+    setScrollPosition,
+  } = useStore();
   const [isDragging, setIsDragging] = useState(false);
   const [dragType, setDragType] = useState<"horizontal" | "vertical" | null>(
     null,
@@ -113,6 +119,9 @@ export const useSheetScroll = (config: {
         } else {
           setZoomSize(zoomSize - 0.1);
         }
+        if (selectedCell) {
+          cellInputActions?.updateInputSize(selectedCell);
+        }
         return;
       }
       const maxScrollX = config.totalWidth - config.viewportWidth;
@@ -145,7 +154,19 @@ export const useSheetScroll = (config: {
         });
       }
     },
-    [scrollPosition, zoomSize, config, setScrollPosition, setZoomSize],
+    [
+      config.totalWidth,
+      config.viewportWidth,
+      config.totalHeight,
+      config.viewportHeight,
+      scrollPosition.x,
+      scrollPosition.y,
+      selectedCell,
+      setZoomSize,
+      zoomSize,
+      cellInputActions,
+      setScrollPosition,
+    ],
   );
 
   // handleScrollbarDragEnd 只用于外部主动取消拖动（一般用不到）

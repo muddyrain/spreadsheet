@@ -4,7 +4,7 @@ import { Canvas } from "./Canvas";
 import { filterData } from "../../utils/filterData";
 import _ from "lodash";
 import { Header } from "./Header/index";
-import { CellInput, CellInputRef } from "./CellInput";
+import { CellInput, CellInputActionsType } from "./CellInput";
 import { useKeyDown } from "@/hooks/useKeyDown";
 import { Current } from "./Current";
 import { useStore } from "@/hooks/useStore";
@@ -29,7 +29,7 @@ const Spreadsheet: React.FC<{
     getCurrentCell,
     dispatch,
   } = useStore();
-  const cellInputRef = useRef<CellInputRef>(null);
+  const cellInputRef = useRef<CellInputActionsType>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const handleSelectAll = () => {
     setSelection({
@@ -233,6 +233,7 @@ const Spreadsheet: React.FC<{
               if (type === "wrap") {
                 onCellDoubleClick(currentCell.row, currentCell.col);
               }
+              cellInputRef.current?.updateInputSize(currentCell);
             }
           } else {
             clearSelection();

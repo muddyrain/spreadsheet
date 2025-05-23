@@ -10,6 +10,7 @@ export const useCursor = (options: {
   const { currentHoverCell, canvasRef } = options;
   const {
     data,
+    selectedCell,
     scrollPosition,
     headerColsWidth,
     headerRowsHeight,
@@ -18,6 +19,7 @@ export const useCursor = (options: {
     currentSideLinePosition,
     isMouseDown,
     zoomSize,
+    cellInputActions,
     dispatch,
     setHeaderColsWidth,
     setHeaderRowsHeight,
@@ -191,11 +193,16 @@ export const useCursor = (options: {
           currentSideLinePosition: [-1, state.currentSideLinePosition[1]],
         }));
       }
+      if (selectedCell) {
+        cellInputActions?.updateInputSize(selectedCell);
+      }
     }
   }, [
     clearState,
     getLeft,
     getTop,
+    selectedCell,
+    cellInputActions,
     currentSideLineIndex,
     currentSideLinePosition,
     headerColsWidth,

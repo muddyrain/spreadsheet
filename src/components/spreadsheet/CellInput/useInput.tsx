@@ -2,53 +2,38 @@ import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { LineType } from "./CellInput";
 
 export const useInput = ({
   currentFocusCell,
   containerRef,
   canvasRef,
-  minSize,
 }: {
   currentFocusCell: React.RefObject<CellData | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   value: string;
   lines: LineType[];
-  minSize: { width: number; height: number };
 }) => {
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
   const cursorLine = useRef(0);
-  const { config, headerColsWidth, headerRowsHeight } = useStore();
+  const { config, selectedCell } = useStore();
   const { getFontSize, getTextAlign, getVerticalAlign } = useTools();
   const [cursorStyle, setCursorStyle] = useState({
     left: 0,
     top: 0,
     height: 20,
   });
-  const { getCellPosition, getMergeCellSize } = useComputed();
-  const getCellWidthHeight = useCallback(
-    (selectedCell?: CellData | null) => {
-      if (selectedCell) {
-        const cellWidth = headerColsWidth[selectedCell.col];
-        const cellHeight = headerRowsHeight[selectedCell.row];
-        const { width: computedWidth, height: computedHeight } =
-          getMergeCellSize(selectedCell, cellWidth, cellHeight);
-        return {
-          cellWidth: computedWidth,
-          cellHeight: computedHeight,
-        };
-      } else {
-        return {
-          cellWidth: 0,
-          cellHeight: 0,
-        };
-      }
-    },
-    [getMergeCellSize, headerColsWidth, headerRowsHeight],
-  );
+  const { getCellPosition, getCellWidthHeight } = useComputed();
+  const minSize = useMemo(() => {
+    const { cellWidth } = getCellWidthHeight(selectedCell);
+    return {
+      width: cellWidth,
+      height: config.height,
+    };
+  }, [selectedCell, config, getCellWidthHeight]);
   // 计算光标位置
   const updateCursorPosition = useCallback(
     (selectedCell: CellData | null, lines: LineType[], cursorIndex: number) => {
@@ -113,16 +98,15 @@ export const useInput = ({
         maxLineWidth + config.inputPadding * 2,
         minSize.width,
       );
-      lastWidth.current = Math.ceil(width);
+      lastWidth.current = width;
       const fontSize = getFontSize(selectedCell);
-      const height = Math.max(
-        Math.ceil(fontSize * 1.3333 + fontSize / 2) * lines.length,
-        minSize.height,
-      );
-      lastHeight.current = Math.ceil(height);
+      const lineHeightPT = fontSize + 4;
+      const lineHeightPX = (lineHeightPT * 4) / 3;
+      const height = Math.max(lineHeightPX * lines.length, minSize.height);
+      lastHeight.current = height;
       return {
-        width: Math.ceil(width),
-        height: Math.ceil(height),
+        width: width,
+        height: height,
         maxLineWidth,
       };
     },
@@ -133,6 +117,21 @@ export const useInput = ({
       minSize.width,
       config.inputPadding,
     ],
+  );
+  // 获取输入框高度 - 真实高度 不包含缩放
+  const getInputHeight = useCallback(
+    (selectedCell: CellData | null, lines: LineType[]) => {
+      if (selectedCell) {
+        const fontSize = getFontSize(selectedCell, false);
+        const lineHeightPT = fontSize + 4;
+        const lineHeightPX = (lineHeightPT * 4) / 3;
+        const height = Math.max(lineHeightPX * lines.length, minSize.height);
+        return height;
+      } else {
+        return minSize.height;
+      }
+    },
+    [getFontSize, minSize.height],
   );
   // 设置 input 样式
   const setInputStyle = useCallback(
@@ -215,7 +214,7 @@ export const useInput = ({
       const lineHeightPT = fontSize + 4;
       const lineHeightPX = (lineHeightPT * 4) / 3;
       // 调整坐标，考虑内边距和滚动
-      const adjustedX = x - config.inputPadding;
+      const adjustedX = x;
       const adjustedY = y - config.inputPadding;
       // 计算点击的行号
       const lineIndex = Math.floor(adjustedY / lineHeightPX);
@@ -234,13 +233,25 @@ export const useInput = ({
       const line = lines[lineIndex];
       const startIndex = line.startIndex;
       const endIndex = Math.min(startIndex + line.content.length, value.length);
+      const textAlign = getTextAlign(selectedCell);
+      const lineWidth = ctx.measureText(line.content).width;
+      let adjustedTextX = adjustedX;
+      // 根据文本对齐方式调整点击位置
+      if (textAlign === "center") {
+        const lineStartX =
+          canvasWidth / 2 - lineWidth / 2 - config.inputPadding;
+        adjustedTextX = adjustedX - lineStartX;
+      } else if (textAlign === "right") {
+        const lineStartX = canvasWidth - lineWidth - config.inputPadding;
+        adjustedTextX = adjustedX - lineStartX;
+      }
       // 找到最接近的字符位置
       let bestIndex = startIndex;
       let minDistance = Infinity;
       for (let i = startIndex; i <= endIndex; i++) {
         const textBefore = value.substring(startIndex, i);
         const textWidth = ctx.measureText(textBefore).width;
-        const distance = Math.abs(textWidth - adjustedX);
+        const distance = Math.abs(textWidth - adjustedTextX);
         if (distance < minDistance) {
           minDistance = distance;
           bestIndex = i;
@@ -252,17 +263,19 @@ export const useInput = ({
         cursorLine: lineIndex,
       };
     },
-    [canvasRef, getFontSize, config.textAlign, config.inputPadding],
+    [canvasRef, getFontSize, config.inputPadding, getTextAlign],
   );
   return {
     lastWidth,
     lastHeight,
     cursorStyle,
     cursorLine,
+    minSize,
     setInputStyle,
     getCursorPosByXY,
     updateCursorPosition,
     updateInputSize,
     getCellWidthHeight,
+    getInputHeight,
   };
 };

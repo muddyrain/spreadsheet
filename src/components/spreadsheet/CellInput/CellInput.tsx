@@ -13,10 +13,11 @@ import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useInput } from "./useInput";
 
-export type CellInputRef = {
+export type CellInputActionsType = {
   focus: (rowIndex: number, colIndex: number) => void;
   blur: () => void;
   setValue: (value: string) => void;
+  updateInputSize: (currentCell: CellData) => void;
 };
 export type LineType = {
   startIndex: number;
@@ -26,7 +27,7 @@ export type LineType = {
   lineIndex: number;
 };
 export const CellInput = forwardRef<
-  CellInputRef,
+  CellInputActionsType,
   {
     onChange: (value: string, editingCell?: CellData | null) => void;
     onTabKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -54,18 +55,12 @@ export const CellInput = forwardRef<
     isFocused,
     editingCell,
     data,
-    zoomSize,
     selectedCell,
     getCurrentCell,
     setHeaderRowsHeight,
     dispatch,
   } = useStore();
-  const minSize = useMemo(() => {
-    return {
-      width: config.width * zoomSize,
-      height: config.height * zoomSize,
-    };
-  }, [config, zoomSize]);
+
   const { getCellPosition } = useComputed();
   const { getFontStyle, isOverflowMaxWidth } = useTools();
 
@@ -74,6 +69,8 @@ export const CellInput = forwardRef<
     lastHeight,
     cursorStyle,
     cursorLine,
+    minSize,
+    getInputHeight,
     setInputStyle,
     getCursorPosByXY,
     getCellWidthHeight,
@@ -84,8 +81,8 @@ export const CellInput = forwardRef<
     containerRef,
     value,
     lines,
-    minSize,
   });
+
   const getLines = useCallback(
     (selectedCell: CellData): LineType[] => {
       const ctx = canvasRef.current?.getContext("2d");
@@ -465,39 +462,63 @@ export const CellInput = forwardRef<
       containerRef.current.blur();
       dispatch({ isFocused: false });
       onChange?.(value);
-      const row = currentFocusCell?.current?.row;
-      if (row && lastHeight.current > headerRowsHeight[row]) {
-        headerRowsHeight[row] = lastHeight.current;
-        setHeaderRowsHeight([...headerRowsHeight]);
-      }
     }
+  }, [dispatch, onChange, value]);
+  const handleCellInputActions: CellInputActionsType = useMemo(() => {
+    return {
+      focus(rowIndex: number, colIndex: number) {
+        const currentCell = getCurrentCell(rowIndex, colIndex);
+        if (!currentCell) return;
+        currentFocusCell.current = currentCell;
+        setSelectionText(null);
+        dispatch({ isFocused: true });
+        const lines = getLines(currentCell);
+        setLines(lines);
+        cursorLine.current = lines.length - 1;
+        setCursorIndex(currentCell.value.length);
+        setInputStyle(currentCell, lines, currentCell.value.length);
+      },
+      blur() {
+        handleBlur();
+        if (currentFocusCell?.current) {
+          const row = currentFocusCell.current?.row;
+          const lines = getLines(currentFocusCell.current);
+          const height = getInputHeight(currentFocusCell.current, lines);
+          if (row && height > headerRowsHeight[row]) {
+            headerRowsHeight[row] = height;
+            setHeaderRowsHeight([...headerRowsHeight]);
+          }
+        }
+      },
+      setValue(content) {
+        setValue(content);
+      },
+      updateInputSize(currentCell) {
+        const lines = getLines(currentCell);
+        setLines(lines);
+        setInputStyle(currentCell, lines, currentCell.value.length);
+        handleBlur();
+      },
+    };
   }, [
+    getCurrentCell,
     dispatch,
-    onChange,
-    value,
-    lastHeight,
-    setHeaderRowsHeight,
+    getLines,
+    cursorLine,
+    setInputStyle,
+    handleBlur,
+    getInputHeight,
     headerRowsHeight,
+    setHeaderRowsHeight,
   ]);
-  useImperativeHandle(ref, () => ({
-    focus(rowIndex: number, colIndex: number) {
-      const currentCell = getCurrentCell(rowIndex, colIndex);
-      if (!currentCell) return;
-      currentFocusCell.current = currentCell;
-      setSelectionText(null);
-      dispatch({ isFocused: true });
-      const lines = getLines(currentCell);
-      setLines(lines);
-      setCursorIndex(currentCell.value.length);
-      setInputStyle(currentCell, lines, currentCell.value.length);
-    },
-    blur() {
-      handleBlur();
-    },
-    setValue(content) {
-      setValue(content);
-    },
-  }));
+  useEffect(() => {
+    if (handleCellInputActions) {
+      dispatch({ cellInputActions: handleCellInputActions });
+    } else {
+      dispatch({ cellInputActions: null });
+    }
+  }, [handleCellInputActions, dispatch]);
+  useImperativeHandle(ref, () => handleCellInputActions);
   // 绘制输入框
   const drawInput = useCallback(() => {
     if (!canvasRef.current || !selectedCell) return;
@@ -551,10 +572,10 @@ export const CellInput = forwardRef<
         lineIndex * lineHeightPX;
       let startX = config.inputPadding;
       if (textAlign === "center") {
-        startX = canvasWidth / 2 - ctx.measureText(texts).width / 2 - 1;
+        startX = canvasWidth / 2 - ctx.measureText(texts).width / 2;
       } else if (textAlign === "right") {
         startX =
-          canvasWidth - config.inputPadding - ctx.measureText(texts).width - 1;
+          canvasWidth - config.inputPadding - ctx.measureText(texts).width;
       }
       for (let i = 0; i < texts.length; i++) {
         const text = texts[i];

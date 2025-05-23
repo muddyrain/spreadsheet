@@ -141,11 +141,19 @@ export const useRenderCell = () => {
         const totalTextHeight = contents.length * lineHeightPX;
         let baseY = 0;
         if (verticalAlign === "start") {
-          baseY = y + lineHeightPX / 2;
+          baseY = y + lineHeightPX / 2 + config.inputPadding;
         } else if (verticalAlign === "center") {
           baseY = y + cellHeight / 2 - totalTextHeight / 2 + lineHeightPX / 2;
         } else if (verticalAlign === "end") {
-          baseY = y + cellHeight - totalTextHeight + lineHeightPX / 2 - 2;
+          baseY = Math.max(
+            y +
+              cellHeight -
+              totalTextHeight +
+              lineHeightPX / 2 -
+              config.inputPadding -
+              2,
+            y + lineHeightPX / 2,
+          );
         }
         for (let i = 0; i < contents.length; i++) {
           const text = contents[i];
@@ -204,6 +212,7 @@ export const useRenderCell = () => {
       headerRowsHeight,
       getFontStyle,
       data,
+      config.inputPadding,
       getWrapContent,
     ],
   );

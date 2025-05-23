@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { useStore } from "../useStore";
 import { useTools } from "./useTools";
+import { useComputed } from "../useComputed";
 
 export const useDynamicRender = () => {
-  const { data, config, headerColsWidth, zoomSize } = useStore();
-
+  const { data, config } = useStore();
+  const { getCellWidthHeight } = useComputed();
   const { getFontStyle } = useTools();
   // 1. 计算 MeasureMap
   const getMeasureMap = useCallback(
@@ -85,9 +86,10 @@ export const useDynamicRender = () => {
           const textAlign = cell.style.textAlign || config.textAlign;
           const textWidth = measureMap[row][col]?.textWidth || 0;
           if (!cell.readOnly && cell.value) {
-            const cellWidth = headerColsWidth[col];
+            const { cellWidth } = getCellWidthHeight(cell);
             if (textAlign === "left") {
-              let remainWidth = textWidth - (cellWidth - 5.5 * zoomSize);
+              let remainWidth =
+                textWidth - (cellWidth - config.inputPadding * 2);
               let nextCol = col + 1;
               while (remainWidth > 0 && nextCol < data[row].length) {
                 const nextCell = data[row][nextCol];
@@ -101,11 +103,13 @@ export const useDynamicRender = () => {
                 ) {
                   target.isDraw = false;
                 }
-                remainWidth -= headerColsWidth[nextCol];
+                const { cellWidth } = getCellWidthHeight(nextCell);
+                remainWidth -= cellWidth;
                 nextCol++;
               }
             } else if (textAlign === "right") {
-              let remainWidth = textWidth - (cellWidth - 5.5 * zoomSize);
+              let remainWidth =
+                textWidth - (cellWidth - config.inputPadding * 2);
               let preCol = col - 1;
               while (remainWidth > 0 && preCol >= 0) {
                 const preCell = data[row][preCol];
@@ -119,11 +123,13 @@ export const useDynamicRender = () => {
                 ) {
                   target.isDraw = false;
                 }
-                remainWidth -= headerColsWidth[preCol];
+                const { cellWidth } = getCellWidthHeight(preCell);
+                remainWidth -= cellWidth;
                 preCol--;
               }
             } else if (textAlign === "center") {
-              const remainWidth = textWidth - (cellWidth - 5.5 * zoomSize);
+              const remainWidth =
+                textWidth - (cellWidth - config.inputPadding * 2);
               let leftCol = col - 1;
               let rightCol = col + 1;
               let leftRemain = remainWidth / 2;
@@ -141,7 +147,8 @@ export const useDynamicRender = () => {
                 ) {
                   target.isDraw = false;
                 }
-                rightRemain -= headerColsWidth[rightCol];
+                const { cellWidth } = getCellWidthHeight(rightCell);
+                rightRemain -= cellWidth;
                 rightCol++;
               }
               // 向左扩展
@@ -157,7 +164,8 @@ export const useDynamicRender = () => {
                 ) {
                   target.isDraw = false;
                 }
-                leftRemain -= headerColsWidth[leftCol];
+                const { cellWidth } = getCellWidthHeight(leftCell);
+                leftRemain -= cellWidth;
                 leftCol--;
               }
             }
@@ -169,7 +177,13 @@ export const useDynamicRender = () => {
       }
     }
     return tempMap;
-  }, [config.textAlign, data, headerColsWidth, measureMap, zoomSize]);
+  }, [
+    config.textAlign,
+    config.inputPadding,
+    data,
+    measureMap,
+    getCellWidthHeight,
+  ]);
 
   return { measureMap, drawBorderMap };
 };

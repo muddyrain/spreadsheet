@@ -12,6 +12,7 @@ import {
   SelectionSheetType,
   CellData,
 } from "../../types/sheet";
+import { CellInputActionsType } from "./CellInput";
 
 export type LocalStoreType = {
   isFocused: boolean;
@@ -23,6 +24,7 @@ export type LocalStoreType = {
   isMouseDown: boolean;
   sideLineMode: string | null;
   currentSideLinePosition: number[];
+  cellInputActions: CellInputActionsType | null;
 };
 export type SheetStoreType = {
   zoomSize: number;

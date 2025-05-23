@@ -12,8 +12,10 @@ export const useTools = () => {
       .trim();
   }, []);
   const getFontSize = useCallback(
-    (cell: CellData) => {
-      return (cell.style.fontSize || config.fontSize) * zoomSize;
+    (cell: CellData, isZoomSize: boolean = true) => {
+      return (
+        (cell.style.fontSize || config.fontSize) * (isZoomSize ? zoomSize : 1)
+      );
     },
     [config.fontSize, zoomSize],
   );
