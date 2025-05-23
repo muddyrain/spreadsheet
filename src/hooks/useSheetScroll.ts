@@ -36,6 +36,9 @@ export const useSheetScroll = (config: {
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!dragRef.current.isDragging) return;
+      if (selectedCell) {
+        cellInputActions?.updateInputSize(selectedCell);
+      }
       const { startPos, lastScrollPos, dragType } = dragRef.current;
 
       if (dragType === "horizontal") {
@@ -83,7 +86,7 @@ export const useSheetScroll = (config: {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [config, setScrollPosition]);
+  }, [cellInputActions, config, selectedCell, setScrollPosition]);
 
   const handleScrollbarDragStart = useCallback(
     (e: React.MouseEvent, type: "horizontal" | "vertical") => {
@@ -119,9 +122,6 @@ export const useSheetScroll = (config: {
         } else {
           setZoomSize(zoomSize - 0.1);
         }
-        if (selectedCell) {
-          cellInputActions?.updateInputSize(selectedCell);
-        }
         return;
       }
       const maxScrollX = config.totalWidth - config.viewportWidth;
@@ -152,6 +152,9 @@ export const useSheetScroll = (config: {
           x: newScrollX,
           y: newScrollY,
         });
+      }
+      if (selectedCell) {
+        cellInputActions?.updateInputSize(selectedCell);
       }
     },
     [
