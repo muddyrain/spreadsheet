@@ -172,6 +172,21 @@ export const CellInput = forwardRef<
     },
     [config.inputPadding, getCellWidthHeight],
   );
+  const updateCell = useCallback(
+    (selectedCell: CellData, content: string, newCursor: number) => {
+      setValue(content);
+      setCursorIndex(newCursor);
+      selectedCell.value = content;
+      const lines = getLines({
+        ...selectedCell,
+        value: content,
+      });
+      setLines(lines);
+      setInputStyle(selectedCell, lines, newCursor);
+      onChange(content, selectedCell);
+    },
+    [getLines, onChange, setInputStyle],
+  );
   // 监听鼠标按下事件
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -262,10 +277,9 @@ export const CellInput = forwardRef<
           const content =
             value.slice(0, selectionText.start) +
             value.slice(selectionText.end);
-          setValue(content);
           const newCursor = selectionText.start;
-          setCursorIndex(newCursor);
           setSelectionText(null);
+          updateCell(selectedCell, content, newCursor);
         }
       } else if ((e.ctrlKey || e.metaKey) && key === "c") {
         copy();
@@ -287,8 +301,7 @@ export const CellInput = forwardRef<
             newCursor = selectionText.start + clipboardText.length;
             setSelectionText(null);
           }
-          setValue(newValue);
-          setCursorIndex(newCursor);
+          updateCell(selectedCell, newValue, newCursor);
         });
         return;
       } else if (e.key === "Enter" && e.altKey) {
@@ -297,14 +310,8 @@ export const CellInput = forwardRef<
         e.stopPropagation();
         const newValue =
           value.slice(0, cursorIndex) + "\n" + value.slice(cursorIndex);
-        setValue(newValue);
-        setCursorIndex(cursorIndex + 1);
         cursorLine.current += 1;
-        selectedCell.value = newValue;
-        const lines = getLines(selectedCell);
-        setLines(lines);
-        setInputStyle(selectedCell, lines, cursorIndex + 1);
-        onChange(newValue, selectedCell);
+        updateCell(selectedCell, newValue, cursorIndex + 1);
       } else if (
         (e.ctrlKey || e.metaKey) &&
         e.key.toLocaleUpperCase() === "A"
@@ -339,17 +346,7 @@ export const CellInput = forwardRef<
             cursorLine.current += 1;
           }
         }
-        const lines = getLines({
-          ...selectedCell,
-          value: newValue,
-        });
-
-        setValue(newValue);
-        const newCursor = cursorIndex + 1;
-        setCursorIndex(newCursor);
-        setLines(lines);
-        setInputStyle(selectedCell, lines, newCursor);
-        onChange(newValue, selectedCell);
+        updateCell(selectedCell, newValue, cursorIndex + 1);
       } else if (e.key === "Backspace") {
         e.preventDefault();
         e.stopPropagation();
@@ -357,14 +354,12 @@ export const CellInput = forwardRef<
           const newValue =
             value.slice(0, selectionText.start) +
             value.slice(selectionText.end);
-          setValue(newValue);
-          setCursorIndex(selectionText.start);
+          updateCell(selectedCell, newValue, selectionText.start);
           setSelectionText(null);
         } else if (cursorIndex > 0) {
           const newValue =
             value.slice(0, cursorIndex - 1) + value.slice(cursorIndex);
-          setValue(newValue);
-          setCursorIndex(cursorIndex - 1);
+          updateCell(selectedCell, newValue, cursorIndex - 1);
         }
       } else if (e.key === "Delete") {
         e.preventDefault();
@@ -373,74 +368,77 @@ export const CellInput = forwardRef<
           const newValue =
             value.slice(0, selectionText.start) +
             value.slice(selectionText.end);
-          setValue(newValue);
-          setCursorIndex(selectionText.start);
+          updateCell(selectedCell, newValue, selectionText.start);
           setSelectionText(null);
         } else if (cursorIndex < value.length) {
           const newValue =
             value.slice(0, cursorIndex) + value.slice(cursorIndex + 1);
-          setValue(newValue);
+          updateCell(selectedCell, newValue, cursorIndex);
         }
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         e.stopPropagation();
-        setCursorIndex(Math.max(0, cursorIndex - 1));
-        e.preventDefault();
+        updateCell(selectedCell, value, Math.max(0, cursorIndex - 1));
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         e.stopPropagation();
-        setCursorIndex(Math.min(value.length, cursorIndex + 1));
-        e.preventDefault();
+        updateCell(
+          selectedCell,
+          value,
+          Math.min(value.length, cursorIndex + 1),
+        );
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         e.stopPropagation();
-        // 上箭头：移动到上一行对应列
-        const lines = value.split("\n");
-        const beforeCursor = value.slice(0, cursorIndex);
-        const currentLine = beforeCursor.split("\n").length - 1;
-        const currentCol =
-          beforeCursor.length - beforeCursor.lastIndexOf("\n") - 1;
-        if (currentLine > 0) {
-          const prevLineLen = lines[currentLine - 1].length;
-          const newCol = Math.min(prevLineLen, currentCol);
-          let newCursor = 0;
-          for (let i = 0; i < currentLine - 1; i++) {
-            newCursor += lines[i].length + 1;
+        if (cursorLine.current > 0) {
+          // 获取当前行的信息
+          const currentLineInfo = lines[cursorLine.current];
+          // 获取上一行的信息
+          const prevLineInfo = lines[cursorLine.current - 1];
+          // 计算当前光标在当前行的相对位置
+          const currentLineOffset = cursorIndex - currentLineInfo.startIndex;
+          if (prevLineInfo) {
+            console.log(prevLineInfo);
+            // 计算在上一行对应的光标位置
+            const newCursorIndex = Math.min(
+              prevLineInfo.startIndex + currentLineOffset, // 保持相同的水平偏移
+              prevLineInfo.endIndex, // 不超过上一行的结束位置
+            );
+            cursorLine.current -= 1;
+            updateCell(selectedCell, value, newCursorIndex);
           }
-          newCursor += newCol;
-          setCursorIndex(newCursor);
         }
         e.preventDefault();
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
         e.stopPropagation();
-        // 下箭头：移动到下一行对应列
-        const lines = value.split("\n");
-        const beforeCursor = value.slice(0, cursorIndex);
-        const currentLine = beforeCursor.split("\n").length - 1;
-        const currentCol =
-          beforeCursor.length - beforeCursor.lastIndexOf("\n") - 1;
-        if (currentLine < lines.length - 1) {
-          const nextLineLen = lines[currentLine + 1].length;
-          const newCol = Math.min(nextLineLen, currentCol);
-          let newCursor = 0;
-          for (let i = 0; i <= currentLine; i++) {
-            newCursor += lines[i].length + 1;
+        if (cursorLine.current < lines.length - 1) {
+          // 获取当前行的信息
+          const currentLineInfo = lines[cursorLine.current];
+          // 获取下一行的信息
+          const nextLineInfo = lines[cursorLine.current + 1];
+          // 计算当前光标在当前行的相对位置
+          const currentLineOffset = cursorIndex - currentLineInfo.startIndex;
+          if (nextLineInfo) {
+            // 计算在下一行对应的光标位置
+            const newCursorIndex = Math.min(
+              nextLineInfo.startIndex + currentLineOffset, // 保持相同的水平偏移
+              nextLineInfo.endIndex, // 不超过下一行的结束位置
+            );
+            cursorLine.current += 1;
+            updateCell(selectedCell, value, newCursorIndex);
           }
-          newCursor += newCol;
-          setCursorIndex(newCursor);
         }
-        e.preventDefault();
       } else if (e.key === "Home") {
         e.preventDefault();
         e.stopPropagation();
-        setCursorIndex(0);
-        e.preventDefault();
+        const currentLine = lines[cursorLine.current];
+        updateCell(selectedCell, value, currentLine.startIndex);
       } else if (e.key === "End") {
         e.preventDefault();
         e.stopPropagation();
-        setCursorIndex(value.length);
-        e.preventDefault();
+        const currentLine = lines[cursorLine.current];
+        updateCell(selectedCell, value, currentLine.endIndex);
       }
     },
     [
@@ -448,12 +446,12 @@ export const CellInput = forwardRef<
       getCellWidthHeight,
       selectionText,
       value,
+      updateCell,
       cursorIndex,
-      getLines,
-      setInputStyle,
-      onChange,
       cursorLine,
+      getLines,
       isOverflowMaxWidth,
+      lines,
     ],
   );
   const handleBlur = useCallback(() => {
