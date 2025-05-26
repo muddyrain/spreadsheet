@@ -546,8 +546,6 @@ export const CellInput = forwardRef<
       cell: selectedCell,
     });
 
-    let globalStart = 0;
-
     ctx.textBaseline = "middle";
     // 行高间距 4pt
     const lineHeightPT = fontSize + 4;
@@ -563,39 +561,63 @@ export const CellInput = forwardRef<
       return config.inputPadding;
     })();
     // 绘制选中
-    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      const texts = lines[lineIndex].content;
-      // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
-      const startY =
-        canvasRef.current.height / 2 -
-        totalTextHeight / 2 +
-        lineIndex * lineHeightPX;
-      let startX = config.inputPadding;
-      if (textAlign === "center") {
-        startX = canvasWidth / 2 - ctx.measureText(texts).width / 2;
-      } else if (textAlign === "right") {
-        startX =
-          canvasWidth - config.inputPadding - ctx.measureText(texts).width;
-      }
-      for (let i = 0; i < texts.length; i++) {
-        const text = texts[i];
-        const metrics = ctx.measureText(text);
-        const width = metrics.width;
-        const globalCharIndex = globalStart + i;
+    if (selectionText) {
+      // 找到选中区域的起始行和结束行
+      let startLineIndex = 0;
+      let endLineIndex = lines.length - 1;
+      for (let i = 0; i < lines.length; i++) {
         if (
-          selectionText &&
-          globalCharIndex >= selectionText.start &&
-          globalCharIndex < selectionText.end
+          lines[i].startIndex <= selectionText.start &&
+          (i === lines.length - 1 ||
+            lines[i + 1].startIndex > selectionText.start)
         ) {
-          // 绘制选中的文本样式
-          ctx.fillStyle = config.inputSelectionColor;
-          const x = startX;
-          const y = startY;
-          ctx.fillRect(x, y, width + 0.5, lineHeightPX + 0.5);
+          startLineIndex = i;
         }
-        startX += width;
+
+        if (lines[i].endIndex >= selectionText.end) {
+          endLineIndex = i;
+          break;
+        }
       }
-      globalStart += texts.length + 1; // +1 是因为换行符
+      // 绘制选中区域
+      for (let i = startLineIndex; i <= endLineIndex; i++) {
+        const line = lines[i];
+        let endX = ctx.measureText(line.content).width;
+        // 文本的对齐起始位置
+        let x = config.inputPadding;
+        if (textAlign === "center") {
+          x = canvasWidth / 2 - ctx.measureText(line.content).width / 2;
+        } else if (textAlign === "right") {
+          x =
+            canvasWidth -
+            config.inputPadding -
+            ctx.measureText(line.content).width;
+        }
+        // 起始位置 画布高度一半 - 文本总高度一半 + 行高 * 行号
+        const startY =
+          canvasRef.current.height / 2 - totalTextHeight / 2 + i * lineHeightPX;
+        let startX = 0;
+        if (i === startLineIndex) {
+          // 起始行
+          const textBeforeStart = value.substring(
+            line.startIndex,
+            selectionText.start,
+          );
+          startX += ctx.measureText(textBeforeStart).width;
+        }
+
+        if (i === endLineIndex) {
+          // 结束行
+          const textBeforeEnd = value.substring(
+            line.startIndex,
+            selectionText.end,
+          );
+          endX = ctx.measureText(textBeforeEnd).width;
+        }
+        // 绘制选中的文本样式
+        ctx.fillStyle = config.inputSelectionColor;
+        ctx.fillRect(x + startX, startY, endX - startX, lineHeightPX);
+      }
     }
     ctx.fillStyle = color;
     // 起始位置 画布高度一半 - 文本总高度一半 + 每行高度的一半
@@ -615,10 +637,11 @@ export const CellInput = forwardRef<
     getCellPosition,
     getFontStyle,
     lines,
+    selectionText,
     minSize.width,
     config.inputPadding,
     config.inputSelectionColor,
-    selectionText,
+    value,
   ]);
   useEffect(() => {
     if (!canvasRef.current || !selectedCell) return;
