@@ -132,7 +132,10 @@ export const useComputed = () => {
       let startRow = -1;
       let endRow = -1;
       const viewTop = (_scrollPosition || scrollPosition).y;
-      const viewBottom = (_scrollPosition || scrollPosition).y + wrapperHeight;
+      const viewBottom =
+        (_scrollPosition || scrollPosition).y +
+        wrapperHeight -
+        headerRowsHeight[0];
       for (let i = 1; i < headerRowsHeight.length; i++) {
         const rowTop = acc;
         const rowBottom = acc + headerRowsHeight[i] * zoomSize;
@@ -162,7 +165,10 @@ export const useComputed = () => {
       let startCol = -1;
       let endCol = -1;
       const viewLeft = (_scrollPosition || scrollPosition).x;
-      const viewRight = (_scrollPosition || scrollPosition).x + wrapperWidth;
+      const viewRight =
+        (_scrollPosition || scrollPosition).x +
+        wrapperWidth -
+        headerColsWidth[0];
       for (let i = 1; i < headerColsWidth.length; i++) {
         const colLeft = acc;
         const colRight = acc + headerColsWidth[i] * zoomSize;
@@ -172,8 +178,6 @@ export const useComputed = () => {
         }
         acc = colRight;
       }
-      // 多加一列预加载
-      if (endCol !== -1) endCol = Math.min(endCol + 2, headerColsWidth.length);
       if (startCol === -1 || endCol === -1) {
         startCol = 0;
         endCol = 1;

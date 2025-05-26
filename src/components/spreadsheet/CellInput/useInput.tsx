@@ -189,23 +189,33 @@ export const useInput = ({
         } else {
           left = x - 2;
         }
-        const { startCol } = getStartEndCol(
+        const { startCol, endCol } = getStartEndCol(
           containerWidth,
           options.scrollPosition,
         );
-        const { startRow } = getStartEndRow(
+        const { startRow, endRow } = getStartEndRow(
           containerHeight,
           options.scrollPosition,
         );
         // 如果当前单元格还在视口内
         const fixedWidth = headerColsWidth[0];
         const fixedHeight = headerRowsHeight[0];
+        if (endCol >= currentCell.col) {
+          if (left + width >= containerWidth - config.inputPadding * 2) {
+            left = containerWidth - width - config.inputPadding * 2;
+          }
+        }
         if (startCol <= currentCell.col) {
           if (left <= fixedWidth) {
             left = fixedWidth;
           }
         } else {
           left = -1e9;
+        }
+        if (endRow >= currentCell.row) {
+          if (top + height >= containerHeight - config.inputPadding * 2) {
+            top = containerHeight - height - config.inputPadding * 2;
+          }
         }
         if (startRow <= currentCell.row) {
           if (top <= fixedHeight) {
@@ -214,6 +224,7 @@ export const useInput = ({
         } else {
           top = -1e9;
         }
+
         const updates = {
           width: width + config.inputPadding,
           height: height + config.inputPadding,

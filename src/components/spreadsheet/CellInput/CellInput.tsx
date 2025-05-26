@@ -470,6 +470,7 @@ export const CellInput = forwardRef<
       containerRef.current.style.display = "none";
       containerRef.current.blur();
       onChange?.(value);
+      setValue("");
     }
   }, [onChange, value]);
   const handleCellInputActions: CellInputActionsType = useMemo(() => {
@@ -705,7 +706,6 @@ export const CellInput = forwardRef<
             dispatch({
               isFocused: false,
             });
-            setValue("");
           });
         }}
         onFocus={() => {

@@ -11,6 +11,7 @@ import { useStore } from "@/hooks/useStore";
 import { Footer } from "./Footer/index";
 import { useTab } from "@/hooks/useTab";
 import { useDirection } from "@/hooks/useDirection";
+import { useComputed } from "@/hooks/useComputed";
 
 const Spreadsheet: React.FC<{
   onChange?: (data: TableData) => void;
@@ -31,6 +32,7 @@ const Spreadsheet: React.FC<{
   } = useStore();
   const cellInputRef = useRef<CellInputActionsType>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { fitCellViewPort } = useComputed();
   const handleSelectAll = () => {
     setSelection({
       start: { row: 1, col: 1 },
@@ -152,7 +154,10 @@ const Spreadsheet: React.FC<{
     if (editingCell) {
       cellInputRef.current?.setValue(editingCell.value);
     }
-    cellInputRef.current?.focus(rowIndex, colIndex);
+    fitCellViewPort(rowIndex, colIndex);
+    Promise.resolve().then(() => {
+      cellInputRef.current?.focus(rowIndex, colIndex);
+    });
   };
   const { onTabKeyDown } = useTab();
   const { onDirectionKeyDown } = useDirection();
