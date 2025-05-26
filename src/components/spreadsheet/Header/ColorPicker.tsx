@@ -3,9 +3,8 @@ import { FC, memo, useMemo, useRef, useState } from "react";
 import { DEFAULT_COLOR_CONFIG } from "@/constant/colors/default_colors";
 import { Separator } from "@/components/ui/separator";
 import { CheckIcon, ChevronRightIcon, PaletteIcon } from "lucide-react";
-import { CellData } from "@/types/sheet";
 import { useStore } from "@/hooks/useStore";
-import { getSmartBorderColor } from "@/utils/color";
+import { useUpdateStyle } from "@/hooks/useUpdateStyle";
 
 type ColorItemType = (typeof DEFAULT_COLOR_CONFIG)[0];
 const RECENT_COLORS_KEY = "recent_text_colors";
@@ -25,14 +24,14 @@ const ColorList: FC<{
   type?: "text" | "background";
   onClick?: (item: ColorItemType) => void;
 }> = ({ list = [], type = "text", onClick }) => {
-  const { currentCell } = useStore();
+  const { isStyle } = useUpdateStyle();
   const currentCellColor = useMemo(() => {
     if (type === "background") {
-      return currentCell?.style.backgroundColor;
+      return isStyle.backgroundColor;
     } else {
-      return currentCell?.style.color;
+      return isStyle.color;
     }
-  }, [currentCell, type]);
+  }, [isStyle, type]);
   return (
     <div className="flex flex-wrap px-2 py-1">
       {list.map((item, index) => {
@@ -68,20 +67,21 @@ const ColorList: FC<{
 const ColorPickerInner: FC<{
   color?: string;
   onChange?: (color: string) => void;
-  selectionCells: CellData[];
   type?: "text" | "background";
-}> = ({ color: _color = "", type = "text", onChange, selectionCells = [] }) => {
+}> = ({ color: _color = "", type = "text", onChange }) => {
   const [recentColors, setRecentColorsState] =
     useState<ColorItemType[]>(getRecentColors());
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const inputColorRef = useRef<HTMLInputElement>(null);
-  const { config, setUpdater } = useStore();
+  const { config } = useStore();
   const backgroundType = type === "background";
   const defaultColor = backgroundType ? config.backgroundColor : config.color;
   const [color, setColor] = useState<ColorItemType>({
     value: defaultColor,
     label: "默认",
   });
+  const { handleUpdaterColor } = useUpdateStyle();
+
   const handleRecentColor = (item: ColorItemType) => {
     let colors = getRecentColors();
     colors = [item, ...colors.filter((c) => c.value !== item.value)].slice(
@@ -93,23 +93,8 @@ const ColorPickerInner: FC<{
   };
   const handleClick = (item: ColorItemType, isRecent = true) => {
     setColor(item);
-    selectionCells.forEach((cItem) => {
-      if (backgroundType) {
-        cItem.style.backgroundColor = item.value || "";
-        if (item.value === config.backgroundColor) {
-          cItem.style.borderColor = config.borderColor;
-        } else {
-          cItem.style.borderColor = getSmartBorderColor(
-            item.value || "",
-            cItem.style.borderColor || config.borderColor,
-          );
-        }
-      } else {
-        cItem.style.color = item.value;
-      }
-    });
     if (isRecent) handleRecentColor(item);
-    setUpdater();
+    handleUpdaterColor(backgroundType, item.value);
   };
 
   return (

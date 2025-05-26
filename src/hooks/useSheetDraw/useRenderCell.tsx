@@ -33,6 +33,65 @@ export const useRenderCell = () => {
     },
     [selection],
   );
+  // 绘制文本装饰线
+  const renderTextDecoration = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      options: {
+        cell: CellData;
+        text: string;
+        textX: number;
+        textY: number;
+        fontSize: number;
+      },
+    ) => {
+      const { cell, text, textX, textY, fontSize } = options;
+      const textMetrics = ctx.measureText(text);
+      const textDecoration = cell.style.textDecoration || "none";
+      // 计算文本装饰线的位置
+      const calculateLinePosition = (
+        align: CanvasTextAlign | undefined,
+        baseX: number,
+        width: number,
+      ) => {
+        if (align === "center") {
+          return [baseX - width / 2, baseX + width / 2];
+        }
+        if (align === "right") {
+          return [baseX - width, baseX];
+        }
+        return [baseX, baseX + width];
+      };
+
+      // 绘制装饰线
+      const drawLine = (startX: number, endX: number, y: number) => {
+        ctx.strokeStyle = cell.style.color || "#000";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
+        ctx.stroke();
+      };
+
+      // 处理文本装饰
+      if (textDecoration !== "none") {
+        const [lineStartX, lineEndX] = calculateLinePosition(
+          ctx.textAlign,
+          textX,
+          textMetrics.width,
+        );
+
+        if (textDecoration.includes("line-through")) {
+          drawLine(lineStartX, lineEndX, textY);
+        }
+
+        if (textDecoration.includes("underline")) {
+          drawLine(lineStartX, lineEndX, textY + fontSize / 2);
+        }
+      }
+    },
+    [],
+  );
   // 绘制文本
   const renderText = useCallback(
     (ctx: CanvasRenderingContext2D, options: RenderOptions) => {
@@ -157,51 +216,15 @@ export const useRenderCell = () => {
         }
         for (let i = 0; i < contents.length; i++) {
           const text = contents[i];
-          const textMetrics = ctx.measureText(text);
           const textY = baseY + i * lineHeightPX;
           ctx.fillText(text, textX, textY);
-          const textDecoration = cell.style.textDecoration || "none";
-          // 计算文本装饰线的位置
-          const calculateLinePosition = (
-            align: CanvasTextAlign | undefined,
-            baseX: number,
-            width: number,
-          ) => {
-            if (align === "center") {
-              return [baseX - width / 2, baseX + width / 2];
-            }
-            if (align === "right") {
-              return [baseX - width, baseX];
-            }
-            return [baseX, baseX + width];
-          };
-
-          // 绘制装饰线
-          const drawLine = (startX: number, endX: number, y: number) => {
-            ctx.strokeStyle = cell.style.color || "#000";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(startX, y);
-            ctx.lineTo(endX, y);
-            ctx.stroke();
-          };
-
-          // 处理文本装饰
-          if (textDecoration !== "none") {
-            const [lineStartX, lineEndX] = calculateLinePosition(
-              ctx.textAlign,
-              textX,
-              textMetrics.width,
-            );
-
-            if (textDecoration.includes("line-through")) {
-              drawLine(lineStartX, lineEndX, textY);
-            }
-
-            if (textDecoration.includes("underline")) {
-              drawLine(lineStartX, lineEndX, textY + fontSize / 2);
-            }
-          }
+          renderTextDecoration(ctx, {
+            cell,
+            text,
+            textX,
+            textY,
+            fontSize,
+          });
         }
       }
       ctx.restore();
@@ -214,6 +237,7 @@ export const useRenderCell = () => {
       data,
       config.inputPadding,
       getWrapContent,
+      renderTextDecoration,
     ],
   );
   // 单元格绘制函数
@@ -340,5 +364,6 @@ export const useRenderCell = () => {
     renderText,
     renderSelectedCell,
     renderBorder,
+    renderTextDecoration,
   };
 };

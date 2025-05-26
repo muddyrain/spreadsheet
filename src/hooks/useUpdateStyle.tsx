@@ -4,6 +4,7 @@ import { useStore } from "./useStore";
 import { CellData, SelectionSheetType } from "@/types/sheet";
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "./useComputed";
+import { getSmartBorderColor } from "@/utils/color";
 export type ClickType =
   | "save"
   | "undo"
@@ -26,6 +27,7 @@ export type ClickType =
 export const useUpdateStyle = () => {
   const exportExcel = useExportExcel();
   const {
+    config,
     updater,
     selection,
     selectedCell,
@@ -88,6 +90,9 @@ export const useUpdateStyle = () => {
         !!selectionCells?.length &&
         selectionCells.every((cell) => cell.style.verticalAlign === "end"),
       isPaint: !!formatBrushStyles.length,
+      backgroundColor:
+        !!selectionCells?.length && selectionCells[0]?.style.backgroundColor,
+      color: !!selectionCells?.length && selectionCells[0]?.style.color,
     };
     // 通过updater来判断是否需要更新isStyle
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -100,7 +105,7 @@ export const useUpdateStyle = () => {
       return [...data];
     });
   }, [selectionCells, setData]);
-  const updateStyle = (type: ClickType) => {
+  const updateStyle = (type?: ClickType) => {
     switch (type) {
       case "paint": {
         if (!selection) return;
@@ -331,10 +336,33 @@ export const useUpdateStyle = () => {
     },
     [formatBrushStyles, setData, dispatch],
   );
+  const handleUpdaterColor = useCallback(
+    (backgroundType: boolean, value: string) => {
+      if (!selectionCells) return;
+      selectionCells.forEach((cItem) => {
+        if (backgroundType) {
+          cItem.style.backgroundColor = value || "";
+          if (value === config.backgroundColor) {
+            cItem.style.borderColor = config.borderColor;
+          } else {
+            cItem.style.borderColor = getSmartBorderColor(
+              value || "",
+              cItem.style.borderColor || config.borderColor,
+            );
+          }
+        } else {
+          cItem.style.color = value;
+        }
+      });
+      handleUpdater();
+    },
+    [config.backgroundColor, config.borderColor, selectionCells, handleUpdater],
+  );
   return {
     isStyle,
     selectionCells,
     updateStyle,
     handleUpdaterBrush,
+    handleUpdaterColor,
   };
 };

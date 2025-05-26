@@ -12,6 +12,7 @@ import { useStore } from "@/hooks/useStore";
 import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useInput } from "./useInput";
+import { useRenderCell } from "@/hooks/useSheetDraw/useRenderCell";
 
 export type CellInputActionsType = {
   focus: (rowIndex: number, colIndex: number) => void;
@@ -44,7 +45,6 @@ export const CellInput = forwardRef<
     start: number;
     end: number;
   } | null>(null);
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -60,7 +60,7 @@ export const CellInput = forwardRef<
     setHeaderRowsHeight,
     dispatch,
   } = useStore();
-
+  const { renderTextDecoration } = useRenderCell();
   const { getCellPosition } = useComputed();
   const { getFontStyle, isOverflowMaxWidth } = useTools();
 
@@ -519,7 +519,6 @@ export const CellInput = forwardRef<
     if (!canvasRef.current || !selectedCell) return;
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
-    if (!isFocused) return;
     if (lastWidth.current !== canvasRef.current.width) {
       canvasRef.current.width = Math.max(lastWidth.current, minSize.width);
       canvasRef.current.style.width = `${Math.max(lastWidth.current, minSize.width)}px`;
@@ -623,10 +622,16 @@ export const CellInput = forwardRef<
       const text = lines[i].content;
       const textY = startY + i * lineHeightPX;
       ctx.fillText(text, textX, textY);
+      renderTextDecoration(ctx, {
+        cell: selectedCell,
+        text,
+        textX,
+        textY,
+        fontSize,
+      });
     }
   }, [
     selectedCell,
-    isFocused,
     lastWidth,
     lastHeight,
     getCellPosition,
@@ -637,6 +642,7 @@ export const CellInput = forwardRef<
     config.inputPadding,
     config.inputSelectionColor,
     value,
+    renderTextDecoration,
   ]);
   useEffect(() => {
     if (!canvasRef.current || !selectedCell) return;

@@ -26,7 +26,7 @@ import { VerticalAlign } from "./VerticalAlign";
 export const Header: FC<{
   onClick?: (type: ClickType) => void;
 }> = ({ onClick }) => {
-  const { isStyle, selectionCells, updateStyle } = useUpdateStyle();
+  const { isStyle, updateStyle } = useUpdateStyle();
 
   const handleClick = (type: ClickType) => {
     updateStyle(type);
@@ -136,8 +136,8 @@ export const Header: FC<{
         </Toggle>
       </Tooltip>
       <Separator orientation="vertical" />
-      <ColorPicker type="text" selectionCells={selectionCells || []} />
-      <ColorPicker type="background" selectionCells={selectionCells || []} />
+      <ColorPicker type="text" />
+      <ColorPicker type="background" />
       <Separator orientation="vertical" />
       <VerticalAlign
         isVerticalAlignStart={isStyle.isVerticalAlignStart}
