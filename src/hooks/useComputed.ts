@@ -126,14 +126,14 @@ export const useComputed = () => {
   );
   //   获取 startRow 和 endRow
   const getStartEndRow = useCallback(
-    (wrapperHeight: number) => {
+    (wrapperHeight: number, _scrollPosition?: PositionType) => {
       // 计算 startRow
       let acc = 0;
       let startRow = -1;
       let endRow = -1;
-      const viewTop = scrollPosition.y;
-      const viewBottom = scrollPosition.y + wrapperHeight;
-      for (let i = 0; i < headerRowsHeight.length; i++) {
+      const viewTop = (_scrollPosition || scrollPosition).y;
+      const viewBottom = (_scrollPosition || scrollPosition).y + wrapperHeight;
+      for (let i = 1; i < headerRowsHeight.length; i++) {
         const rowTop = acc;
         const rowBottom = acc + headerRowsHeight[i] * zoomSize;
         if (rowBottom > viewTop && rowTop < viewBottom) {
@@ -157,13 +157,13 @@ export const useComputed = () => {
   );
   // 获取 startCol 和 endCol
   const getStartEndCol = useCallback(
-    (wrapperWidth: number) => {
+    (wrapperWidth: number, _scrollPosition?: PositionType) => {
       let acc = 0;
       let startCol = -1;
       let endCol = -1;
-      const viewLeft = scrollPosition.x;
-      const viewRight = scrollPosition.x + wrapperWidth;
-      for (let i = 0; i < headerColsWidth.length; i++) {
+      const viewLeft = (_scrollPosition || scrollPosition).x;
+      const viewRight = (_scrollPosition || scrollPosition).x + wrapperWidth;
+      for (let i = 1; i < headerColsWidth.length; i++) {
         const colLeft = acc;
         const colRight = acc + headerColsWidth[i] * zoomSize;
         if (colRight > viewLeft && colLeft < viewRight) {

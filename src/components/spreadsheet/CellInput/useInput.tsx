@@ -19,7 +19,16 @@ export const useInput = ({
   const lastWidth = useRef(0);
   const lastHeight = useRef(0);
   const cursorLine = useRef(0);
-  const { config, selectedCell } = useStore();
+  const { getStartEndRow, getStartEndCol } = useComputed();
+
+  const {
+    config,
+    containerWidth,
+    containerHeight,
+    headerColsWidth,
+    headerRowsHeight,
+    selectedCell,
+  } = useStore();
 
   const { getFontSize, getTextAlign, getVerticalAlign, setFontStyle } =
     useTools();
@@ -169,7 +178,7 @@ export const useInput = ({
           lines,
         );
         let left = 0;
-        const top = y - 2;
+        let top = y - 2;
         if (textAlign === "right") {
           // 减的是左右的 padding
           if (maxLineWidth >= cellWidth - config.inputPadding * 2) {
@@ -180,19 +189,44 @@ export const useInput = ({
         } else {
           left = x - 2;
         }
+        const { startCol } = getStartEndCol(
+          containerWidth,
+          options.scrollPosition,
+        );
+        const { startRow } = getStartEndRow(
+          containerHeight,
+          options.scrollPosition,
+        );
+        // 如果当前单元格还在视口内
+        const fixedWidth = headerColsWidth[0];
+        const fixedHeight = headerRowsHeight[0];
+        if (startCol <= currentCell.col) {
+          if (left <= fixedWidth) {
+            left = fixedWidth;
+          }
+        } else {
+          left = -1e9;
+        }
+        if (startRow <= currentCell.row) {
+          if (top <= fixedHeight) {
+            top = fixedHeight;
+          }
+        } else {
+          top = -1e9;
+        }
         const updates = {
-          width: `${width + config.inputPadding}px`,
-          height: `${height + config.inputPadding}px`,
+          width: width + config.inputPadding,
+          height: height + config.inputPadding,
           transform: `translate(${left}px, ${top}px)`,
-          minWidth: `${cellWidth + config.inputPadding}px`,
-          minHeight: `${cellHeight + config.inputPadding}px`,
+          minWidth: cellWidth + config.inputPadding,
+          minHeight: cellHeight + config.inputPadding,
           alignItems: verticalAlign,
         };
+        updateCursorPosition(currentCell, lines, cursorIndex);
         setInputStyleState(updates);
-        Promise.resolve().then(() => {
+        setTimeout(() => {
           containerRef.current?.focus();
-          updateCursorPosition(currentCell, lines, cursorIndex);
-        });
+        }, 0);
         return {
           width,
           height,
@@ -208,8 +242,14 @@ export const useInput = ({
       getTop,
       getVerticalAlign,
       getTextAlign,
-      config.inputPadding,
       updateInputSize,
+      getStartEndCol,
+      containerWidth,
+      getStartEndRow,
+      containerHeight,
+      headerColsWidth,
+      headerRowsHeight,
+      config.inputPadding,
       updateCursorPosition,
     ],
   );
@@ -288,7 +328,6 @@ export const useInput = ({
     },
     [canvasRef, getFontSize, config.inputPadding, getTextAlign],
   );
-
   return {
     lastWidth,
     lastHeight,

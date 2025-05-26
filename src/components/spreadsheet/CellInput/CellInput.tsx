@@ -666,11 +666,8 @@ export const CellInput = forwardRef<
     };
   }, [value, selectedCell, getCellPosition, getFontStyle, drawInput, data]);
   useEffect(() => {
-    if (currentFocusCell.current && editingCell) {
-      const { row, col } = currentFocusCell.current;
-      if (row !== editingCell.row && col !== editingCell.col) {
-        handleBlur();
-      }
+    if (!editingCell) {
+      handleBlur();
     }
   }, [editingCell, handleBlur]);
   const isShowCursor = useMemo(() => {
@@ -703,17 +700,19 @@ export const CellInput = forwardRef<
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
         onBlur={() => {
-          // 延迟 0 毫秒执行 放到下一个事件循环中执行
-          setTimeout(() => {
+          // 下一个事件循环中执行
+          Promise.resolve().then(() => {
             dispatch({
               isFocused: false,
             });
             setValue("");
-          }, 0);
+          });
         }}
         onFocus={() => {
-          dispatch({
-            isFocused: true,
+          Promise.resolve().then(() => {
+            dispatch({
+              isFocused: true,
+            });
           });
         }}
       >
