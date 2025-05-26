@@ -398,7 +398,6 @@ export const CellInput = forwardRef<
           // 计算当前光标在当前行的相对位置
           const currentLineOffset = cursorIndex - currentLineInfo.startIndex;
           if (prevLineInfo) {
-            console.log(prevLineInfo);
             // 计算在上一行对应的光标位置
             const newCursorIndex = Math.min(
               prevLineInfo.startIndex + currentLineOffset, // 保持相同的水平偏移
@@ -458,10 +457,9 @@ export const CellInput = forwardRef<
     if (containerRef.current) {
       containerRef.current.style.display = "none";
       containerRef.current.blur();
-      dispatch({ isFocused: false });
       onChange?.(value);
     }
-  }, [dispatch, onChange, value]);
+  }, [onChange, value]);
   const handleCellInputActions: CellInputActionsType = useMemo(() => {
     return {
       focus(rowIndex: number, colIndex: number) {
@@ -492,10 +490,7 @@ export const CellInput = forwardRef<
         setValue(content);
       },
       updateInputSize(currentCell) {
-        const lines = getLines(currentCell);
-        setLines(lines);
-        setInputStyle(currentCell, lines, currentCell.value.length);
-        handleBlur();
+        updateCell(currentCell, value, currentCell.value.length);
       },
     };
   }, [
@@ -508,6 +503,8 @@ export const CellInput = forwardRef<
     getInputHeight,
     headerRowsHeight,
     setHeaderRowsHeight,
+    updateCell,
+    value,
   ]);
   useEffect(() => {
     if (handleCellInputActions) {
@@ -660,6 +657,12 @@ export const CellInput = forwardRef<
       }
     }
   }, [editingCell, handleBlur]);
+  const isShowCursor = useMemo(() => {
+    if (selectionText) {
+      return false;
+    }
+    return isFocused;
+  }, [selectionText, isFocused]);
   return (
     <div className="w-full h-full absolute top-0 left-0 pointer-events-none">
       <div
@@ -675,6 +678,19 @@ export const CellInput = forwardRef<
         }}
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
+        onBlur={() => {
+          // 延迟 0 毫秒执行 放到下一个事件循环中执行
+          setTimeout(() => {
+            dispatch({
+              isFocused: false,
+            });
+          }, 0);
+        }}
+        onFocus={() => {
+          dispatch({
+            isFocused: true,
+          });
+        }}
       >
         <div className="relative overflow-hidden" ref={innerRef}>
           <canvas ref={canvasRef} style={{ pointerEvents: "none" }} />
@@ -686,7 +702,7 @@ export const CellInput = forwardRef<
               top: cursorStyle.top,
               width: 1,
               height: cursorStyle.height,
-              display: selectionText ? "none" : "block",
+              display: isShowCursor ? "block" : "none",
             }}
           />
         </div>
