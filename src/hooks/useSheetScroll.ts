@@ -152,9 +152,14 @@ export const useSheetScroll = (config: {
           x: newScrollX,
           y: newScrollY,
         });
-      }
-      if (selectedCell) {
-        cellInputActions?.updateInputSize(selectedCell);
+        if (selectedCell) {
+          cellInputActions?.updateInputSize(selectedCell, {
+            scrollPosition: {
+              x: newScrollX,
+              y: newScrollY,
+            },
+          });
+        }
       }
     },
     [

@@ -7,18 +7,24 @@ import {
   useRef,
   useState,
 } from "react";
-import { CellData } from "@/types/sheet";
+import { CellData, PositionType } from "@/types/sheet";
 import { useStore } from "@/hooks/useStore";
 import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useInput } from "./useInput";
 import { useRenderCell } from "@/hooks/useSheetDraw/useRenderCell";
 
+export type CellInputUpdateInputOptions = {
+  scrollPosition?: PositionType;
+};
 export type CellInputActionsType = {
   focus: (rowIndex: number, colIndex: number) => void;
   blur: () => void;
   setValue: (value: string) => void;
-  updateInputSize: (currentCell: CellData) => void;
+  updateInputSize: (
+    currentCell: CellData,
+    options?: CellInputUpdateInputOptions,
+  ) => void;
 };
 export type LineType = {
   startIndex: number;
@@ -70,6 +76,7 @@ export const CellInput = forwardRef<
     cursorStyle,
     cursorLine,
     minSize,
+    inputStyle,
     getInputHeight,
     setInputStyle,
     getCursorPosByXY,
@@ -173,7 +180,12 @@ export const CellInput = forwardRef<
     [config.inputPadding, getCellWidthHeight],
   );
   const updateCell = useCallback(
-    (selectedCell: CellData, content: string, newCursor: number) => {
+    (
+      selectedCell: CellData,
+      content: string,
+      newCursor: number,
+      options: CellInputUpdateInputOptions = {},
+    ) => {
       setValue(content);
       setCursorIndex(newCursor);
       selectedCell.value = content;
@@ -182,7 +194,7 @@ export const CellInput = forwardRef<
         value: content,
       });
       setLines(lines);
-      setInputStyle(selectedCell, lines, newCursor);
+      setInputStyle(selectedCell, lines, newCursor, options);
       onChange(content, selectedCell);
     },
     [getLines, onChange, setInputStyle],
@@ -489,8 +501,8 @@ export const CellInput = forwardRef<
       setValue(content) {
         setValue(content);
       },
-      updateInputSize(currentCell) {
-        updateCell(currentCell, value, currentCell.value.length);
+      updateInputSize(currentCell, options = {}) {
+        updateCell(currentCell, value, currentCell.value.length, options);
       },
     };
   }, [
@@ -529,7 +541,6 @@ export const CellInput = forwardRef<
     }
     const { row, col } = selectedCell || { row: 0, col: 0 };
     const { x, y } = getCellPosition(selectedCell);
-
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     // 设置字体样式
     const { minWidth, color, fontSize, textAlign } = getFontStyle(ctx, {
@@ -539,7 +550,6 @@ export const CellInput = forwardRef<
       y,
       cell: selectedCell,
     });
-
     ctx.textBaseline = "middle";
     // 行高间距 4pt
     const lineHeightPT = fontSize + 4;
@@ -669,6 +679,13 @@ export const CellInput = forwardRef<
     }
     return isFocused;
   }, [selectionText, isFocused]);
+  const inputDisplay = useMemo(() => {
+    if (editingCell) {
+      return "flex";
+    } else {
+      return "none";
+    }
+  }, [editingCell]);
   return (
     <div className="w-full h-full absolute top-0 left-0 pointer-events-none">
       <div
@@ -676,11 +693,12 @@ export const CellInput = forwardRef<
         tabIndex={0}
         className="bg-white z-50 pointer-events-auto outline-0"
         style={{
-          display: "none",
+          display: inputDisplay,
           position: "relative",
           border: `2px solid ${config.selectionBorderColor}`,
           fontFamily: "PingFangSC sans-serif",
           cursor: "text",
+          ...inputStyle,
         }}
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
@@ -690,6 +708,7 @@ export const CellInput = forwardRef<
             dispatch({
               isFocused: false,
             });
+            setValue("");
           }, 0);
         }}
         onFocus={() => {

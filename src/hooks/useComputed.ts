@@ -1,6 +1,7 @@
 import {
   ArrowDirectionType,
   CellData,
+  PositionType,
   SelectionSheetType,
 } from "@/types/sheet";
 import { useStore } from "./useStore";
@@ -197,8 +198,10 @@ export const useComputed = () => {
   );
   // 获取 x - left
   const getLeft = useCallback(
-    (col: number) => {
-      return col === 0 ? 0 : getRealLeft(col) - scrollPosition.x;
+    (col: number, _scrollPosition?: PositionType) => {
+      return col === 0
+        ? 0
+        : getRealLeft(col) - (_scrollPosition || scrollPosition).x;
     },
     [scrollPosition, getRealLeft],
   );
@@ -233,8 +236,10 @@ export const useComputed = () => {
     [zoomSize, headerRowsHeight],
   );
   const getTop = useCallback(
-    (row: number) => {
-      return row === 0 ? 0 : getRealTop(row) - scrollPosition.y;
+    (row: number, _scrollPosition?: PositionType) => {
+      return row === 0
+        ? 0
+        : getRealTop(row) - (_scrollPosition || scrollPosition).y;
     },
     [scrollPosition, getRealTop],
   );
@@ -319,7 +324,7 @@ export const useComputed = () => {
 
   // 获取单元格位置
   const getCellPosition = useCallback(
-    (cell: CellData) => {
+    (cell: CellData, _scrollPosition?: PositionType) => {
       let col = cell.col;
       let row = cell.row;
       // 如果单元格是主单元格，则计算其位置
@@ -327,8 +332,8 @@ export const useComputed = () => {
         row = cell.mergeSpan.r1;
         col = cell.mergeSpan.c1;
       }
-      const x = getLeft(col);
-      const y = getTop(row);
+      const x = getLeft(col, _scrollPosition);
+      const y = getTop(row, _scrollPosition);
       const right = getRight(col);
       return { x, y, right };
     },

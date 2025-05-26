@@ -3,7 +3,7 @@ import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { LineType } from "./CellInput";
+import { CellInputUpdateInputOptions, LineType } from "./CellInput";
 
 export const useInput = ({
   currentFocusCell,
@@ -20,6 +20,7 @@ export const useInput = ({
   const lastHeight = useRef(0);
   const cursorLine = useRef(0);
   const { config, selectedCell } = useStore();
+
   const { getFontSize, getTextAlign, getVerticalAlign, setFontStyle } =
     useTools();
   const [cursorStyle, setCursorStyle] = useState({
@@ -27,7 +28,7 @@ export const useInput = ({
     top: 0,
     height: 20,
   });
-  const { getCellPosition, getCellWidthHeight } = useComputed();
+  const { getLeft, getTop, getCellWidthHeight } = useComputed();
   const minSize = useMemo(() => {
     const { cellWidth } = getCellWidthHeight(selectedCell);
     return {
@@ -35,6 +36,14 @@ export const useInput = ({
       height: config.height,
     };
   }, [selectedCell, config, getCellWidthHeight]);
+  const [inputStyle, setInputStyleState] = useState<React.CSSProperties>({
+    width: minSize.width,
+    height: minSize.height,
+    minWidth: minSize.width,
+    minHeight: minSize.height,
+    alignItems: config.verticalAlign,
+    transform: `translate(0px, 0px)`,
+  });
   // 计算光标位置
   const updateCursorPosition = useCallback(
     (selectedCell: CellData | null, lines: LineType[], cursorIndex: number) => {
@@ -139,42 +148,51 @@ export const useInput = ({
   );
   // 设置 input 样式
   const setInputStyle = useCallback(
-    (currentCell: CellData | null, lines: LineType[], cursorIndex: number) => {
+    (
+      currentCell: CellData | null,
+      lines: LineType[],
+      cursorIndex: number,
+      options: CellInputUpdateInputOptions = {},
+    ) => {
       if (!currentCell) return;
       currentFocusCell.current = currentCell;
       const ctx = canvasRef.current?.getContext("2d");
       if (!ctx) return;
       if (containerRef.current) {
         const { cellWidth, cellHeight } = getCellWidthHeight(currentCell);
-        const { x, y } = getCellPosition(currentCell);
+        const x = getLeft(currentCell.col, options.scrollPosition);
+        const y = getTop(currentCell.row, options.scrollPosition);
         const verticalAlign = getVerticalAlign(currentCell);
         const textAlign = getTextAlign(currentCell);
-        containerRef.current.style.display = "flex";
-        containerRef.current.style.alignItems = verticalAlign;
-        containerRef.current.style.minWidth = `${cellWidth + config.inputPadding}px`;
-        containerRef.current.style.minHeight = `${cellHeight + config.inputPadding}px`;
         const { width, height, maxLineWidth } = updateInputSize(
           currentCell,
           lines,
         );
-        updateCursorPosition(currentCell, lines, cursorIndex);
+        let left = 0;
+        const top = y - 2;
         if (textAlign === "right") {
           // 减的是左右的 padding
           if (maxLineWidth >= cellWidth - config.inputPadding * 2) {
-            const left = x + cellWidth - width - 2;
-            containerRef.current.style.left = `${left}px`;
+            left = x + cellWidth - width - 2;
           } else {
-            containerRef.current.style.left = `${x - 2}px`;
+            left = x - 2;
           }
         } else {
-          containerRef.current.style.left = `${x - 2}px`;
+          left = x - 2;
         }
-        containerRef.current.style.top = `${y - 2}px`;
-        containerRef.current.style.width = `${width + config.inputPadding}px`;
-        containerRef.current.style.height = `${height + config.inputPadding}px`;
-        setTimeout(() => {
+        const updates = {
+          width: `${width + config.inputPadding}px`,
+          height: `${height + config.inputPadding}px`,
+          transform: `translate(${left}px, ${top}px)`,
+          minWidth: `${cellWidth + config.inputPadding}px`,
+          minHeight: `${cellHeight + config.inputPadding}px`,
+          alignItems: verticalAlign,
+        };
+        setInputStyleState(updates);
+        Promise.resolve().then(() => {
           containerRef.current?.focus();
-        }, 0);
+          updateCursorPosition(currentCell, lines, cursorIndex);
+        });
         return {
           width,
           height,
@@ -186,7 +204,8 @@ export const useInput = ({
       canvasRef,
       containerRef,
       getCellWidthHeight,
-      getCellPosition,
+      getLeft,
+      getTop,
       getVerticalAlign,
       getTextAlign,
       config.inputPadding,
@@ -269,12 +288,14 @@ export const useInput = ({
     },
     [canvasRef, getFontSize, config.inputPadding, getTextAlign],
   );
+
   return {
     lastWidth,
     lastHeight,
     cursorStyle,
     cursorLine,
     minSize,
+    inputStyle,
     setInputStyle,
     getCursorPosByXY,
     updateCursorPosition,
