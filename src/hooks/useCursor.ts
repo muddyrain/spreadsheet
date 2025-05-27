@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "./useStore";
 import { useComputed } from "./useComputed";
 import { PaintCursorURL } from "@/assets";
+import { produce } from "immer";
 
 export const useCursor = (options: {
   currentHoverCell: [number, number] | null;
@@ -171,8 +172,11 @@ export const useCursor = (options: {
         if (width <= 0) {
           width = 0;
         }
-        headerColsWidth[currentColSideLineIndex] = width;
-        setHeaderColsWidth([...headerColsWidth]);
+        setHeaderColsWidth(
+          produce((headerColsWidth) => {
+            headerColsWidth[currentColSideLineIndex] = width;
+          }),
+        );
         dispatch((state) => ({
           currentSideLineIndex: [state.currentSideLineIndex[0], -1],
           currentSideLinePosition: [state.currentSideLinePosition[0], -1],
@@ -186,8 +190,11 @@ export const useCursor = (options: {
         if (height <= 0) {
           height = 0;
         }
-        headerRowsHeight[currentRowSideLineIndex] = height;
-        setHeaderRowsHeight([...headerRowsHeight]);
+        setHeaderRowsHeight(
+          produce((headerRowsHeight) => {
+            headerRowsHeight[currentRowSideLineIndex] = height;
+          }),
+        );
         dispatch((state) => ({
           currentSideLineIndex: [-1, state.currentSideLineIndex[1]],
           currentSideLinePosition: [-1, state.currentSideLinePosition[1]],
@@ -205,8 +212,6 @@ export const useCursor = (options: {
     cellInputActions,
     currentSideLineIndex,
     currentSideLinePosition,
-    headerColsWidth,
-    headerRowsHeight,
     isMouseDown,
     dispatch,
     setHeaderColsWidth,

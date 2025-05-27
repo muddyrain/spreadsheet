@@ -14,6 +14,7 @@ import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useInput } from "./useInput";
 import { useRenderCell } from "@/hooks/useSheetDraw/useRenderCell";
 import _ from "lodash";
+import { produce } from "immer";
 
 export type CellInputUpdateInputOptions = {
   scrollPosition?: PositionType;
@@ -472,7 +473,6 @@ export const CellInput = forwardRef<
     ],
   );
   const handleBlur = useCallback(() => {
-    if (!isFocused.current) return;
     if (containerRef.current) {
       if (currentFocusCell.current) {
         const row = currentFocusCell.current.row;
@@ -482,8 +482,11 @@ export const CellInput = forwardRef<
         });
         const height = getInputHeight(currentFocusCell.current, lines);
         if (row && height > headerRowsHeight[row]) {
-          headerRowsHeight[row] = height;
-          setHeaderRowsHeight([...headerRowsHeight]);
+          setHeaderRowsHeight(
+            produce((headerRowsHeight) => {
+              headerRowsHeight[row] = height;
+            }),
+          );
         }
         containerRef.current.style.display = "none";
         containerRef.current.blur();
@@ -704,8 +707,10 @@ export const CellInput = forwardRef<
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
         onBlur={() => {
-          isFocused.current = false;
           handleCellInputActions.blur();
+          // Promise.resolve().then(() => {
+          //   isFocused.current = false;
+          // });
         }}
         onFocus={() => {
           Promise.resolve().then(() => {
