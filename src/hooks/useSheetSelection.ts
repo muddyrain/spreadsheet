@@ -180,9 +180,9 @@ export function useSheetSelection() {
         const x = e.clientX - rect.left + scrollPositionRef.current.x;
         const y = e.clientY - rect.top + scrollPositionRef.current.y;
         // 列索引
-        const col = findIndexByAccumulate(headerColsWidth, x);
+        const col = Math.max(findIndexByAccumulate(headerColsWidth, x), 1);
         // 行索引
-        const row = findIndexByAccumulate(headerRowsHeight, y);
+        const row = Math.max(findIndexByAccumulate(headerRowsHeight, y), 1);
         if (row !== lastRow || col !== lastCol) {
           setSelection(() => {
             const { newStartRow, newStartCol, newEndRow, newEndCol } =
