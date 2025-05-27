@@ -48,6 +48,7 @@ const Spreadsheet: React.FC<{
     e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
     options: { col: number; row: number },
   ) => {
+    isFocused.current = false;
     const { row: rowIndex, col: colIndex } = options;
     if (rowIndex === 0 && colIndex === 0) {
       handleSelectAll();
@@ -150,6 +151,7 @@ const Spreadsheet: React.FC<{
       colIndex = col;
       rowIndex = row;
     }
+    isFocused.current = false;
     setEditingCell(() => ({ row: rowIndex, col: colIndex })); // 双击才进入编辑
     const editingCell = getCurrentCell(rowIndex, colIndex);
     if (editingCell) {
@@ -173,7 +175,8 @@ const Spreadsheet: React.FC<{
           colIndex = col;
           rowIndex = row;
         }
-        if (!isFocused) {
+        if (!isFocused.current) {
+          isFocused.current = false;
           const originData = _.cloneDeep(data);
           const newValue = selectedCell.value + content;
           setData(
@@ -198,7 +201,7 @@ const Spreadsheet: React.FC<{
       onDirectionKeyDown("ArrowDown");
       clearSelection();
       cellInputActions?.blur();
-      dispatch({ isFocused: false });
+      isFocused.current = false;
     },
   });
   // 防抖更新
@@ -211,7 +214,7 @@ const Spreadsheet: React.FC<{
   // 监听输入更新事件
   const handleInputChange = useCallback(
     (value: string, _editingCell?: CellData | null) => {
-      if ((_editingCell || editingCell) && isFocused) {
+      if ((_editingCell || editingCell) && isFocused.current) {
         const row = _editingCell?.row || editingCell?.row;
         const col = _editingCell?.col || editingCell?.col;
         if (row && col) {
@@ -278,7 +281,7 @@ const Spreadsheet: React.FC<{
             onDirectionKeyDown("ArrowDown");
             clearSelection();
             cellInputActions?.blur();
-            dispatch({ isFocused: false });
+            isFocused.current = false;
           }}
         />
       </div>

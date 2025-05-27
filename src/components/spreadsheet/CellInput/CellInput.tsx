@@ -472,7 +472,7 @@ export const CellInput = forwardRef<
     ],
   );
   const handleBlur = useCallback(() => {
-    if (!isFocused) return;
+    if (!isFocused.current) return;
     if (containerRef.current) {
       if (currentFocusCell.current) {
         const row = currentFocusCell.current.row;
@@ -490,10 +490,7 @@ export const CellInput = forwardRef<
         setValue("");
         onChange?.(value, currentFocusCell?.current);
         currentFocusCell.current = null;
-        dispatch(() => ({
-          isFocused: false,
-        }));
-        // addDelta(originData);
+        isFocused.current = false;
       }
     }
   }, [
@@ -503,7 +500,6 @@ export const CellInput = forwardRef<
     getInputHeight,
     headerRowsHeight,
     onChange,
-    dispatch,
     setHeaderRowsHeight,
   ]);
   const handleCellInputActions: CellInputActionsType = useMemo(() => {
@@ -513,13 +509,13 @@ export const CellInput = forwardRef<
         if (!currentCell) return;
         currentFocusCell.current = _.cloneDeep(cell);
         setSelectionText(null);
-        dispatch({ isFocused: true });
         const lines = getLines(currentCell);
         setLines(lines);
         cursorLine.current = lines.length - 1;
         setCursorIndex(currentCell.value.length);
         setInputStyle(currentCell, lines, currentCell.value.length);
         setOriginData(originData);
+        isFocused.current = true;
       },
       blur() {
         handleBlur();
@@ -536,7 +532,7 @@ export const CellInput = forwardRef<
         );
       },
     };
-  }, [dispatch, getLines, cursorLine, setInputStyle, handleBlur, updateCell]);
+  }, [isFocused, getLines, cursorLine, setInputStyle, handleBlur, updateCell]);
   useEffect(() => {
     if (handleCellInputActions) {
       dispatch({ cellInputActions: handleCellInputActions });
@@ -684,12 +680,6 @@ export const CellInput = forwardRef<
       }
     };
   }, [value, drawInput, selectedCell]);
-  const isShowCursor = useMemo(() => {
-    if (selectionText) {
-      return false;
-    }
-    return isFocused;
-  }, [selectionText, isFocused]);
   const inputDisplay = useMemo(() => {
     if (editingCell) {
       return "flex";
@@ -714,12 +704,13 @@ export const CellInput = forwardRef<
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
         onBlur={() => {
+          isFocused.current = false;
           handleCellInputActions.blur();
         }}
         onFocus={() => {
-          dispatch(() => ({
-            isFocused: true,
-          }));
+          Promise.resolve().then(() => {
+            isFocused.current = true;
+          });
         }}
       >
         <div className="relative overflow-hidden" ref={innerRef}>
@@ -732,7 +723,11 @@ export const CellInput = forwardRef<
               top: cursorStyle.top,
               width: 1,
               height: cursorStyle.height,
-              display: isShowCursor ? "block" : "none",
+              display: selectionText
+                ? "none"
+                : isFocused.current
+                  ? "block"
+                  : "none",
             }}
           />
         </div>

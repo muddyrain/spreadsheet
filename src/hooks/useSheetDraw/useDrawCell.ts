@@ -346,7 +346,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   // 绘制选中单元格
   const drawSelectedCell = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      if (selectedCell && !isFocused) {
+      if (selectedCell && !isFocused.current) {
         let { row, col } = selectedCell;
         let cell = data[row]?.[col];
         if (!cell) return;
@@ -431,7 +431,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   const drawSelectionBorder = useCallback(
     (ctx: CanvasRenderingContext2D) => {
       if (selection?.start && selection?.end) {
-        if (isOneSelection && isFocused) return;
+        if (isOneSelection && isFocused.current) return;
         const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
 
         // 只绘制在当前可视区域内的部分

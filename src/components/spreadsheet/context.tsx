@@ -16,7 +16,6 @@ import {
 import { CellInputActionsType } from "./CellInput";
 
 export type LocalStoreType = {
-  isFocused: boolean;
   currentSideLineIndex: number[];
   containerWidth: number;
   containerHeight: number;
@@ -56,6 +55,7 @@ export const SpreadsheetContext = React.createContext<
   | ({
       sheets: Sheet[];
       activeSheetId: string;
+      isFocused: React.RefObject<boolean>;
       setActiveSheetId: (activeSheetId: string) => void;
       currentSheet: Sheet | null;
       config: Required<SpreadsheetConfig>;

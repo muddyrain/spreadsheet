@@ -43,7 +43,8 @@ export const useTab = () => {
     if (!cell) return;
     updateSelectionAndCell(cell.row, cell.col);
     fitCellViewPort(cell.row, cell.col);
-    if (isFocused) {
+    if (isFocused.current) {
+      isFocused.current = false;
       Promise.resolve().then(() => {
         cellInputActions?.updateInputSize(cell);
       });
@@ -180,7 +181,7 @@ export const useTab = () => {
       const cell = getCurrentCell(row, col);
       setSelectedCell(cell);
       // 处理编辑状态
-      if (isFocused && cell) {
+      if (isFocused.current && cell) {
         setEditingCell({ row, col });
         Promise.resolve().then(() => {
           cellInputActions?.updateInputSize(cell);

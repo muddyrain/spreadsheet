@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   TableData,
   SpreadsheetConfig,
@@ -30,7 +30,7 @@ const RootSpreadsheet: React.FC<{
   const { config: _config, onChange } = props;
   const [deltas, setDeltas] = useState<DeltaItem[]>([]);
   const [deltaIndex, setDeltaIndex] = useState(-1);
-
+  const isFocused = useRef(false);
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const sheet = props.spreadsheet ?? useSpreadsheet(_config);
   const [sheetCellSettingsConfig, setSheetCellSettingsConfig] =
@@ -82,6 +82,7 @@ const RootSpreadsheet: React.FC<{
       sheetCellSettingsConfig,
       setSheetCellSettingsConfig,
       getCurrentCell: sheet.getCurrentCell,
+      isFocused,
     };
   }, [
     addDelta,
@@ -259,7 +260,6 @@ const useSheetStore = (sheet: SpreadsheetType) => {
 };
 const useLocalState = () => {
   const initialState: LocalStoreType = {
-    isFocused: false,
     currentSideLineIndex: [-1, -1],
     containerWidth: 0,
     containerHeight: 0,
