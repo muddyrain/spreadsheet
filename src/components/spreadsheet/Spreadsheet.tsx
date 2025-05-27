@@ -194,9 +194,10 @@ const Spreadsheet: React.FC<{
   const debouncedChange = useMemo(() => {
     const handleChange = (data: TableData) => {
       onChange?.(filterData(data) as TableData);
+      setData(() => data);
     };
-    return _.debounce(handleChange, 500);
-  }, [onChange]);
+    return _.debounce(handleChange, 150);
+  }, [onChange, setData]);
   // 监听输入更新事件
   const handleInputChange = useCallback(
     (value: string, _editingCell?: CellData | null) => {
@@ -204,17 +205,16 @@ const Spreadsheet: React.FC<{
         const row = _editingCell?.row || editingCell?.row;
         const col = _editingCell?.col || editingCell?.col;
         if (row && col) {
-          const newData = [...data];
+          const newData = _.cloneDeep(data);
           const targetCell = newData[row][col];
           if (targetCell) {
             targetCell.value = value;
           }
-          setData(() => newData);
           debouncedChange(newData);
         }
       }
     },
-    [isFocused, data, debouncedChange, editingCell, setData],
+    [isFocused, data, debouncedChange, editingCell],
   );
   // 清除选中
   const clearSelection = useCallback(() => {

@@ -163,7 +163,23 @@ export type MergeSpanType = {
  * @description 表格数据 - 二维数组
  */
 export type TableData = CellData[][];
-
+/**
+ * @description 表格数据 - 差异数据
+ */
+export type DeltaItem = {
+  /**
+   * @description 差异单元格数据
+   */
+  data: CellData[];
+  /**
+   * @description 差异时间戳
+   */
+  timestamp: number;
+  /**
+   * @description 差异工作表ID
+   */
+  sheetId: string;
+};
 /**
  * @description 表格配置
  */
@@ -306,6 +322,8 @@ export type SpreadsheetType = {
   clearSelection: () => void;
   getCurrentCell: (row: number, col: number) => CellData | null;
   setCurrentSheet: <T extends keyof Sheet>(key: T, value: Sheet[T]) => void;
+  deltas: DeltaItem[];
+  setDeltas: React.Dispatch<React.SetStateAction<DeltaItem[]>>;
 };
 /**
  * @description 位置类型

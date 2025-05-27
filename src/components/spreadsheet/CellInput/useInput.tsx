@@ -9,6 +9,7 @@ export const useInput = ({
   currentFocusCell,
   containerRef,
   canvasRef,
+  value,
 }: {
   currentFocusCell: React.RefObject<CellData | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -283,7 +284,6 @@ export const useInput = ({
           cursorIndex: 0,
           cursorLine: 0,
         };
-      const value = selectedCell.value;
       const fontSize = getFontSize(selectedCell);
       const lineHeightPT = fontSize + 4;
       const lineHeightPX = (lineHeightPT * 4) / 3;
@@ -337,7 +337,7 @@ export const useInput = ({
         cursorLine: lineIndex,
       };
     },
-    [canvasRef, getFontSize, config.inputPadding, getTextAlign],
+    [canvasRef, getFontSize, value, config.inputPadding, getTextAlign],
   );
   return {
     lastWidth,

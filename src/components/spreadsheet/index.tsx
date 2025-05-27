@@ -77,6 +77,14 @@ const useSheetStore = (sheet: SpreadsheetType) => {
         if (typeof data === "function") {
           data = data(currentSheet?.data || []);
         }
+        // 深拷贝后再比较，避免引用复用导致 isEqual 失效
+        const oldData = _.cloneDeep(currentSheet?.data);
+        const newData = _.cloneDeep(data);
+        // 数据全量对比，完全一致则不更新
+        if (_.isEqual(newData, oldData)) {
+          return;
+        }
+        console.log("update-data");
         setCurrentSheet("cutSelection", null);
         setCurrentSheet("data", data);
       },

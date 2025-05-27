@@ -1,5 +1,6 @@
 import {
   CellData,
+  DeltaItem,
   Sheet,
   SpreadsheetConfig,
   SpreadsheetType,
@@ -16,6 +17,7 @@ export const useSpreadsheet = (
   // 配置
   const config = useSpreadsheetConfig(_config);
   const [updater, setUpdater] = useState(+new Date());
+  const [deltas, setDeltas] = useState<DeltaItem[]>([]);
   const {
     sheets,
     setSheets,
@@ -96,6 +98,8 @@ export const useSpreadsheet = (
     deleteSheet,
     createCopySheet,
     setCurrentSheet,
+    deltas,
+    setDeltas,
   };
   window.$sheet = $sheet;
   return $sheet;

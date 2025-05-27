@@ -188,7 +188,6 @@ export const CellInput = forwardRef<
     ) => {
       setValue(content);
       setCursorIndex(newCursor);
-      selectedCell.value = content;
       const lines = getLines({
         ...selectedCell,
         value: content,
@@ -208,7 +207,10 @@ export const CellInput = forwardRef<
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const canvasWidth = canvasRef.current.width;
-      const lines = getLines(selectedCell);
+      const lines = getLines({
+        ...selectedCell,
+        value: value,
+      });
       const { cursorIndex } = getCursorPosByXY(
         x,
         y,
@@ -255,13 +257,7 @@ export const CellInput = forwardRef<
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     },
-    [
-      selectedCell,
-      getCursorPosByXY,
-      updateCursorPosition,
-      setCursorIndex,
-      getLines,
-    ],
+    [selectedCell, getLines, value, getCursorPosByXY, updateCursorPosition],
   );
   // 处理键盘输入
   const handleKeyDown = useCallback(
@@ -343,8 +339,18 @@ export const CellInput = forwardRef<
         e.stopPropagation();
         // 普通字符输入
         let newValue = "";
+        let newCursor = cursorIndex;
         newValue =
           value.slice(0, cursorIndex) + e.key + value.slice(cursorIndex);
+        newCursor = cursorIndex + 1;
+        if (selectionText) {
+          newValue =
+            value.slice(0, selectionText.start) +
+            e.key +
+            value.slice(selectionText.end);
+          setSelectionText(null);
+          newCursor = selectionText.start + 1;
+        }
         const originLines = getLines(selectedCell);
         const currentLine = originLines[cursorLine.current];
         // 当前光标是当前行的最后一个字符 且 输入的字符会导致当前行溢出
@@ -358,7 +364,7 @@ export const CellInput = forwardRef<
             cursorLine.current += 1;
           }
         }
-        updateCell(selectedCell, newValue, cursorIndex + 1);
+        updateCell(selectedCell, newValue, newCursor);
       } else if (e.key === "Backspace") {
         e.preventDefault();
         e.stopPropagation();

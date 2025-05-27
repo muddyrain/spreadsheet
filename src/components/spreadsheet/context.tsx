@@ -1,5 +1,6 @@
 import {
   CellStyle,
+  DeltaItem,
   EditingCell,
   PositionType,
   Sheet,
@@ -65,6 +66,8 @@ export const SpreadsheetContext = React.createContext<
       deleteSheet: (id: string) => void;
       createCopySheet: (id: string) => void;
       setUpdater: () => void;
+      deltas: DeltaItem[];
+      setDeltas: React.Dispatch<React.SetStateAction<DeltaItem[]>>;
       getCurrentCell: (row: number, col: number) => CellData | null;
       sheetCellSettingsConfig: SheetCellSettingsConfig;
       setSheetCellSettingsConfig: React.Dispatch<
