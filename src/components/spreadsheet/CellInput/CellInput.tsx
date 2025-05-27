@@ -56,15 +56,13 @@ export const CellInput = forwardRef<
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const currentFocusCell = useRef<CellData | null>(null);
-  const [originData, setOriginData] = useState<TableData>([]);
+  const [__, setOriginData] = useState<TableData>([]);
   const {
     config,
     headerRowsHeight,
     isFocused,
     editingCell,
-    data,
     selectedCell,
-    addDelta,
     setHeaderRowsHeight,
     dispatch,
   } = useStore();
@@ -474,6 +472,7 @@ export const CellInput = forwardRef<
     ],
   );
   const handleBlur = useCallback(() => {
+    if (!isFocused) return;
     if (containerRef.current) {
       if (currentFocusCell.current) {
         const row = currentFocusCell.current.row;
@@ -489,26 +488,22 @@ export const CellInput = forwardRef<
         containerRef.current.style.display = "none";
         containerRef.current.blur();
         setValue("");
+        onChange?.(value, currentFocusCell?.current);
+        currentFocusCell.current = null;
+        dispatch(() => ({
+          isFocused: false,
+        }));
         // addDelta(originData);
-        // 下一个事件循环中执行
-        Promise.resolve().then(() => {
-          dispatch({
-            isFocused: false,
-          });
-          onChange?.(value, currentFocusCell?.current);
-          currentFocusCell.current = null;
-        });
       }
     }
   }, [
-    originData,
-    onChange,
-    value,
-    dispatch,
+    isFocused,
     getLines,
-    addDelta,
+    value,
     getInputHeight,
     headerRowsHeight,
+    onChange,
+    dispatch,
     setHeaderRowsHeight,
   ]);
   const handleCellInputActions: CellInputActionsType = useMemo(() => {
@@ -516,7 +511,7 @@ export const CellInput = forwardRef<
       focus(cell, originData) {
         const currentCell = cell;
         if (!currentCell) return;
-        currentFocusCell.current = _.cloneDeep(currentCell);
+        currentFocusCell.current = _.cloneDeep(cell);
         setSelectionText(null);
         dispatch({ isFocused: true });
         const lines = getLines(currentCell);
@@ -533,18 +528,15 @@ export const CellInput = forwardRef<
         setValue(content);
       },
       updateInputSize(currentCell, options = {}) {
-        updateCell(currentCell, value, currentCell.value.length, options);
+        updateCell(
+          currentCell,
+          currentCell.value,
+          currentCell.value.length,
+          options,
+        );
       },
     };
-  }, [
-    dispatch,
-    getLines,
-    cursorLine,
-    setInputStyle,
-    handleBlur,
-    updateCell,
-    value,
-  ]);
+  }, [dispatch, getLines, cursorLine, setInputStyle, handleBlur, updateCell]);
   useEffect(() => {
     if (handleCellInputActions) {
       dispatch({ cellInputActions: handleCellInputActions });
@@ -691,7 +683,7 @@ export const CellInput = forwardRef<
         cancelAnimationFrame(rafId.current);
       }
     };
-  }, [value, selectedCell, getCellPosition, getFontStyle, drawInput, data]);
+  }, [value, drawInput, selectedCell]);
   const isShowCursor = useMemo(() => {
     if (selectionText) {
       return false;
@@ -725,11 +717,9 @@ export const CellInput = forwardRef<
           handleCellInputActions.blur();
         }}
         onFocus={() => {
-          Promise.resolve().then(() => {
-            dispatch({
-              isFocused: true,
-            });
-          });
+          dispatch(() => ({
+            isFocused: true,
+          }));
         }}
       >
         <div className="relative overflow-hidden" ref={innerRef}>

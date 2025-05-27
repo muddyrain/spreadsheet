@@ -41,12 +41,12 @@ export const useTab = () => {
     const { nextRow: row, nextCol: col } = position;
     const cell = getCurrentCell(row, col);
     if (!cell) return;
-
     updateSelectionAndCell(cell.row, cell.col);
     fitCellViewPort(cell.row, cell.col);
-
     if (isFocused) {
-      cellInputActions?.blur();
+      Promise.resolve().then(() => {
+        cellInputActions?.updateInputSize(cell);
+      });
       setEditingCell(null);
     }
   }, [
@@ -182,7 +182,9 @@ export const useTab = () => {
       // 处理编辑状态
       if (isFocused && cell) {
         setEditingCell({ row, col });
-        cellInputActions?.setValue(cell.value);
+        Promise.resolve().then(() => {
+          cellInputActions?.updateInputSize(cell);
+        });
       }
     }
   }, [

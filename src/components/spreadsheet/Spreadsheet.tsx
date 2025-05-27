@@ -24,6 +24,7 @@ const Spreadsheet: React.FC<{
     selectedCell,
     currentCell,
     editingCell,
+    cellInputActions,
     setData,
     setSelection,
     setEditingCell,
@@ -185,6 +186,7 @@ const Spreadsheet: React.FC<{
               cellInputRef.current?.focus(target, originData);
             }),
           );
+
           setEditingCell(() => ({ row: rowIndex, col: colIndex }));
         }
       }
@@ -195,7 +197,7 @@ const Spreadsheet: React.FC<{
     onEnterKey: () => {
       onDirectionKeyDown("ArrowDown");
       clearSelection();
-      cellInputRef.current?.blur();
+      cellInputActions?.blur();
       dispatch({ isFocused: false });
     },
   });
@@ -234,10 +236,10 @@ const Spreadsheet: React.FC<{
     if (import.meta?.hot) {
       import.meta.hot.dispose(() => {
         clearSelection();
-        cellInputRef.current?.blur();
+        cellInputActions?.blur();
       });
     }
-  }, [clearSelection, dispatch]);
+  }, [cellInputActions, clearSelection, dispatch]);
   return (
     <div className="flex flex-col w-full h-full overflow-hidden">
       <Header
@@ -275,7 +277,7 @@ const Spreadsheet: React.FC<{
           onEnterKeyDown={() => {
             onDirectionKeyDown("ArrowDown");
             clearSelection();
-            cellInputRef.current?.blur();
+            cellInputActions?.blur();
             dispatch({ isFocused: false });
           }}
         />
