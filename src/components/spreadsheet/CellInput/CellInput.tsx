@@ -7,18 +7,19 @@ import {
   useRef,
   useState,
 } from "react";
-import { CellData, PositionType } from "@/types/sheet";
+import { CellData, PositionType, TableData } from "@/types/sheet";
 import { useStore } from "@/hooks/useStore";
 import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useInput } from "./useInput";
 import { useRenderCell } from "@/hooks/useSheetDraw/useRenderCell";
+import _ from "lodash";
 
 export type CellInputUpdateInputOptions = {
   scrollPosition?: PositionType;
 };
 export type CellInputActionsType = {
-  focus: (rowIndex: number, colIndex: number) => void;
+  focus: (cell: CellData | null, originData: TableData) => void;
   blur: () => void;
   setValue: (value: string) => void;
   updateInputSize: (
@@ -55,6 +56,7 @@ export const CellInput = forwardRef<
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const currentFocusCell = useRef<CellData | null>(null);
+  const [originData, setOriginData] = useState<TableData>([]);
   const {
     config,
     headerRowsHeight,
@@ -62,7 +64,7 @@ export const CellInput = forwardRef<
     editingCell,
     data,
     selectedCell,
-    getCurrentCell,
+    addDelta,
     setHeaderRowsHeight,
     dispatch,
   } = useStore();
@@ -193,8 +195,8 @@ export const CellInput = forwardRef<
         value: content,
       });
       setLines(lines);
-      setInputStyle(selectedCell, lines, newCursor, options);
       onChange(content, selectedCell);
+      setInputStyle(selectedCell, lines, newCursor, options);
     },
     [getLines, onChange, setInputStyle],
   );
@@ -473,18 +475,48 @@ export const CellInput = forwardRef<
   );
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
-      containerRef.current.style.display = "none";
-      containerRef.current.blur();
-      onChange?.(value);
-      setValue("");
+      if (currentFocusCell.current) {
+        const row = currentFocusCell.current.row;
+        const lines = getLines({
+          ...currentFocusCell.current,
+          value,
+        });
+        const height = getInputHeight(currentFocusCell.current, lines);
+        if (row && height > headerRowsHeight[row]) {
+          headerRowsHeight[row] = height;
+          setHeaderRowsHeight([...headerRowsHeight]);
+        }
+        containerRef.current.style.display = "none";
+        containerRef.current.blur();
+        setValue("");
+        // addDelta(originData);
+        // 下一个事件循环中执行
+        Promise.resolve().then(() => {
+          dispatch({
+            isFocused: false,
+          });
+          onChange?.(value, currentFocusCell?.current);
+          currentFocusCell.current = null;
+        });
+      }
     }
-  }, [onChange, value]);
+  }, [
+    originData,
+    onChange,
+    value,
+    dispatch,
+    getLines,
+    addDelta,
+    getInputHeight,
+    headerRowsHeight,
+    setHeaderRowsHeight,
+  ]);
   const handleCellInputActions: CellInputActionsType = useMemo(() => {
     return {
-      focus(rowIndex: number, colIndex: number) {
-        const currentCell = getCurrentCell(rowIndex, colIndex);
+      focus(cell, originData) {
+        const currentCell = cell;
         if (!currentCell) return;
-        currentFocusCell.current = currentCell;
+        currentFocusCell.current = _.cloneDeep(currentCell);
         setSelectionText(null);
         dispatch({ isFocused: true });
         const lines = getLines(currentCell);
@@ -492,18 +524,10 @@ export const CellInput = forwardRef<
         cursorLine.current = lines.length - 1;
         setCursorIndex(currentCell.value.length);
         setInputStyle(currentCell, lines, currentCell.value.length);
+        setOriginData(originData);
       },
       blur() {
         handleBlur();
-        if (currentFocusCell?.current) {
-          const row = currentFocusCell.current?.row;
-          const lines = getLines(currentFocusCell.current);
-          const height = getInputHeight(currentFocusCell.current, lines);
-          if (row && height > headerRowsHeight[row]) {
-            headerRowsHeight[row] = height;
-            setHeaderRowsHeight([...headerRowsHeight]);
-          }
-        }
       },
       setValue(content) {
         setValue(content);
@@ -513,15 +537,11 @@ export const CellInput = forwardRef<
       },
     };
   }, [
-    getCurrentCell,
     dispatch,
     getLines,
     cursorLine,
     setInputStyle,
     handleBlur,
-    getInputHeight,
-    headerRowsHeight,
-    setHeaderRowsHeight,
     updateCell,
     value,
   ]);
@@ -672,11 +692,6 @@ export const CellInput = forwardRef<
       }
     };
   }, [value, selectedCell, getCellPosition, getFontStyle, drawInput, data]);
-  useEffect(() => {
-    if (!editingCell) {
-      handleBlur();
-    }
-  }, [editingCell, handleBlur]);
   const isShowCursor = useMemo(() => {
     if (selectionText) {
       return false;
@@ -707,12 +722,7 @@ export const CellInput = forwardRef<
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
         onBlur={() => {
-          // 下一个事件循环中执行
-          Promise.resolve().then(() => {
-            dispatch({
-              isFocused: false,
-            });
-          });
+          handleCellInputActions.blur();
         }}
         onFocus={() => {
           Promise.resolve().then(() => {

@@ -12,6 +12,7 @@ import { Footer } from "./Footer/index";
 import { useTab } from "@/hooks/useTab";
 import { useDirection } from "@/hooks/useDirection";
 import { useComputed } from "@/hooks/useComputed";
+import { produce } from "immer";
 
 const Spreadsheet: React.FC<{
   onChange?: (data: TableData) => void;
@@ -46,7 +47,6 @@ const Spreadsheet: React.FC<{
     e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
     options: { col: number; row: number },
   ) => {
-    cellInputRef.current?.blur();
     const { row: rowIndex, col: colIndex } = options;
     if (rowIndex === 0 && colIndex === 0) {
       handleSelectAll();
@@ -156,7 +156,7 @@ const Spreadsheet: React.FC<{
     }
     fitCellViewPort(rowIndex, colIndex);
     Promise.resolve().then(() => {
-      cellInputRef.current?.focus(rowIndex, colIndex);
+      cellInputRef.current?.focus(currentCell, _.cloneDeep(data));
     });
   };
   const { onTabKeyDown } = useTab();
@@ -173,9 +173,18 @@ const Spreadsheet: React.FC<{
           rowIndex = row;
         }
         if (!isFocused) {
-          cellInputRef.current?.setValue(selectedCell.value + content);
-          selectedCell.value = selectedCell.value + content;
-          cellInputRef.current?.focus(rowIndex, colIndex);
+          const originData = _.cloneDeep(data);
+          const newValue = selectedCell.value + content;
+          setData(
+            produce((data) => {
+              const target = data[selectedCell.row][selectedCell.col];
+              if (target) {
+                target.value = newValue;
+              }
+              cellInputRef.current?.setValue(newValue);
+              cellInputRef.current?.focus(target, originData);
+            }),
+          );
           setEditingCell(() => ({ row: rowIndex, col: colIndex }));
         }
       }
@@ -194,10 +203,9 @@ const Spreadsheet: React.FC<{
   const debouncedChange = useMemo(() => {
     const handleChange = (data: TableData) => {
       onChange?.(filterData(data) as TableData);
-      setData(() => data);
     };
-    return _.debounce(handleChange, 150);
-  }, [onChange, setData]);
+    return _.debounce(handleChange, 100);
+  }, [onChange]);
   // 监听输入更新事件
   const handleInputChange = useCallback(
     (value: string, _editingCell?: CellData | null) => {
@@ -210,11 +218,12 @@ const Spreadsheet: React.FC<{
           if (targetCell) {
             targetCell.value = value;
           }
+          setData(() => newData);
           debouncedChange(newData);
         }
       }
     },
-    [isFocused, data, debouncedChange, editingCell],
+    [editingCell, isFocused, data, setData, debouncedChange],
   );
   // 清除选中
   const clearSelection = useCallback(() => {
@@ -242,7 +251,6 @@ const Spreadsheet: React.FC<{
             }
           } else {
             clearSelection();
-            cellInputRef.current?.blur();
           }
         }}
       />

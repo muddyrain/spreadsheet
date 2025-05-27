@@ -29,25 +29,28 @@ export type LocalStoreType = {
 };
 export type SheetStoreType = {
   zoomSize: number;
-  setZoomSize: React.Dispatch<React.SetStateAction<number>>;
   headerColsWidth: number[];
-  setHeaderColsWidth: React.Dispatch<React.SetStateAction<number[]>>;
   headerRowsHeight: number[];
-  setHeaderRowsHeight: React.Dispatch<React.SetStateAction<number[]>>;
   scrollPosition: PositionType;
-  setScrollPosition: React.Dispatch<React.SetStateAction<PositionType>>;
   selectedCell: CellData | null;
-  setSelectedCell: React.Dispatch<React.SetStateAction<CellData | null>>;
   cutSelection: SelectionSheetType | null;
+  editingCell: EditingCell;
+  selection: SelectionSheetType | null;
+  data: TableData;
+};
+export type SheetStoreActionType = {
+  setZoomSize: (zoomSize: number) => void;
+  setHeaderColsWidth: React.Dispatch<React.SetStateAction<number[]>>;
+  setHeaderRowsHeight: React.Dispatch<React.SetStateAction<number[]>>;
+  setScrollPosition: React.Dispatch<React.SetStateAction<PositionType>>;
+  setSelectedCell: React.Dispatch<React.SetStateAction<CellData | null>>;
   setCutSelection: React.Dispatch<
     React.SetStateAction<SelectionSheetType | null>
   >;
-  editingCell: EditingCell;
   setEditingCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
-  selection: SelectionSheetType | null;
   setSelection: React.Dispatch<React.SetStateAction<SelectionSheetType | null>>;
-  data: TableData;
   setData: React.Dispatch<React.SetStateAction<TableData>>;
+  addDelta: (data: TableData) => void;
 };
 export const SpreadsheetContext = React.createContext<
   | ({
@@ -68,6 +71,8 @@ export const SpreadsheetContext = React.createContext<
       setUpdater: () => void;
       deltas: DeltaItem[];
       setDeltas: React.Dispatch<React.SetStateAction<DeltaItem[]>>;
+      deltaIndex: number;
+      setDeltaIndex: React.Dispatch<React.SetStateAction<number>>;
       getCurrentCell: (row: number, col: number) => CellData | null;
       sheetCellSettingsConfig: SheetCellSettingsConfig;
       setSheetCellSettingsConfig: React.Dispatch<
@@ -79,6 +84,7 @@ export const SpreadsheetContext = React.createContext<
           | ((state: LocalStoreType) => Partial<LocalStoreType>),
       ) => void;
     } & LocalStoreType &
-      SheetStoreType)
+      SheetStoreType &
+      SheetStoreActionType)
   | undefined
 >(undefined);

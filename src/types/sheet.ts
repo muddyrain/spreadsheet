@@ -322,8 +322,6 @@ export type SpreadsheetType = {
   clearSelection: () => void;
   getCurrentCell: (row: number, col: number) => CellData | null;
   setCurrentSheet: <T extends keyof Sheet>(key: T, value: Sheet[T]) => void;
-  deltas: DeltaItem[];
-  setDeltas: React.Dispatch<React.SetStateAction<DeltaItem[]>>;
 };
 /**
  * @description 位置类型

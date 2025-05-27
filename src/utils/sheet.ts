@@ -1,3 +1,4 @@
+import _ from "lodash";
 import {
   SelectionSheetType,
   MergeSpanType,
@@ -6,6 +7,20 @@ import {
   TableData,
 } from "../types/sheet";
 
+export const createDefaultStyle = (config: SpreadsheetConfig) => {
+  return {
+    color: config.color,
+    backgroundColor: config.backgroundColor,
+    borderColor: config.borderColor,
+    fontSize: config.fontSize,
+    textAlign: config.textAlign,
+    verticalAlign: config.verticalAlign,
+    fontWeight: "normal",
+    fontStyle: "normal",
+    textDecoration: "none",
+    wrap: false,
+  };
+};
 export const createDefaultCell = (
   config: SpreadsheetConfig,
   row: number,
@@ -15,18 +30,7 @@ export const createDefaultCell = (
     mergeSpan: null,
     mergeParent: null,
     value: ``,
-    style: {
-      color: config.color,
-      backgroundColor: config.backgroundColor,
-      borderColor: config.borderColor,
-      fontSize: config.fontSize,
-      textAlign: config.textAlign,
-      verticalAlign: config.verticalAlign,
-      fontWeight: "normal",
-      fontStyle: "normal",
-      textDecoration: "none",
-      wrap: false,
-    },
+    style: createDefaultStyle(config),
     row: row,
     col: col,
     address: generateColName(col) + row,
@@ -145,3 +149,28 @@ export const getAbsoluteSelection = (
     c2,
   };
 };
+
+/**
+ * 计算表格的差异
+ * @param oldData 旧表格数据
+ * @param newData 新表格数据
+ * @returns 差异数组
+ */
+export function getTableDiffs(oldData: TableData, newData: TableData) {
+  const diffs: Array<CellData> = [];
+  const maxRows = Math.max(oldData.length, newData.length);
+  for (let row = 0; row < maxRows; row++) {
+    const oldRow = oldData[row] || [];
+    const newRow = newData[row] || [];
+    const maxCols = Math.max(oldRow.length, newRow.length);
+    for (let col = 0; col < maxCols; col++) {
+      const oldValue = oldRow[col];
+      const newValue = newRow[col];
+      // 只要有差异（包括undefined和null），就记录
+      if (!_.isEqual(oldValue, newValue)) {
+        diffs.push(oldValue);
+      }
+    }
+  }
+  return diffs;
+}

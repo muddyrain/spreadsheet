@@ -1,11 +1,11 @@
 import {
   CellData,
-  DeltaItem,
   Sheet,
   SpreadsheetConfig,
   SpreadsheetType,
   TableData,
 } from "@/types/sheet";
+import { produce } from "immer";
 import { generateUUID, limitSheetSize } from "@/utils";
 import { createInitialData } from "@/utils/sheet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -17,7 +17,6 @@ export const useSpreadsheet = (
   // 配置
   const config = useSpreadsheetConfig(_config);
   const [updater, setUpdater] = useState(+new Date());
-  const [deltas, setDeltas] = useState<DeltaItem[]>([]);
   const {
     sheets,
     setSheets,
@@ -69,18 +68,15 @@ export const useSpreadsheet = (
   }, [sheets, currentSheet, getCurrentCell]);
   const setCurrentSheet = useCallback(
     <T extends keyof Sheet>(key: T, value: Sheet[T]) => {
-      if (!currentSheet) return;
-      setSheets((_sheets) => {
-        const idx = _sheets.findIndex((sheet) => sheet.id === activeSheetId);
-        if (idx === -1) return _sheets;
-        // 生成新的 sheet 对象
-        const newSheets = _sheets.map((sheet, i) =>
-          i === idx ? { ...sheet, [key]: value } : sheet,
-        );
-        return newSheets;
-      });
+      setSheets((_sheets) =>
+        produce(_sheets, (draft) => {
+          const target = draft.find((sheet) => sheet.id === activeSheetId);
+          if (!target) return;
+          target[key] = value;
+        }),
+      );
     },
-    [activeSheetId, currentSheet, setSheets],
+    [activeSheetId, setSheets],
   );
   const $sheet = {
     currentSheet,
@@ -98,8 +94,6 @@ export const useSpreadsheet = (
     deleteSheet,
     createCopySheet,
     setCurrentSheet,
-    deltas,
-    setDeltas,
   };
   window.$sheet = $sheet;
   return $sheet;

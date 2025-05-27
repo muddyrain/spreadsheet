@@ -2,9 +2,11 @@ import { useCallback, useMemo, useState } from "react";
 import { useExportExcel } from "./useExportExcel";
 import { useStore } from "./useStore";
 import { CellData, SelectionSheetType } from "@/types/sheet";
-import { getAbsoluteSelection } from "@/utils/sheet";
+import { createDefaultStyle, getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "./useComputed";
 import { getSmartBorderColor } from "@/utils/color";
+import _ from "lodash";
+import { produce } from "immer";
 export type ClickType =
   | "save"
   | "undo"
@@ -28,15 +30,18 @@ export const useUpdateStyle = () => {
   const exportExcel = useExportExcel();
   const {
     config,
-    updater,
     selection,
     selectedCell,
     currentCell,
-    data,
     sheetCellSettingsConfig,
-    setData,
-    getCurrentCell,
     formatBrushStyles,
+    deltas,
+    deltaIndex,
+    activeSheetId,
+    setActiveSheetId,
+    setDeltaIndex,
+    setDeltas,
+    setData,
     dispatch,
   } = useStore();
   const { getSelectionCells } = useComputed();
@@ -93,19 +98,33 @@ export const useUpdateStyle = () => {
       backgroundColor:
         !!selectionCells?.length && selectionCells[0]?.style.backgroundColor,
       color: !!selectionCells?.length && selectionCells[0]?.style.color,
+      isUndo: deltaIndex >= 0,
+      isRedo: deltaIndex < deltas.length - 1,
     };
-    // 通过updater来判断是否需要更新isStyle
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectionCells, currentCell, updater]);
-  const handleUpdater = useCallback(() => {
-    setData((data) => {
-      selectionCells.map((cell) => {
-        data[cell.row][cell.col] = cell;
-      });
-      return [...data];
-    });
-  }, [selectionCells, setData]);
+  }, [
+    selectionCells,
+    currentCell,
+    formatBrushStyles.length,
+    deltaIndex,
+    deltas.length,
+  ]);
+  const handleUpdater = useCallback(
+    (selectionCells: CellData[]) => {
+      setData(
+        produce((draft) => {
+          selectionCells.forEach((cell) => {
+            draft[cell.row][cell.col] = {
+              ...draft[cell.row][cell.col],
+              ...cell,
+            };
+          });
+        }),
+      );
+    },
+    [setData],
+  );
   const updateStyle = (type?: ClickType) => {
+    let newSelectionCells: CellData[] = [];
     switch (type) {
       case "paint": {
         if (!selection) return;
@@ -127,8 +146,10 @@ export const useUpdateStyle = () => {
         break;
       }
       case "eraser": {
-        selectionCells.forEach((cell) => {
-          cell.style = {};
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            cell.style = createDefaultStyle(config);
+          });
         });
         break;
       }
@@ -136,12 +157,14 @@ export const useUpdateStyle = () => {
         const isAll = selectionCells.every(
           (cell) => cell.style.fontWeight === "bold",
         );
-        selectionCells.forEach((cell) => {
-          if (isAll) {
-            cell.style.fontWeight = "normal";
-          } else {
-            cell.style.fontWeight = "bold";
-          }
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            if (isAll) {
+              cell.style.fontWeight = "normal";
+            } else {
+              cell.style.fontWeight = "bold";
+            }
+          });
         });
         break;
       }
@@ -149,12 +172,14 @@ export const useUpdateStyle = () => {
         const isAll = selectionCells.every(
           (cell) => cell.style.fontStyle === "italic",
         );
-        selectionCells.forEach((cell) => {
-          if (isAll) {
-            cell.style.fontStyle = "normal";
-          } else {
-            cell.style.fontStyle = "italic";
-          }
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            if (isAll) {
+              cell.style.fontStyle = "normal";
+            } else {
+              cell.style.fontStyle = "italic";
+            }
+          });
         });
         break;
       }
@@ -162,16 +187,21 @@ export const useUpdateStyle = () => {
         const isAll = selectionCells.every((cell) =>
           cell.style.textDecoration?.includes("line-through"),
         );
-        selectionCells.forEach((cell) => {
-          const textDecoration = cell.style.textDecoration?.replace("none", "");
-          if (isAll) {
-            cell.style.textDecoration = cell.style.textDecoration?.replace(
-              "line-through",
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            const textDecoration = cell.style.textDecoration?.replace(
+              "none",
               "",
             );
-          } else {
-            cell.style.textDecoration = `line-through ${textDecoration || ""}`;
-          }
+            if (isAll) {
+              cell.style.textDecoration = cell.style.textDecoration?.replace(
+                "line-through",
+                "",
+              );
+            } else {
+              cell.style.textDecoration = `line-through ${textDecoration || ""}`;
+            }
+          });
         });
         break;
       }
@@ -179,63 +209,78 @@ export const useUpdateStyle = () => {
         const isAll = selectionCells.every((cell) =>
           cell.style.textDecoration?.includes("underline"),
         );
-        selectionCells.forEach((cell) => {
-          const textDecoration = cell.style.textDecoration?.replace("none", "");
-          if (isAll) {
-            cell.style.textDecoration = cell.style.textDecoration?.replace(
-              "underline",
-              "",
-            );
-          } else {
-            cell.style.textDecoration = `underline ${textDecoration || ""}`;
-          }
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            if (isAll) {
+              cell.style.textDecoration = cell.style.textDecoration?.replace(
+                "underline",
+                "",
+              );
+            } else {
+              cell.style.textDecoration = `underline ${cell.style.textDecoration || ""}`;
+            }
+          });
         });
         break;
       }
       case "wrap": {
         const isAll = selectionCells.every((cell) => cell.style.wrap);
-        selectionCells.forEach((cell) => {
-          if (isAll) {
-            cell.style.wrap = false;
-          } else {
-            cell.style.wrap = true;
-          }
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            if (isAll) {
+              cell.style.wrap = false;
+            } else {
+              cell.style.wrap = true;
+            }
+          });
         });
         break;
       }
       case "alignLeft": {
-        selectionCells.forEach((cell) => {
-          cell.style.textAlign = "left";
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            cell.style.textAlign = "left";
+          });
         });
         break;
       }
       case "alignCenter": {
-        selectionCells.forEach((cell) => {
-          cell.style.textAlign = "center";
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            cell.style.textAlign = "center";
+          });
         });
         break;
       }
       case "alignRight": {
-        selectionCells.forEach((cell) => {
-          cell.style.textAlign = "right";
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            cell.style.textAlign = "right";
+          });
         });
         break;
       }
       case "verticalAlignStart": {
-        selectionCells.forEach((cell) => {
-          cell.style.verticalAlign = "start";
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            cell.style.verticalAlign = "start";
+          });
         });
         break;
       }
       case "verticalAlignCenter": {
-        selectionCells.forEach((cell) => {
-          cell.style.verticalAlign = "center";
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            cell.style.verticalAlign = "center";
+          });
         });
         break;
       }
       case "verticalAlignEnd": {
-        selectionCells.forEach((cell) => {
-          cell.style.verticalAlign = "end";
+        newSelectionCells = produce(selectionCells, (draft) => {
+          draft.forEach((cell) => {
+            cell.style.verticalAlign = "end";
+          });
         });
         break;
       }
@@ -244,65 +289,100 @@ export const useUpdateStyle = () => {
         if (isStyle.isMergeCell) {
           // 取消合并
           const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
-          for (let i = r1; i <= r2; i++) {
-            for (let j = c1; j <= c2; j++) {
-              data[i][j].mergeSpan = null;
-              data[i][j].mergeParent = null;
-            }
-          }
+          setData(
+            produce((draft) => {
+              for (let i = r1; i <= r2; i++) {
+                for (let j = c1; j <= c2; j++) {
+                  draft[i][j].mergeSpan = null;
+                  draft[i][j].mergeParent = null;
+                }
+              }
+            }),
+          );
         } else {
           const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
           if (r1 === r2 && c1 === c2) return;
-          const cell = data[selectedCell?.row || 0][selectedCell?.col || 0];
           const isAnchorMergePoint = sheetCellSettingsConfig.isAnchorMergePoint;
-          if (isAnchorMergePoint) {
-            cell.mergeSpan = {
-              r1,
-              r2,
-              c1,
-              c2,
-            };
-          } else {
-            const currentCell = getCurrentCell(r1, c1);
-            if (currentCell) {
-              currentCell.mergeSpan = {
-                r1,
-                r2,
-                c1,
-                c2,
-              };
-            }
-          }
-          for (let i = r1; i <= r2; i++) {
-            for (let j = c1; j <= c2; j++) {
+
+          setData(
+            produce((data) => {
               if (isAnchorMergePoint) {
-                if (i === selectedCell?.row && j === selectedCell?.col)
-                  continue;
-                if (data[i][j].mergeSpan) {
-                  data[i][j].mergeSpan = null;
-                }
-                data[i][j].mergeParent = {
-                  row: selectedCell?.row || 0,
-                  col: selectedCell?.col || 0,
+                const target =
+                  data[selectedCell?.row || 0][selectedCell?.col || 0];
+                target.mergeSpan = {
+                  r1,
+                  r2,
+                  c1,
+                  c2,
                 };
               } else {
-                if (i === r1 && j === c1) continue;
-                data[i][j].mergeParent = {
-                  row: r1 || 0,
-                  col: c1 || 0,
-                };
+                const target = data[r1][c1];
+                if (target) {
+                  target.mergeSpan = {
+                    r1,
+                    r2,
+                    c1,
+                    c2,
+                  };
+                }
               }
-            }
-          }
+              for (let i = r1; i <= r2; i++) {
+                for (let j = c1; j <= c2; j++) {
+                  if (isAnchorMergePoint) {
+                    if (i === selectedCell?.row && j === selectedCell?.col)
+                      continue;
+                    if (data[i][j].mergeSpan) {
+                      data[i][j].mergeSpan = null;
+                    }
+                    data[i][j].mergeParent = {
+                      row: selectedCell?.row || 0,
+                      col: selectedCell?.col || 0,
+                    };
+                  } else {
+                    if (i === r1 && j === c1) continue;
+                    data[i][j].mergeParent = {
+                      row: r1 || 0,
+                      col: c1 || 0,
+                    };
+                  }
+                }
+              }
+            }),
+          );
         }
         break;
       }
       case "export": {
         exportExcel();
-        break;
+        return;
+      }
+      case "undo": {
+        const delta = deltas[deltaIndex];
+        const sheetId = delta?.sheetId;
+        const diffData = delta?.data;
+        if (activeSheetId !== sheetId) {
+          setActiveSheetId(sheetId);
+        }
+        // setSelection(delta?.selection);
+        setDeltaIndex(deltaIndex - 1);
+        deltas.pop();
+        setDeltas([...deltas]);
+        setData((data) => {
+          for (let i = 0; i < diffData.length; i++) {
+            const cell = diffData[i];
+            if (cell) {
+              data[cell.row][cell.col] = {
+                ...data[cell.row][cell.col],
+                ...cell,
+              };
+            }
+          }
+          return [...data];
+        });
+        return;
       }
     }
-    handleUpdater();
+    handleUpdater(newSelectionCells);
     return type;
   };
   const handleUpdaterBrush = useCallback(
@@ -310,51 +390,54 @@ export const useUpdateStyle = () => {
       if (!formatBrushStyles.length) return;
       if (!currentSelection) return;
       dispatch({ formatBrushStyles: [] });
-      setData((data) => {
-        const { r1, c1, r2, c2 } = getAbsoluteSelection(currentSelection);
-        const rows = r2 - r1 + 1;
-        const cols = c2 - c1 + 1;
-        const srcRows = formatBrushStyles.length;
-        const srcCols = formatBrushStyles[0]?.length || 0;
-        for (let i = 0; i < rows; i++) {
-          for (let j = 0; j < cols; j++) {
-            const style =
-              formatBrushStyles[i % srcRows] &&
-              formatBrushStyles[i % srcRows][j % srcCols]
-                ? formatBrushStyles[i % srcRows][j % srcCols]
-                : {};
-            if (data[r1 + i][c1 + j]) {
-              data[r1 + i][c1 + j].style = {
-                ...data[r1 + i][c1 + j].style,
-                ...style,
-              };
+      setData(
+        produce((data) => {
+          const { r1, c1, r2, c2 } = getAbsoluteSelection(currentSelection);
+          const rows = r2 - r1 + 1;
+          const cols = c2 - c1 + 1;
+          const srcRows = formatBrushStyles.length;
+          const srcCols = formatBrushStyles[0]?.length || 0;
+          for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+              const style =
+                formatBrushStyles[i % srcRows] &&
+                formatBrushStyles[i % srcRows][j % srcCols]
+                  ? formatBrushStyles[i % srcRows][j % srcCols]
+                  : {};
+              if (data[r1 + i][c1 + j]) {
+                data[r1 + i][c1 + j].style = {
+                  ...data[r1 + i][c1 + j].style,
+                  ...style,
+                };
+              }
             }
           }
-        }
-        return [...data];
-      });
+        }),
+      );
     },
     [formatBrushStyles, setData, dispatch],
   );
   const handleUpdaterColor = useCallback(
     (backgroundType: boolean, value: string) => {
       if (!selectionCells) return;
-      selectionCells.forEach((cItem) => {
-        if (backgroundType) {
-          cItem.style.backgroundColor = value || "";
-          if (value === config.backgroundColor) {
-            cItem.style.borderColor = config.borderColor;
+      const newSelectionCells = produce(selectionCells, (draft) => {
+        draft.forEach((cItem) => {
+          if (backgroundType) {
+            cItem.style.backgroundColor = value || "";
+            if (value === config.backgroundColor) {
+              cItem.style.borderColor = config.borderColor;
+            } else {
+              cItem.style.borderColor = getSmartBorderColor(
+                value || "",
+                cItem.style.borderColor || config.borderColor,
+              );
+            }
           } else {
-            cItem.style.borderColor = getSmartBorderColor(
-              value || "",
-              cItem.style.borderColor || config.borderColor,
-            );
+            cItem.style.color = value;
           }
-        } else {
-          cItem.style.color = value;
-        }
+        });
       });
-      handleUpdater();
+      handleUpdater(newSelectionCells);
     },
     [config.backgroundColor, config.borderColor, selectionCells, handleUpdater],
   );
