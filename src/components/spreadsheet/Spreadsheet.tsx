@@ -22,7 +22,6 @@ const Spreadsheet: React.FC<{
     data,
     isFocused,
     selectedCell,
-    currentCell,
     editingCell,
     cellInputActions,
     setData,
@@ -247,14 +246,7 @@ const Spreadsheet: React.FC<{
     <div className="flex flex-col w-full h-full overflow-hidden">
       <Header
         onClick={(type) => {
-          if (!["eraser"].includes(type)) {
-            if (currentCell) {
-              if (type === "wrap") {
-                onCellDoubleClick(currentCell.row, currentCell.col);
-              }
-              cellInputRef.current?.updateInputSize(currentCell);
-            }
-          } else {
+          if (["eraser"].includes(type)) {
             clearSelection();
           }
         }}
