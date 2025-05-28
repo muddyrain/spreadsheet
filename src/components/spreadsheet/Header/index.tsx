@@ -22,12 +22,13 @@ import { Import } from "./import";
 import { TextAlign } from "./TextAlign";
 import { ClickType, useUpdateStyle } from "@/hooks/useUpdateStyle";
 import { VerticalAlign } from "./VerticalAlign";
+import { useStore } from "@/hooks/useStore";
 
 export const Header: FC<{
   onClick?: (type: ClickType) => void;
 }> = ({ onClick }) => {
   const { isStyle, updateStyle } = useUpdateStyle();
-
+  const { currentCtrlKey } = useStore();
   const handleClick = (type: ClickType) => {
     updateStyle(type);
     onClick?.(type);
@@ -49,7 +50,7 @@ export const Header: FC<{
           <Save />
         </Toggle>
       </Tooltip>
-      <Tooltip content="撤销">
+      <Tooltip content={`撤销（${currentCtrlKey} + Z）`}>
         <Toggle
           disabled={!isStyle.isUndo}
           pressed={false}
@@ -61,7 +62,7 @@ export const Header: FC<{
           <Undo />
         </Toggle>
       </Tooltip>
-      <Tooltip content="重做">
+      <Tooltip content={`重做（${currentCtrlKey} + Y）`}>
         <Toggle
           disabled={!isStyle.isRedo}
           pressed={false}
@@ -84,7 +85,7 @@ export const Header: FC<{
           <PaintRoller />
         </Toggle>
       </Tooltip>
-      <Tooltip content="清除格式">
+      <Tooltip content={`清除格式（${currentCtrlKey} + \\）`}>
         <Toggle
           pressed={false}
           className="text-lg"
@@ -95,7 +96,7 @@ export const Header: FC<{
           <Eraser />
         </Toggle>
       </Tooltip>
-      <Tooltip content="加粗">
+      <Tooltip content={`加粗（${currentCtrlKey} + B）`}>
         <Toggle
           pressed={isStyle.isBold}
           className={`text-lg`}
@@ -106,7 +107,7 @@ export const Header: FC<{
           <Bold />
         </Toggle>
       </Tooltip>
-      <Tooltip content="斜体">
+      <Tooltip content={`斜体（${currentCtrlKey} + I）`}>
         <Toggle
           pressed={isStyle.isItalic}
           className="text-lg"
@@ -117,7 +118,7 @@ export const Header: FC<{
           <Italic />
         </Toggle>
       </Tooltip>
-      <Tooltip content="删除线">
+      <Tooltip content={`删除线（${currentCtrlKey} + Shift + X）`}>
         <Toggle
           pressed={isStyle.isLineThrough}
           className="text-lg"
@@ -128,7 +129,7 @@ export const Header: FC<{
           <Strikethrough />
         </Toggle>
       </Tooltip>
-      <Tooltip content="下划线">
+      <Tooltip content={`下划线（${currentCtrlKey} + U）`}>
         <Toggle
           pressed={isStyle.isUnderline}
           className="text-lg"

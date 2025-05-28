@@ -57,6 +57,8 @@ export const CellInput = forwardRef<
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const currentFocusCell = useRef<CellData | null>(null);
+  const [undoStack, setUndoStack] = useState<string[]>([]); // 撤销栈
+  const [redoStack, setRedoStack] = useState<string[]>([]); // 重做栈
   const [originData, setOriginData] = useState<TableData>([]);
   const {
     config,
@@ -71,7 +73,6 @@ export const CellInput = forwardRef<
   const { renderTextDecoration } = useRenderCell();
   const { getCellPosition } = useComputed();
   const { getFontStyle, isOverflowMaxWidth } = useTools();
-
   const {
     lastWidth,
     lastHeight,
@@ -188,13 +189,15 @@ export const CellInput = forwardRef<
       newCursor: number,
       options: CellInputUpdateInputOptions = {},
     ) => {
+      // 保存当前状态到撤销栈
+      setUndoStack((prev) => [...prev, content]);
       setValue(() => content);
       setCursorIndex(() => newCursor);
       const lines = getLines({
         ...selectedCell,
         value: content,
       });
-      setLines(() => lines);
+      setLines(() => [...lines]);
       onChange(content, selectedCell);
       setInputStyle(selectedCell, lines, newCursor, options);
     },
@@ -281,6 +284,54 @@ export const CellInput = forwardRef<
           navigator.clipboard.writeText(selectedText);
         }
       };
+      // 处理 ctrl/cmd + z 撤销
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (currentFocusCell.current) {
+          if (undoStack.length === 0) return; // 没有可撤销的操作
+          const newUndoStack = undoStack.slice(0, -1);
+          // 取出最近的历史状态
+          const prevState = newUndoStack[newUndoStack.length - 1] || "";
+          // 将当前状态推入重做栈
+          setRedoStack((prev) => [...prev, value]);
+          // 恢复到历史状态
+          updateCell(selectedCell, prevState, cursorIndex);
+          setUndoStack(newUndoStack);
+        }
+        return;
+      }
+      // 处理 ctrl/cmd + y 重做
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (redoStack.length === 0) return; // 没有可重做的操作
+        // 取出最近被撤销的状态
+        const nextState = redoStack[redoStack.length - 1];
+        const newRedoStack = redoStack.slice(0, -1);
+        // 将当前状态推入撤销栈
+        setUndoStack((prev) => [...prev, value]);
+        // 恢复到被撤销的状态
+        updateCell(selectedCell, nextState, cursorIndex);
+        setRedoStack(newRedoStack);
+        return;
+      }
+      // 使用事件冒泡 向上冒泡
+      // 处理 ctrl/cmd + b 加粗
+      // 处理 ctrl/cmd + \ 清除格式
+      // 处理 ctrl/cmd + i 斜体
+      // 处理 ctrl/cmd + i 下划线
+      // 处理 ctrl/cmd + shift + x 删除线
+      if (
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "\\") ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "i") ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "u") ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "x" && e.shiftKey)
+      ) {
+        e.preventDefault();
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && key === "x") {
         copy();
         if (selectionText) {
@@ -291,9 +342,13 @@ export const CellInput = forwardRef<
           setSelectionText(null);
           updateCell(selectedCell, content, newCursor);
         }
-      } else if ((e.ctrlKey || e.metaKey) && key === "c") {
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === "c") {
         copy();
-      } else if ((e.ctrlKey || e.metaKey) && key === "v") {
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === "v") {
         e.preventDefault();
         e.stopPropagation();
         navigator.clipboard.readText().then((clipboardText) => {
@@ -314,7 +369,8 @@ export const CellInput = forwardRef<
           updateCell(selectedCell, newValue, newCursor);
         });
         return;
-      } else if (e.key === "Enter" && e.altKey) {
+      }
+      if (e.key === "Enter" && e.altKey) {
         // 换行
         e.preventDefault();
         e.stopPropagation();
@@ -322,17 +378,24 @@ export const CellInput = forwardRef<
           value.slice(0, cursorIndex) + "\n" + value.slice(cursorIndex);
         cursorLine.current += 1;
         updateCell(selectedCell, newValue, cursorIndex + 1);
-      } else if (
-        (e.ctrlKey || e.metaKey) &&
-        e.key.toLocaleUpperCase() === "A"
-      ) {
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLocaleUpperCase() === "A") {
         e.preventDefault();
         e.stopPropagation();
         setSelectionText({
           start: 0,
           end: value.length,
         });
-      } else if (
+        return;
+      }
+      // 按 ctrl 或 meta 键时，不处理其他按键
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      if (
         key.length === 1 &&
         (/[a-zA-Z0-9]/.test(key) || // 字母数字
           /[~!@#$%^&*()_+\-=[\]{};':"|,.<>\\/?`]/.test(key)) // 常见符号
@@ -366,8 +429,12 @@ export const CellInput = forwardRef<
             cursorLine.current += 1;
           }
         }
+        // 若更新内容则清空重做栈
+        setRedoStack([]);
         updateCell(selectedCell, newValue, newCursor);
-      } else if (e.key === "Backspace") {
+        return;
+      }
+      if (e.key === "Backspace") {
         e.preventDefault();
         e.stopPropagation();
         if (selectionText) {
@@ -381,7 +448,9 @@ export const CellInput = forwardRef<
             value.slice(0, cursorIndex - 1) + value.slice(cursorIndex);
           updateCell(selectedCell, newValue, cursorIndex - 1);
         }
-      } else if (e.key === "Delete") {
+        return;
+      }
+      if (e.key === "Delete") {
         e.preventDefault();
         e.stopPropagation();
         if (selectionText) {
@@ -395,11 +464,15 @@ export const CellInput = forwardRef<
             value.slice(0, cursorIndex) + value.slice(cursorIndex + 1);
           updateCell(selectedCell, newValue, cursorIndex);
         }
-      } else if (e.key === "ArrowLeft") {
+        return;
+      }
+      if (e.key === "ArrowLeft") {
         e.preventDefault();
         e.stopPropagation();
         updateCell(selectedCell, value, Math.max(0, cursorIndex - 1));
-      } else if (e.key === "ArrowRight") {
+        return;
+      }
+      if (e.key === "ArrowRight") {
         e.preventDefault();
         e.stopPropagation();
         updateCell(
@@ -407,7 +480,9 @@ export const CellInput = forwardRef<
           value,
           Math.min(value.length, cursorIndex + 1),
         );
-      } else if (e.key === "ArrowUp") {
+        return;
+      }
+      if (e.key === "ArrowUp") {
         e.preventDefault();
         e.stopPropagation();
         if (cursorLine.current > 0) {
@@ -427,8 +502,9 @@ export const CellInput = forwardRef<
             updateCell(selectedCell, value, newCursorIndex);
           }
         }
-        e.preventDefault();
-      } else if (e.key === "ArrowDown") {
+        return;
+      }
+      if (e.key === "ArrowDown") {
         e.preventDefault();
         e.stopPropagation();
         if (cursorLine.current < lines.length - 1) {
@@ -448,16 +524,21 @@ export const CellInput = forwardRef<
             updateCell(selectedCell, value, newCursorIndex);
           }
         }
-      } else if (e.key === "Home") {
+        return;
+      }
+      if (e.key === "Home") {
         e.preventDefault();
         e.stopPropagation();
         const currentLine = lines[cursorLine.current];
         updateCell(selectedCell, value, currentLine.startIndex);
-      } else if (e.key === "End") {
+        return;
+      }
+      if (e.key === "End") {
         e.preventDefault();
         e.stopPropagation();
         const currentLine = lines[cursorLine.current];
         updateCell(selectedCell, value, currentLine.endIndex);
+        return;
       }
     },
     [
@@ -467,6 +548,8 @@ export const CellInput = forwardRef<
       value,
       updateCell,
       cursorIndex,
+      undoStack,
+      redoStack,
       cursorLine,
       getLines,
       isOverflowMaxWidth,
@@ -493,6 +576,13 @@ export const CellInput = forwardRef<
         containerRef.current.style.display = "none";
         containerRef.current.blur();
         setValue("");
+        setLines([]);
+        setSelectionText(null);
+        cursorLine.current = 0;
+        setCursorIndex(0);
+        setOriginData(originData);
+        setUndoStack([]);
+        setRedoStack([]);
         onChange?.(value, currentFocusCell?.current);
         currentFocusCell.current = null;
         isFocused.current = false;
@@ -508,6 +598,7 @@ export const CellInput = forwardRef<
     getInputHeight,
     onChange,
     setHeaderRowsHeight,
+    cursorLine,
   ]);
   const handleCellInputActions: CellInputActionsType = useMemo(() => {
     return {

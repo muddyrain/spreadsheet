@@ -38,7 +38,7 @@ export type SheetStoreType = {
   data: TableData;
 };
 export type SheetStoreActionType = {
-  setZoomSize: (zoomSize: number) => void;
+  setZoomSize: React.Dispatch<React.SetStateAction<number>>;
   setHeaderColsWidth: React.Dispatch<React.SetStateAction<number[]>>;
   setHeaderRowsHeight: React.Dispatch<React.SetStateAction<number[]>>;
   setScrollPosition: React.Dispatch<React.SetStateAction<PositionType>>;

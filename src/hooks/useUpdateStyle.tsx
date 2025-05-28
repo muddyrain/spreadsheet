@@ -432,7 +432,10 @@ export const useUpdateStyle = () => {
         }
       }
       handleUpdater(newSelectionCells);
-      return type;
+      if (newSelectionCells.length) {
+        setSelectedCell(() => newSelectionCells[0]);
+      }
+      return newSelectionCells;
     },
     [
       activeSheetId,

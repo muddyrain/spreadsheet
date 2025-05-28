@@ -60,7 +60,7 @@ const RootSpreadsheet: React.FC<{
       let index = Math.min(deltaIndex + 1, deltas.length);
       // 把 deltaIndex 后的数据全部移除
       const newDeltas = deltas.slice(0, index);
-      if (newDeltas.length >= 5) {
+      if (newDeltas.length >= 100) {
         newDeltas.shift();
         index -= 1;
       }
@@ -116,8 +116,11 @@ const RootSpreadsheet: React.FC<{
 };
 const useSheetStore = (sheet: SpreadsheetType) => {
   const { currentSheet, setCurrentSheet } = sheet;
-  const setZoomSize = useCallback(
-    (_size: number) => {
+  const setZoomSize: SheetStoreActionType["setZoomSize"] = useCallback(
+    (_size) => {
+      if (typeof _size === "function") {
+        _size = _size(currentSheet?.zoomSize || 1);
+      }
       const size = Number(parseFloat(_size.toString()).toFixed(1));
       if (size >= 2) {
         setCurrentSheet("zoomSize", 2);
@@ -129,7 +132,7 @@ const useSheetStore = (sheet: SpreadsheetType) => {
       }
       setCurrentSheet("zoomSize", size);
     },
-    [setCurrentSheet],
+    [setCurrentSheet, currentSheet?.zoomSize],
   );
   const setData: SheetStoreActionType["setData"] = useCallback(
     (data) => {
