@@ -17,7 +17,7 @@ export const Footer: FC = () => {
     <div className="relative flex gap-x-1 bg-zinc-50 px-6 h-10 z-[1]">
       <SheetTabs />
       <div className="flex items-center h-8">
-        <Tooltip content={`缩小（${currentCtrlKey} + ⬇）`}>
+        <Tooltip content={`缩小（${currentCtrlKey} + 减号键）`}>
           <Button
             variant={"ghost"}
             size={"sm"}
@@ -44,7 +44,7 @@ export const Footer: FC = () => {
             {parseInt((zoomSize * 100).toString())}%
           </div>
         </Tooltip>
-        <Tooltip content={`放大（${currentCtrlKey} + ⬆）`}>
+        <Tooltip content={`放大（${currentCtrlKey} + 加号键）`}>
           <Button
             variant={"ghost"}
             size={"sm"}

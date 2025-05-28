@@ -3,6 +3,7 @@ import { useCallback, useEffect } from "react";
 import { useStore } from "./useStore";
 import { useFunctions } from "./useFunctions";
 import { useUpdateStyle } from "./useUpdateStyle";
+import { useComputed } from "./useComputed";
 
 interface useKeyDownCallback {
   onCellInputKey?: (value: string) => void;
@@ -16,10 +17,19 @@ interface useKeyDownCallback {
   onEnterKey?: () => void;
 }
 export const useKeyDown = (callback: useKeyDownCallback = {}) => {
-  const { selection, setZoomSize } = useStore();
+  const {
+    data,
+    selection,
+    selectedCell,
+    setSelectedCell,
+    setSelection,
+    setZoomSize,
+    getCurrentCell,
+  } = useStore();
   const { updateStyle, isStyle } = useUpdateStyle();
   const { handleCopy, handlePaste, handleCut, handleClearContent } =
     useFunctions();
+  const { fitCellViewPort } = useComputed();
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const key = e.key;
@@ -28,7 +38,39 @@ export const useKeyDown = (callback: useKeyDownCallback = {}) => {
         callback?.onEnterKey?.();
         return;
       }
-      console.log(e.ctrlKey || e.metaKey, e.shiftKey, key);
+      // 处理 ctrl/cmd + 上下左右
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        selectedCell &&
+        (e.key === "ArrowLeft" ||
+          e.key === "ArrowRight" ||
+          e.key === "ArrowUp" ||
+          e.key === "ArrowDown")
+      ) {
+        e.preventDefault();
+        const { row, col } = selectedCell;
+        let newCol = col;
+        let newRow = row;
+        if (e.key === "ArrowLeft") {
+          newCol = 1;
+        } else if (e.key === "ArrowRight") {
+          newCol = data[0].length - 1;
+        } else if (e.key === "ArrowUp") {
+          newRow = 1;
+        } else if (e.key === "ArrowDown") {
+          newRow = data.length - 1;
+        }
+        const cell = getCurrentCell(newRow, newCol);
+        if (cell) {
+          setSelectedCell(cell);
+          setSelection({
+            start: { row: newRow, col: newCol },
+            end: { row: newRow, col: newCol },
+          });
+          fitCellViewPort(newRow, newCol);
+        }
+        return;
+      }
       // 处理 ctrl/cmd + - 和 ctrl/cmd + shift + = 放大
       if (
         ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "+") ||
@@ -156,10 +198,18 @@ export const useKeyDown = (callback: useKeyDownCallback = {}) => {
       }
     },
     [
-      selection,
-      setZoomSize,
+      selectedCell,
+      selection?.start,
+      selection?.end,
       callback,
-      isStyle,
+      data,
+      getCurrentCell,
+      setSelectedCell,
+      setSelection,
+      fitCellViewPort,
+      setZoomSize,
+      isStyle.isUndo,
+      isStyle.isRedo,
       updateStyle,
       handlePaste,
       handleCut,
