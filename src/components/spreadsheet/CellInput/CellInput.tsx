@@ -67,7 +67,6 @@ export const CellInput = forwardRef<
     addDelta,
     setHeaderRowsHeight,
     dispatch,
-    setEditingCell,
   } = useStore();
   const { renderTextDecoration } = useRenderCell();
   const { getCellPosition } = useComputed();
@@ -475,10 +474,8 @@ export const CellInput = forwardRef<
     ],
   );
   const handleBlur = useCallback(() => {
-    console.log("blur");
     if (containerRef.current) {
       if (currentFocusCell.current) {
-        console.log("blur2");
         addDelta(originData);
         const row = currentFocusCell.current.row;
         const lines = getLines({
@@ -495,7 +492,6 @@ export const CellInput = forwardRef<
         }
         containerRef.current.style.display = "none";
         containerRef.current.blur();
-        setEditingCell(null);
         setValue("");
         onChange?.(value, currentFocusCell?.current);
         currentFocusCell.current = null;
@@ -512,7 +508,6 @@ export const CellInput = forwardRef<
     getInputHeight,
     onChange,
     setHeaderRowsHeight,
-    setEditingCell,
   ]);
   const handleCellInputActions: CellInputActionsType = useMemo(() => {
     return {

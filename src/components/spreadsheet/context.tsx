@@ -54,6 +54,7 @@ export type SheetStoreActionType = {
 export const SpreadsheetContext = React.createContext<
   | ({
       sheets: Sheet[];
+      setSheets: React.Dispatch<React.SetStateAction<Sheet[]>>;
       activeSheetId: string;
       isFocused: React.RefObject<boolean>;
       setActiveSheetId: (activeSheetId: string) => void;

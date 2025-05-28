@@ -33,7 +33,6 @@ export const useUpdateStyle = () => {
     selection,
     selectedCell,
     currentCell,
-    cellInputActions,
     sheetCellSettingsConfig,
     formatBrushStyles,
     deltas,
@@ -44,6 +43,7 @@ export const useUpdateStyle = () => {
     setActiveSheetId,
     setDeltaIndex,
     setData,
+    setSheets,
     dispatch,
   } = useStore();
   const { getSelectionCells } = useComputed();
@@ -125,301 +125,337 @@ export const useUpdateStyle = () => {
     },
     [setData],
   );
-  const updateStyle = (type?: ClickType) => {
-    let newSelectionCells: CellData[] = [];
-    switch (type) {
-      case "paint": {
-        if (!selection) return;
-        const { c1, c2, r1, r2 } = getAbsoluteSelection(selection);
-        const rows = r2 - r1 + 1;
-        const cols = c2 - c1 + 1;
-        const _formatBrushStyles: CellData["style"][][] = [];
-        for (let i = 0; i < rows; i++) {
-          const rowStyles: CellData["style"][] = [];
-          for (let j = 0; j < cols; j++) {
-            const cell = selectionCells.find(
-              (cell) => cell.row === r1 + i && cell.col === c1 + j,
-            );
-            rowStyles.push(cell ? { ...cell.style } : {});
+  const updateStyle = useCallback(
+    (type?: ClickType) => {
+      let newSelectionCells: CellData[] = [];
+      switch (type) {
+        case "paint": {
+          if (!selection) return;
+          const { c1, c2, r1, r2 } = getAbsoluteSelection(selection);
+          const rows = r2 - r1 + 1;
+          const cols = c2 - c1 + 1;
+          const _formatBrushStyles: CellData["style"][][] = [];
+          for (let i = 0; i < rows; i++) {
+            const rowStyles: CellData["style"][] = [];
+            for (let j = 0; j < cols; j++) {
+              const cell = selectionCells.find(
+                (cell) => cell.row === r1 + i && cell.col === c1 + j,
+              );
+              rowStyles.push(cell ? { ...cell.style } : {});
+            }
+            _formatBrushStyles.push(rowStyles);
           }
-          _formatBrushStyles.push(rowStyles);
+          dispatch({ formatBrushStyles: _formatBrushStyles });
+          break;
         }
-        dispatch({ formatBrushStyles: _formatBrushStyles });
-        break;
-      }
-      case "eraser": {
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            cell.style = createDefaultStyle(config);
+        case "eraser": {
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              cell.style = createDefaultStyle(config);
+            });
           });
-        });
-        break;
-      }
-      case "bold": {
-        const isAll = selectionCells.every(
-          (cell) => cell.style.fontWeight === "bold",
-        );
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            if (isAll) {
-              cell.style.fontWeight = "normal";
-            } else {
-              cell.style.fontWeight = "bold";
-            }
-          });
-        });
-        break;
-      }
-      case "italic": {
-        const isAll = selectionCells.every(
-          (cell) => cell.style.fontStyle === "italic",
-        );
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            if (isAll) {
-              cell.style.fontStyle = "normal";
-            } else {
-              cell.style.fontStyle = "italic";
-            }
-          });
-        });
-        break;
-      }
-      case "strikethrough": {
-        const isAll = selectionCells.every((cell) =>
-          cell.style.textDecoration?.includes("line-through"),
-        );
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            const textDecoration = cell.style.textDecoration?.replace(
-              "none",
-              "",
-            );
-            if (isAll) {
-              cell.style.textDecoration = cell.style.textDecoration?.replace(
-                "line-through",
-                "",
-              );
-            } else {
-              cell.style.textDecoration = `line-through ${textDecoration || ""}`;
-            }
-          });
-        });
-        break;
-      }
-      case "underline": {
-        const isAll = selectionCells.every((cell) =>
-          cell.style.textDecoration?.includes("underline"),
-        );
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            if (isAll) {
-              cell.style.textDecoration = cell.style.textDecoration?.replace(
-                "underline",
-                "",
-              );
-            } else {
-              cell.style.textDecoration = `underline ${cell.style.textDecoration || ""}`;
-            }
-          });
-        });
-        break;
-      }
-      case "wrap": {
-        const isAll = selectionCells.every((cell) => cell.style.wrap);
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            if (isAll) {
-              cell.style.wrap = false;
-            } else {
-              cell.style.wrap = true;
-            }
-          });
-        });
-        break;
-      }
-      case "alignLeft": {
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            cell.style.textAlign = "left";
-          });
-        });
-        break;
-      }
-      case "alignCenter": {
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            cell.style.textAlign = "center";
-          });
-        });
-        break;
-      }
-      case "alignRight": {
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            cell.style.textAlign = "right";
-          });
-        });
-        break;
-      }
-      case "verticalAlignStart": {
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            cell.style.verticalAlign = "start";
-          });
-        });
-        break;
-      }
-      case "verticalAlignCenter": {
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            cell.style.verticalAlign = "center";
-          });
-        });
-        break;
-      }
-      case "verticalAlignEnd": {
-        newSelectionCells = produce(selectionCells, (draft) => {
-          draft.forEach((cell) => {
-            cell.style.verticalAlign = "end";
-          });
-        });
-        break;
-      }
-      case "merge": {
-        if (!selection) return;
-        if (isStyle.isMergeCell) {
-          // 取消合并
-          const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
-          setData(
-            produce((draft) => {
-              for (let i = r1; i <= r2; i++) {
-                for (let j = c1; j <= c2; j++) {
-                  draft[i][j].mergeSpan = null;
-                  draft[i][j].mergeParent = null;
-                }
-              }
-            }),
+          break;
+        }
+        case "bold": {
+          const isAll = selectionCells.every(
+            (cell) => cell.style.fontWeight === "bold",
           );
-        } else {
-          const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
-          if (r1 === r2 && c1 === c2) return;
-          const isAnchorMergePoint = sheetCellSettingsConfig.isAnchorMergePoint;
-          setData(
-            produce((data) => {
-              if (isAnchorMergePoint) {
-                const target =
-                  data[selectedCell?.row || 0][selectedCell?.col || 0];
-                target.mergeSpan = {
-                  r1,
-                  r2,
-                  c1,
-                  c2,
-                };
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              if (isAll) {
+                cell.style.fontWeight = "normal";
               } else {
-                const target = data[r1][c1];
-                if (target) {
+                cell.style.fontWeight = "bold";
+              }
+            });
+          });
+          break;
+        }
+        case "italic": {
+          const isAll = selectionCells.every(
+            (cell) => cell.style.fontStyle === "italic",
+          );
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              if (isAll) {
+                cell.style.fontStyle = "normal";
+              } else {
+                cell.style.fontStyle = "italic";
+              }
+            });
+          });
+          break;
+        }
+        case "strikethrough": {
+          const isAll = selectionCells.every((cell) =>
+            cell.style.textDecoration?.includes("line-through"),
+          );
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              const textDecoration = cell.style.textDecoration?.replace(
+                "none",
+                "",
+              );
+              if (isAll) {
+                cell.style.textDecoration = cell.style.textDecoration?.replace(
+                  "line-through",
+                  "",
+                );
+              } else {
+                cell.style.textDecoration = `line-through ${textDecoration || ""}`;
+              }
+            });
+          });
+          break;
+        }
+        case "underline": {
+          const isAll = selectionCells.every((cell) =>
+            cell.style.textDecoration?.includes("underline"),
+          );
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              if (isAll) {
+                cell.style.textDecoration = cell.style.textDecoration?.replace(
+                  "underline",
+                  "",
+                );
+              } else {
+                cell.style.textDecoration = `underline ${cell.style.textDecoration || ""}`;
+              }
+            });
+          });
+          break;
+        }
+        case "wrap": {
+          const isAll = selectionCells.every((cell) => cell.style.wrap);
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              if (isAll) {
+                cell.style.wrap = false;
+              } else {
+                cell.style.wrap = true;
+              }
+            });
+          });
+          break;
+        }
+        case "alignLeft": {
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              cell.style.textAlign = "left";
+            });
+          });
+          break;
+        }
+        case "alignCenter": {
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              cell.style.textAlign = "center";
+            });
+          });
+          break;
+        }
+        case "alignRight": {
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              cell.style.textAlign = "right";
+            });
+          });
+          break;
+        }
+        case "verticalAlignStart": {
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              cell.style.verticalAlign = "start";
+            });
+          });
+          break;
+        }
+        case "verticalAlignCenter": {
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              cell.style.verticalAlign = "center";
+            });
+          });
+          break;
+        }
+        case "verticalAlignEnd": {
+          newSelectionCells = produce(selectionCells, (draft) => {
+            draft.forEach((cell) => {
+              cell.style.verticalAlign = "end";
+            });
+          });
+          break;
+        }
+        case "merge": {
+          if (!selection) return;
+          if (isStyle.isMergeCell) {
+            // 取消合并
+            const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
+            setData(
+              produce((draft) => {
+                for (let i = r1; i <= r2; i++) {
+                  for (let j = c1; j <= c2; j++) {
+                    draft[i][j].mergeSpan = null;
+                    draft[i][j].mergeParent = null;
+                  }
+                }
+              }),
+            );
+          } else {
+            const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
+            if (r1 === r2 && c1 === c2) return;
+            const isAnchorMergePoint =
+              sheetCellSettingsConfig.isAnchorMergePoint;
+            setData(
+              produce((data) => {
+                if (isAnchorMergePoint) {
+                  const target =
+                    data[selectedCell?.row || 0][selectedCell?.col || 0];
                   target.mergeSpan = {
                     r1,
                     r2,
                     c1,
                     c2,
                   };
-                }
-              }
-              for (let i = r1; i <= r2; i++) {
-                for (let j = c1; j <= c2; j++) {
-                  if (isAnchorMergePoint) {
-                    if (i === selectedCell?.row && j === selectedCell?.col)
-                      continue;
-                    if (data[i][j].mergeSpan) {
-                      data[i][j].mergeSpan = null;
-                    }
-                    data[i][j].mergeParent = {
-                      row: selectedCell?.row || 0,
-                      col: selectedCell?.col || 0,
-                    };
-                  } else {
-                    if (i === r1 && j === c1) continue;
-                    data[i][j].mergeParent = {
-                      row: r1 || 0,
-                      col: c1 || 0,
+                } else {
+                  const target = data[r1][c1];
+                  if (target) {
+                    target.mergeSpan = {
+                      r1,
+                      r2,
+                      c1,
+                      c2,
                     };
                   }
+                }
+                for (let i = r1; i <= r2; i++) {
+                  for (let j = c1; j <= c2; j++) {
+                    if (isAnchorMergePoint) {
+                      if (i === selectedCell?.row && j === selectedCell?.col)
+                        continue;
+                      if (data[i][j].mergeSpan) {
+                        data[i][j].mergeSpan = null;
+                      }
+                      data[i][j].mergeParent = {
+                        row: selectedCell?.row || 0,
+                        col: selectedCell?.col || 0,
+                      };
+                    } else {
+                      if (i === r1 && j === c1) continue;
+                      data[i][j].mergeParent = {
+                        row: r1 || 0,
+                        col: c1 || 0,
+                      };
+                    }
+                  }
+                }
+              }),
+            );
+          }
+          break;
+        }
+        case "export": {
+          exportExcel();
+          return;
+        }
+        case "undo": {
+          const delta = deltas[deltaIndex];
+          const sheetId = delta?.sheetId;
+          const diffData = delta?.originData;
+          if (activeSheetId !== sheetId) {
+            setActiveSheetId(sheetId);
+          }
+          setSelection(() => ({
+            start: {
+              row: diffData[0].row,
+              col: diffData[0].col,
+            },
+            end: {
+              row: diffData[diffData.length - 1].row,
+              col: diffData[diffData.length - 1].col,
+            },
+          }));
+          setSelectedCell(() => diffData[0]);
+          setDeltaIndex(() => deltaIndex - 1);
+          setSheets(
+            produce((draft) => {
+              const targetSheet = draft.find((sheet) => sheet.id === sheetId);
+              if (!targetSheet) return;
+              const data = targetSheet.data;
+              for (let i = 0; i < diffData.length; i++) {
+                const cell = diffData[i];
+                if (cell) {
+                  data[cell.row][cell.col] = {
+                    ...data[cell.row][cell.col],
+                    ...cell,
+                  };
                 }
               }
             }),
           );
+          return;
         }
-        break;
-      }
-      case "export": {
-        exportExcel();
-        return;
-      }
-      case "undo": {
-        const delta = deltas[deltaIndex];
-        const sheetId = delta?.sheetId;
-        const diffData = delta?.originData;
-        if (activeSheetId !== sheetId) {
-          setActiveSheetId(sheetId);
-        }
-        setSelection({
-          start: {
-            row: diffData[0].row,
-            col: diffData[0].col,
-          },
-          end: {
-            row: diffData[diffData.length - 1].row,
-            col: diffData[diffData.length - 1].col,
-          },
-        });
-        setSelectedCell(diffData[0]);
-        cellInputActions?.blur();
-        setDeltaIndex(deltaIndex - 1);
-        setData(
-          produce((data) => {
-            for (let i = 0; i < diffData.length; i++) {
-              const cell = diffData[i];
-              if (cell) {
-                data[cell.row][cell.col] = {
-                  ...data[cell.row][cell.col],
-                  ...cell,
-                };
+        case "redo": {
+          const delta = deltas[deltaIndex + 1];
+          const sheetId = delta?.sheetId;
+          const diffData = delta?.currentData;
+          if (activeSheetId !== sheetId) {
+            setActiveSheetId(sheetId);
+          }
+          setSelection(() => ({
+            start: {
+              row: diffData[0].row,
+              col: diffData[0].col,
+            },
+            end: {
+              row: diffData[diffData.length - 1].row,
+              col: diffData[diffData.length - 1].col,
+            },
+          }));
+          setSelectedCell(() => diffData[0]);
+          setDeltaIndex(() => deltaIndex + 1);
+          setData(
+            produce((data) => {
+              for (let i = 0; i < diffData.length; i++) {
+                const cell = diffData[i];
+                if (cell) {
+                  data[cell.row][cell.col] = {
+                    ...data[cell.row][cell.col],
+                    ...cell,
+                  };
+                }
               }
-            }
-          }),
-        );
-        return;
-      }
-      case "redo": {
-        const delta = deltas[deltaIndex + 1];
-        const sheetId = delta?.sheetId;
-        const diffData = delta?.currentData;
-        if (activeSheetId !== sheetId) {
-          setActiveSheetId(sheetId);
+            }),
+          );
+          return;
         }
-        cellInputActions?.blur();
-        setDeltaIndex(deltaIndex + 1);
-        setData(
-          produce((data) => {
-            for (let i = 0; i < diffData.length; i++) {
-              const cell = diffData[i];
-              if (cell) {
-                data[cell.row][cell.col] = {
-                  ...data[cell.row][cell.col],
-                  ...cell,
-                };
-              }
-            }
-          }),
-        );
-        return;
       }
-    }
-    handleUpdater(newSelectionCells);
-    return type;
-  };
+      handleUpdater(newSelectionCells);
+      return type;
+    },
+    [
+      activeSheetId,
+      config,
+      deltaIndex,
+      deltas,
+      dispatch,
+      exportExcel,
+      handleUpdater,
+      isStyle.isMergeCell,
+      selectedCell?.col,
+      selectedCell?.row,
+      selection,
+      selectionCells,
+      setActiveSheetId,
+      setData,
+      setDeltaIndex,
+      setSelectedCell,
+      setSelection,
+      setSheets,
+      sheetCellSettingsConfig.isAnchorMergePoint,
+    ],
+  );
   const handleUpdaterBrush = useCallback(
     (currentSelection: SelectionSheetType | null) => {
       if (!formatBrushStyles.length) return;

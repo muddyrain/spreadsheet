@@ -311,7 +311,7 @@ export type SpreadsheetType = {
   currentSheet: Sheet | null;
   currentCell: CellData | null;
   sheets: Sheet[];
-  setSheets: (sheets: Sheet[]) => void;
+  setSheets: React.Dispatch<React.SetStateAction<Sheet[]>>;
   activeSheetId: string;
   setActiveSheetId: (id: string) => void;
   config: Required<SpreadsheetConfig>; // 全局配置

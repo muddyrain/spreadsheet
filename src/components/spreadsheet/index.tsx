@@ -57,13 +57,14 @@ const RootSpreadsheet: React.FC<{
         originData,
         currentData,
       };
-      const index = Math.min(deltaIndex + 1, deltas.length);
+      let index = Math.min(deltaIndex + 1, deltas.length);
       // 把 deltaIndex 后的数据全部移除
       const newDeltas = deltas.slice(0, index);
-      if (newDeltas.length >= 100) {
+      if (newDeltas.length >= 5) {
         newDeltas.shift();
+        index -= 1;
       }
-      if (newDeltas.length < 100) newDeltas.push(delta);
+      newDeltas.push(delta);
       setDeltaIndex(index);
       setDeltas(newDeltas);
     },
