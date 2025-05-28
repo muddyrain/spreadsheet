@@ -445,7 +445,14 @@ export const CellInput = forwardRef<
             value.slice(0, selectionText.start) +
             value.slice(selectionText.end);
           updateCell(selectedCell, newValue, selectionText.start);
+          if (selectionText.start === 0 && value.length === selectionText.end) {
+            cursorLine.current = 0;
+            setCursorIndex(0);
+          }
           setSelectionText(null);
+          if (cursorIndex === selectionText.start) {
+            cursorLine.current = Math.max(0, cursorLine.current - 1);
+          }
         } else if (cursorIndex > 0) {
           const newValue =
             value.slice(0, cursorIndex - 1) + value.slice(cursorIndex);
