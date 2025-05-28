@@ -52,6 +52,7 @@ export const Header: FC<{
       <Tooltip content="撤销">
         <Toggle
           disabled={!isStyle.isUndo}
+          pressed={false}
           className="text-lg"
           onClick={() => {
             handleClick("undo");
@@ -63,6 +64,7 @@ export const Header: FC<{
       <Tooltip content="重做">
         <Toggle
           disabled={!isStyle.isRedo}
+          pressed={false}
           className="text-lg"
           onClick={() => {
             handleClick("redo");

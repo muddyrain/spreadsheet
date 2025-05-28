@@ -33,14 +33,16 @@ export const useUpdateStyle = () => {
     selection,
     selectedCell,
     currentCell,
+    cellInputActions,
     sheetCellSettingsConfig,
     formatBrushStyles,
     deltas,
     deltaIndex,
     activeSheetId,
+    setSelectedCell,
+    setSelection,
     setActiveSheetId,
     setDeltaIndex,
-    setDeltas,
     setData,
     dispatch,
   } = useStore();
@@ -303,7 +305,6 @@ export const useUpdateStyle = () => {
           const { r1, r2, c1, c2 } = getAbsoluteSelection(selection);
           if (r1 === r2 && c1 === c2) return;
           const isAnchorMergePoint = sheetCellSettingsConfig.isAnchorMergePoint;
-
           setData(
             produce((data) => {
               if (isAnchorMergePoint) {
@@ -359,26 +360,60 @@ export const useUpdateStyle = () => {
       case "undo": {
         const delta = deltas[deltaIndex];
         const sheetId = delta?.sheetId;
-        const diffData = delta?.data;
+        const diffData = delta?.originData;
         if (activeSheetId !== sheetId) {
           setActiveSheetId(sheetId);
         }
-        // setSelection(delta?.selection);
-        setDeltaIndex(deltaIndex - 1);
-        deltas.pop();
-        setDeltas([...deltas]);
-        setData((data) => {
-          for (let i = 0; i < diffData.length; i++) {
-            const cell = diffData[i];
-            if (cell) {
-              data[cell.row][cell.col] = {
-                ...data[cell.row][cell.col],
-                ...cell,
-              };
-            }
-          }
-          return [...data];
+        setSelection({
+          start: {
+            row: diffData[0].row,
+            col: diffData[0].col,
+          },
+          end: {
+            row: diffData[diffData.length - 1].row,
+            col: diffData[diffData.length - 1].col,
+          },
         });
+        setSelectedCell(diffData[0]);
+        cellInputActions?.blur();
+        setDeltaIndex(deltaIndex - 1);
+        setData(
+          produce((data) => {
+            for (let i = 0; i < diffData.length; i++) {
+              const cell = diffData[i];
+              if (cell) {
+                data[cell.row][cell.col] = {
+                  ...data[cell.row][cell.col],
+                  ...cell,
+                };
+              }
+            }
+          }),
+        );
+        return;
+      }
+      case "redo": {
+        const delta = deltas[deltaIndex + 1];
+        const sheetId = delta?.sheetId;
+        const diffData = delta?.currentData;
+        if (activeSheetId !== sheetId) {
+          setActiveSheetId(sheetId);
+        }
+        cellInputActions?.blur();
+        setDeltaIndex(deltaIndex + 1);
+        setData(
+          produce((data) => {
+            for (let i = 0; i < diffData.length; i++) {
+              const cell = diffData[i];
+              if (cell) {
+                data[cell.row][cell.col] = {
+                  ...data[cell.row][cell.col],
+                  ...cell,
+                };
+              }
+            }
+          }),
+        );
         return;
       }
     }

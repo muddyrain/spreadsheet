@@ -168,9 +168,13 @@ export type TableData = CellData[][];
  */
 export type DeltaItem = {
   /**
-   * @description 差异单元格数据
+   * @description 原单元格数据
    */
-  data: CellData[];
+  originData: CellData[];
+  /**
+   * @description 当前单元格数据
+   */
+  currentData: CellData[];
   /**
    * @description 差异时间戳
    */

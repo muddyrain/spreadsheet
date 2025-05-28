@@ -4,6 +4,7 @@ import { useStore } from "@/hooks/useStore";
 import { CellData } from "@/types/sheet";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { CellInputUpdateInputOptions, LineType } from "./CellInput";
+import _ from "lodash";
 
 export const useInput = ({
   currentFocusCell,
@@ -165,7 +166,7 @@ export const useInput = ({
       options: CellInputUpdateInputOptions = {},
     ) => {
       if (!currentCell) return;
-      currentFocusCell.current = currentCell;
+      currentFocusCell.current = _.cloneDeep(currentCell);
       const ctx = canvasRef.current?.getContext("2d");
       if (!ctx) return;
       if (containerRef.current) {

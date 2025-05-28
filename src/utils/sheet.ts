@@ -156,21 +156,26 @@ export const getAbsoluteSelection = (
  * @param newData 新表格数据
  * @returns 差异数组
  */
-export function getTableDiffs(oldData: TableData, newData: TableData) {
-  const diffs: Array<CellData> = [];
-  const maxRows = Math.max(oldData.length, newData.length);
+export function getTableDiffs(_oldData: TableData, _newData: TableData) {
+  const originData: Array<CellData> = [];
+  const currentData: Array<CellData> = [];
+  const maxRows = Math.max(_oldData.length, _newData.length);
   for (let row = 0; row < maxRows; row++) {
-    const oldRow = oldData[row] || [];
-    const newRow = newData[row] || [];
+    const oldRow = _oldData[row] || [];
+    const newRow = _newData[row] || [];
     const maxCols = Math.max(oldRow.length, newRow.length);
     for (let col = 0; col < maxCols; col++) {
       const oldValue = oldRow[col];
       const newValue = newRow[col];
       // 只要有差异（包括undefined和null），就记录
       if (!_.isEqual(oldValue, newValue)) {
-        diffs.push(oldValue);
+        originData.push(oldValue);
+        currentData.push(newValue);
       }
     }
   }
-  return diffs;
+  return {
+    originData,
+    currentData,
+  };
 }

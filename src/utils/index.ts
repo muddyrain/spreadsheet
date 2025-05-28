@@ -68,3 +68,19 @@ export function pxToPt(px: number | string): number {
   const pxValue = typeof px === "string" ? parseFloat(px) : px;
   return pxValue * 0.75;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function measurePerformance<T extends (...args: any[]) => any>(
+  fn: T,
+  name: string,
+): (...args: Parameters<T>) => ReturnType<T> {
+  return (...args: Parameters<T>) => {
+    const start = performance.now();
+    const result = fn(...args);
+    const end = performance.now();
+    if (end - start > 16) {
+      console.warn(`${name} took ${end - start}ms to execute`);
+    }
+    return result;
+  };
+}

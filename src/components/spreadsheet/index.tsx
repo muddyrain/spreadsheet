@@ -42,27 +42,30 @@ const RootSpreadsheet: React.FC<{
   const { isMac, isWindows } = getSystemInfo();
   const { currentSheet } = sheet;
   const addDelta: SheetStoreActionType["addDelta"] = useCallback(
-    (originData) => {
-      console.log("addDelta");
+    (_originData) => {
       // 深拷贝后再比较，避免引用复用导致 isEqual 失效
-      const oldData = _.cloneDeep(originData);
+      const oldData = _.cloneDeep(_originData);
       const newData = _.cloneDeep(currentSheet?.data || []);
       // 数据全量对比，完全一致则不更新
       if (_.isEqual(newData, oldData)) {
         return;
       }
-      const diff = getTableDiffs(oldData, newData);
+      const { originData, currentData } = getTableDiffs(oldData, newData);
       const delta: DeltaItem = {
         timestamp: Date.now(),
         sheetId: currentSheet?.id || "",
-        data: diff,
+        originData,
+        currentData,
       };
-      if (deltas.length >= 100) {
-        deltas.shift();
+      const index = Math.min(deltaIndex + 1, deltas.length);
+      // 把 deltaIndex 后的数据全部移除
+      const newDeltas = deltas.slice(0, index);
+      if (newDeltas.length >= 100) {
+        newDeltas.shift();
       }
-      if (deltas.length < 100) deltas.push(delta);
-      setDeltaIndex(Math.min(deltaIndex + 1, deltas.length));
-      setDeltas(deltas);
+      if (newDeltas.length < 100) newDeltas.push(delta);
+      setDeltaIndex(index);
+      setDeltas(newDeltas);
     },
     [currentSheet, deltas, deltaIndex, setDeltaIndex],
   );

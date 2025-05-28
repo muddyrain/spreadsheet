@@ -57,15 +57,17 @@ export const CellInput = forwardRef<
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const currentFocusCell = useRef<CellData | null>(null);
-  const [__, setOriginData] = useState<TableData>([]);
+  const [originData, setOriginData] = useState<TableData>([]);
   const {
     config,
     headerRowsHeight,
     isFocused,
     editingCell,
     selectedCell,
+    addDelta,
     setHeaderRowsHeight,
     dispatch,
+    setEditingCell,
   } = useStore();
   const { renderTextDecoration } = useRenderCell();
   const { getCellPosition } = useComputed();
@@ -187,13 +189,13 @@ export const CellInput = forwardRef<
       newCursor: number,
       options: CellInputUpdateInputOptions = {},
     ) => {
-      setValue(content);
-      setCursorIndex(newCursor);
+      setValue(() => content);
+      setCursorIndex(() => newCursor);
       const lines = getLines({
         ...selectedCell,
         value: content,
       });
-      setLines(lines);
+      setLines(() => lines);
       onChange(content, selectedCell);
       setInputStyle(selectedCell, lines, newCursor, options);
     },
@@ -473,8 +475,11 @@ export const CellInput = forwardRef<
     ],
   );
   const handleBlur = useCallback(() => {
+    console.log("blur");
     if (containerRef.current) {
       if (currentFocusCell.current) {
+        console.log("blur2");
+        addDelta(originData);
         const row = currentFocusCell.current.row;
         const lines = getLines({
           ...currentFocusCell.current,
@@ -490,6 +495,7 @@ export const CellInput = forwardRef<
         }
         containerRef.current.style.display = "none";
         containerRef.current.blur();
+        setEditingCell(null);
         setValue("");
         onChange?.(value, currentFocusCell?.current);
         currentFocusCell.current = null;
@@ -498,12 +504,15 @@ export const CellInput = forwardRef<
     }
   }, [
     isFocused,
-    getLines,
     value,
-    getInputHeight,
+    originData,
     headerRowsHeight,
+    getLines,
+    addDelta,
+    getInputHeight,
     onChange,
     setHeaderRowsHeight,
+    setEditingCell,
   ]);
   const handleCellInputActions: CellInputActionsType = useMemo(() => {
     return {
