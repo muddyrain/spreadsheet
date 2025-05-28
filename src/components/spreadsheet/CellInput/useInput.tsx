@@ -171,8 +171,14 @@ export const useInput = ({
       if (!ctx) return;
       if (containerRef.current) {
         const { cellWidth, cellHeight } = getCellWidthHeight(currentCell);
-        const x = getLeft(currentCell.col, options.scrollPosition);
-        const y = getTop(currentCell.row, options.scrollPosition);
+        let x = getLeft(currentCell.col, options.scrollPosition);
+        let y = getTop(currentCell.row, options.scrollPosition);
+        if (currentCell.mergeParent) {
+          const { mergeParent } = currentCell;
+          const { row, col } = mergeParent;
+          x = getLeft(col, options.scrollPosition);
+          y = getTop(row, options.scrollPosition);
+        }
         const verticalAlign = getVerticalAlign(currentCell);
         const textAlign = getTextAlign(currentCell);
         const { width, height, maxLineWidth } = updateInputSize(
