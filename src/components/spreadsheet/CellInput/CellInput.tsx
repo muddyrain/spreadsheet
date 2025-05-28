@@ -71,7 +71,7 @@ export const CellInput = forwardRef<
     dispatch,
   } = useStore();
   const { renderTextDecoration } = useRenderCell();
-  const { getCellPosition } = useComputed();
+  const { getCellPosition, getValue } = useComputed();
   const { getFontStyle, isOverflowMaxWidth } = useTools();
   const {
     lastWidth,
@@ -96,7 +96,7 @@ export const CellInput = forwardRef<
   const getLines = useCallback(
     (selectedCell: CellData): LineType[] => {
       const ctx = canvasRef.current?.getContext("2d");
-      const value = selectedCell.value;
+      const value = getValue(selectedCell);
       if (!ctx) return [];
       if (!selectedCell?.style.wrap) {
         // 不启用自动换行，只按硬换行分割
@@ -180,7 +180,7 @@ export const CellInput = forwardRef<
 
       return allLines;
     },
-    [config.inputPadding, getCellWidthHeight],
+    [config.inputPadding, getCellWidthHeight, getValue],
   );
   const updateCell = useCallback(
     (
@@ -416,7 +416,10 @@ export const CellInput = forwardRef<
           setSelectionText(null);
           newCursor = selectionText.start + 1;
         }
-        const originLines = getLines(selectedCell);
+        const originLines = getLines({
+          ...selectedCell,
+          value: value,
+        });
         const currentLine = originLines[cursorLine.current];
         // 当前光标是当前行的最后一个字符 且 输入的字符会导致当前行溢出
         if (cursorIndex === currentLine?.endIndex && wrap) {
@@ -446,7 +449,33 @@ export const CellInput = forwardRef<
         } else if (cursorIndex > 0) {
           const newValue =
             value.slice(0, cursorIndex - 1) + value.slice(cursorIndex);
-          updateCell(selectedCell, newValue, cursorIndex - 1);
+          const originLines = getLines({
+            ...selectedCell,
+            value,
+          });
+          const lines = getLines({
+            ...selectedCell,
+            value: newValue,
+          });
+          let newCursor = cursorIndex - 1;
+          const currentLine = lines[cursorLine.current];
+          // 如果当前行 && 当前行的起始索引 > 0 且 当前行的起始索引 === 光标索引
+          if (
+            currentLine &&
+            currentLine.startIndex > 0 &&
+            currentLine.startIndex === cursorIndex
+          ) {
+            cursorLine.current -= 1;
+            newCursor = originLines[cursorLine.current]?.endIndex || 0;
+          }
+          // 如果当前行 已经被清除如果没有内容
+          if (!currentLine) {
+            cursorLine.current -= 1;
+            newCursor = originLines[cursorLine.current]?.endIndex || 0;
+          }
+          // 若更新内容则清空重做栈
+          setRedoStack([]);
+          updateCell(selectedCell, newValue, newCursor);
         }
         return;
       }
@@ -566,7 +595,12 @@ export const CellInput = forwardRef<
           value,
         });
         const height = getInputHeight(currentFocusCell.current, lines);
-        if (row && height > headerRowsHeight[row]) {
+        if (
+          !currentFocusCell.current.mergeParent &&
+          !currentFocusCell.current.mergeSpan &&
+          row &&
+          height > headerRowsHeight[row]
+        ) {
           setHeaderRowsHeight(
             produce((headerRowsHeight) => {
               headerRowsHeight[row] = height;
@@ -610,8 +644,9 @@ export const CellInput = forwardRef<
         const lines = getLines(currentCell);
         setLines(lines);
         cursorLine.current = lines.length - 1;
-        setCursorIndex(currentCell.value.length);
-        setInputStyle(currentCell, lines, currentCell.value.length);
+        const value = getValue(currentCell);
+        setCursorIndex(value.length);
+        setInputStyle(currentCell, lines, value.length);
         setOriginData(originData);
         isFocused.current = true;
       },
@@ -630,7 +665,15 @@ export const CellInput = forwardRef<
         );
       },
     };
-  }, [isFocused, getLines, cursorLine, setInputStyle, handleBlur, updateCell]);
+  }, [
+    isFocused,
+    getLines,
+    cursorLine,
+    setInputStyle,
+    handleBlur,
+    getValue,
+    updateCell,
+  ]);
   useEffect(() => {
     if (handleCellInputActions) {
       dispatch({ cellInputActions: handleCellInputActions });
@@ -803,9 +846,6 @@ export const CellInput = forwardRef<
         onMouseDown={handleMouseDown}
         onBlur={() => {
           handleCellInputActions.blur();
-          // Promise.resolve().then(() => {
-          //   isFocused.current = false;
-          // });
         }}
         onFocus={() => {
           Promise.resolve().then(() => {

@@ -49,6 +49,18 @@ export const useComputed = () => {
     },
     [data],
   );
+  const getValue = useCallback(
+    (cell: CellData) => {
+      if (cell.mergeParent) {
+        const { row, col } = cell.mergeParent;
+        const parent = getCurrentCell(row, col);
+        return parent?.value || "";
+      } else {
+        return cell.value;
+      }
+    },
+    [getCurrentCell],
+  );
   // 获取默认样式
   const getDefaultCellStyle = useCallback(() => {
     return {
@@ -474,6 +486,7 @@ export const useComputed = () => {
     getLeft,
     getTop,
     getRight,
+    getValue,
     getCellWidthHeight,
   };
 };
