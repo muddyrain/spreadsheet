@@ -946,6 +946,9 @@ export const CellInput = forwardRef<
           ...inputStyle,
         }}
         role="cellInput"
+        onWheel={(e) => {
+          e.stopPropagation();
+        }}
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
         onBlur={() => {
