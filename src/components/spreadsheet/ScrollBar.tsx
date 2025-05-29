@@ -23,7 +23,9 @@ export const ScrollBar: React.FC<ScrollBarProps> = ({
   const scrollBarPosition = useMemo(() => {
     if (isHorizontal) {
       return Math.max(
-        (scrollPosition / maxScroll) * (viewportSize - scrollBarSize - 20),
+        Math.floor(
+          (scrollPosition / maxScroll) * (viewportSize - scrollBarSize - 10),
+        ),
         10,
       );
     }

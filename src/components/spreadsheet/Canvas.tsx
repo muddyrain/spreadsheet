@@ -14,6 +14,7 @@ import { useStore } from "@/hooks/useStore";
 import { useCursor } from "@/hooks/useCursor";
 import { useComputed } from "@/hooks/useComputed";
 import { Menu } from "./Menu";
+import { AppendRow } from "./AppendRow";
 
 interface CanvasProps {
   data: TableData;
@@ -166,13 +167,13 @@ export const Canvas: React.FC<CanvasProps> = ({
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-
         // 检查是否在表格区域内
         const totalWidth =
-          headerColsWidth.reduce((sum, prev) => sum + prev, 0) * zoomSize;
+          headerColsWidth.reduce((sum, prev) => sum + prev, 0) * zoomSize -
+          scrollPosition.x;
         const totalHeight =
-          headerRowsHeight.reduce((sum, prev) => sum + prev, 0) * zoomSize;
-
+          headerRowsHeight.reduce((sum, prev) => sum + prev, 0) * zoomSize -
+          scrollPosition.y;
         if (x > totalWidth || y > totalHeight || x < 0 || y < 0) {
           if (_ === "move") {
             setCurrentHoverCell(null);
@@ -324,8 +325,8 @@ export const Canvas: React.FC<CanvasProps> = ({
       <div
         ref={containerRef}
         style={{
-          width: "calc(100% - 10px)",
-          height: "calc(100% - 10px)",
+          width: "calc(100% - 20px)",
+          height: "calc(100% - 20px)",
           position: "relative",
           overflow: "hidden",
         }}
@@ -396,6 +397,11 @@ export const Canvas: React.FC<CanvasProps> = ({
               movedRef.current = false;
             }
           }}
+        />
+        <AppendRow
+          viewportSize={scrollConfig.viewportHeight}
+          contentSize={scrollConfig?.totalHeight}
+          scrollPosition={scrollPosition.y}
         />
       </div>
       {scrollConfig && scrollConfig.totalWidth > scrollConfig.viewportWidth && (

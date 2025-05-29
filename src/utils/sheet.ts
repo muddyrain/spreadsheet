@@ -21,19 +21,31 @@ export const createDefaultStyle = (config: SpreadsheetConfig) => {
     wrap: false,
   };
 };
+export const createDefaultOnlyStyle = (config: SpreadsheetConfig) => {
+  return {
+    backgroundColor: config?.readOnlyBackgroundColor,
+    textAlign: "center",
+    borderColor: config.readOnlyBorderColor,
+    color: config.color,
+  } as CellData["style"];
+};
 export const createDefaultCell = (
   config: SpreadsheetConfig,
   row: number,
   col: number,
 ): CellData => {
+  const isReadOnly = col === 0 || row === 0;
   const cell = {
     mergeSpan: null,
     mergeParent: null,
-    value: ``,
-    style: createDefaultStyle(config),
+    value: row === 0 ? generateColName(col) : col === 0 ? row.toString() : ``,
+    style: isReadOnly
+      ? createDefaultOnlyStyle(config)
+      : createDefaultStyle(config),
     row: row,
     col: col,
     address: generateColName(col) + row,
+    readOnly: isReadOnly,
   };
   return cell;
 };
@@ -45,12 +57,7 @@ export const createInitialData = (
   initialData: TableData = [],
 ): TableData => {
   const isInitialData = initialData.length === 0;
-  const readOnlyStyle: CellData["style"] = {
-    backgroundColor: config?.readOnlyBackgroundColor,
-    textAlign: "center",
-    borderColor: config.readOnlyBorderColor,
-    color: config.color,
-  };
+  const readOnlyStyle: CellData["style"] = createDefaultOnlyStyle(config);
   const colNames: CellData[] = [
     {
       ...createDefaultCell(config, 0, 0),
