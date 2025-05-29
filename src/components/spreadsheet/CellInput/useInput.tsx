@@ -1,7 +1,7 @@
 import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
 import { useStore } from "@/hooks/useStore";
-import { CellData } from "@/types/sheet";
+import { CellData, PositionType } from "@/types/sheet";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { CellInputUpdateInputOptions, LineType } from "./CellInput";
 import _ from "lodash";
@@ -31,7 +31,7 @@ export const useInput = ({
     top: 0,
     height: 20,
   });
-  const { getLeft, getTop, getCellWidthHeight } = useComputed();
+  const { getLeft, getTop, getCellWidthHeight, getValue } = useComputed();
   const minSize = useMemo(() => {
     const { cellWidth } = getCellWidthHeight(selectedCell);
     return {
@@ -264,9 +264,9 @@ export const useInput = ({
         updateCursorPosition(currentCell, lines, cursorIndex, width);
         setInputStyleState({
           ...updates,
-          width: height > maxHeight ? updates.width + 25 : updates.width,
+          width: height > maxHeight ? updates.width + 15 : updates.width,
           minWidth:
-            height > maxHeight ? updates.minWidth + 25 : updates.minWidth,
+            height > maxHeight ? updates.minWidth + 15 : updates.minWidth,
         });
         setTimeout(() => {
           containerRef.current?.focus();
@@ -363,6 +363,154 @@ export const useInput = ({
     },
     [canvasRef, getFontSize, value, config.inputPadding, getTextAlign],
   );
+  const getLines = useCallback(
+    (
+      selectedCell: CellData,
+      options?: {
+        wrap?: boolean;
+        cellWidth?: number;
+        scrollPosition?: PositionType;
+      },
+    ): {
+      lines: LineType[];
+    } => {
+      const checkInputOverflow = (allLines: LineType[]) => {
+        if (!options?.wrap) {
+          const { maxWidth } = getInputStyle(selectedCell, options);
+          const maxLineWidth =
+            Math.max(...allLines.map((item) => item.width)) +
+            config.inputPadding * 2;
+          if (maxLineWidth > maxWidth) {
+            const { lines } = getLines(selectedCell, {
+              wrap: true,
+              cellWidth: maxWidth,
+            });
+            return {
+              lines: lines,
+            };
+          } else {
+            return {
+              lines: allLines,
+            };
+          }
+        } else {
+          return {
+            lines: allLines,
+          };
+        }
+      };
+      const ctx = canvasRef.current?.getContext("2d");
+      const value = getValue(selectedCell);
+      if (!ctx)
+        return {
+          lines: [],
+        };
+      let { cellWidth } = getCellWidthHeight(selectedCell);
+      if (options?.wrap) {
+        cellWidth = options.cellWidth || 0;
+      }
+      const wrap = !!options?.wrap || !!selectedCell?.style.wrap;
+      if (!wrap) {
+        // 不启用自动换行，只按硬换行分割
+        const hardLines = value.split("\n");
+        let startIndex = 0;
+        const allLines = hardLines.map((line, index) => {
+          const result = {
+            content: line,
+            startIndex: startIndex,
+            lineIndex: index,
+            hardLineIndex: index,
+            endIndex: startIndex + line.length,
+            width: ctx.measureText(line).width,
+          };
+          startIndex += line.length + 1; // +1 是为了计算换行符
+          return result;
+        });
+        return checkInputOverflow(allLines);
+      }
+      // 启用自动换行，需要同时考虑硬换行和软换行
+      const allLines: LineType[] = [];
+      const hardLines = value.split("\n");
+      let currentStartIndex = 0;
+      hardLines.forEach((hardLine, hardLineIndex) => {
+        // 如果是空行，直接添加
+        if (hardLine.length === 0) {
+          allLines.push({
+            content: "",
+            startIndex: currentStartIndex,
+            lineIndex: hardLineIndex,
+            hardLineIndex: hardLineIndex,
+            endIndex: currentStartIndex + hardLine.length,
+            width: ctx.measureText(hardLine).width,
+          });
+          currentStartIndex++; // 空行只包含一个换行符
+          return;
+        }
+        // 处理当前硬行的软换行
+        let currentLineStartIndex = currentStartIndex;
+        let remainingText = hardLine;
+
+        while (remainingText.length > 0) {
+          // 找到可以在当前行放置的最长文本
+          let bestLength = 0;
+
+          for (let i = remainingText.length; i >= 0; i--) {
+            const testText = remainingText.substring(0, i);
+            const width = ctx.measureText(testText).width;
+            // 否则，更新最佳长度和宽度
+            bestLength = i;
+            if (width <= cellWidth - config.inputPadding * 2) {
+              bestLength = i;
+              break;
+            }
+          }
+
+          // 如果找不到合适的长度，强制放置至少一个字符
+          if (bestLength === 0 && remainingText.length > 0) {
+            bestLength = 1;
+          }
+
+          // 添加当前行
+          const lineText = remainingText.substring(0, bestLength);
+          allLines.push({
+            content: lineText,
+            startIndex: currentLineStartIndex,
+            hardLineIndex: hardLineIndex,
+            lineIndex: allLines.length,
+            endIndex: currentLineStartIndex + lineText.length,
+            width: ctx.measureText(lineText).width,
+          });
+
+          // 更新剩余文本和起始索引
+          remainingText = remainingText.substring(bestLength);
+          currentLineStartIndex += bestLength;
+        }
+
+        // 更新总起始索引（包括换行符）
+        currentStartIndex += hardLine.length + 1;
+      });
+      return checkInputOverflow(allLines);
+    },
+    [
+      config.inputPadding,
+      getInputStyle,
+      getCellWidthHeight,
+      getValue,
+      canvasRef,
+    ],
+  );
+  const getCurrentLineIndex = useCallback(
+    (selectedCell: CellData, cursorIndex: number) => {
+      const { lines } = getLines({
+        ...selectedCell,
+      });
+      return lines.findIndex((line) => {
+        // 如果当前行包含光标位置，则返回该行的索引
+        return cursorIndex >= line.startIndex && cursorIndex <= line.endIndex;
+      });
+    },
+    [getLines],
+  );
   return {
     lastWidth,
     lastHeight,
@@ -377,5 +525,7 @@ export const useInput = ({
     updateInputSize,
     getCellWidthHeight,
     getInputHeight,
+    getCurrentLineIndex,
+    getLines,
   };
 };

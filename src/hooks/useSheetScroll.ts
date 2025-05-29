@@ -115,10 +115,6 @@ export const useSheetScroll = (config: {
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
-      if (isFocused.current) return;
-      const role = (e.target as HTMLElement).role;
-      // 判断事件是否发生在 textarea 内
-      if (role && ["cellInput", "cellInputInner"].includes(role)) return;
       let deltaX = e.deltaX;
       let deltaY = e.deltaY;
       // 兼容 Windows 下 shift+滚轮横向滚动
@@ -128,10 +124,18 @@ export const useSheetScroll = (config: {
       }
       // 如果是ctrl或者cmd键按下，不处理滚轮事件
       if (e.ctrlKey || e.metaKey) {
-        if (e.deltaY <= 0) {
-          setZoomSize(zoomSize + 0.1);
-        } else {
-          setZoomSize(zoomSize - 0.1);
+        if (isFocused.current) return;
+        const role = (e.target as HTMLElement).role;
+        // 判断事件是否发生在 textarea 内
+        const isInputInner = !!(
+          role && ["cellInput", "cellInputInner"].includes(role)
+        );
+        if (!isInputInner) {
+          if (e.deltaY <= 0) {
+            setZoomSize(zoomSize + 0.1);
+          } else {
+            setZoomSize(zoomSize - 0.1);
+          }
         }
         return;
       }

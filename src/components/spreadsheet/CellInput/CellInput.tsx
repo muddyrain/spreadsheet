@@ -98,14 +98,19 @@ export const CellInput = forwardRef<
   const getLines = useCallback(
     (
       selectedCell: CellData,
-      options?: {
+      _options?: {
         wrap?: boolean;
         cellWidth?: number;
         scrollPosition?: PositionType;
+        isCheckOverflow?: boolean;
       },
     ): {
       lines: LineType[];
     } => {
+      const options = {
+        isCheckOverflow: true,
+        ..._options,
+      };
       const checkInputOverflow = (allLines: LineType[]) => {
         if (!options?.wrap) {
           const { maxWidth } = getInputStyle(selectedCell, options);
@@ -142,89 +147,95 @@ export const CellInput = forwardRef<
         cellWidth = options.cellWidth || 0;
       }
       const wrap = !!options?.wrap || !!selectedCell?.style.wrap;
+      const maxWidth = cellWidth - config.inputPadding * 2;
+      // 创建辅助函数，减少重复代码
+      const createLine = (
+        content: string,
+        startIndex: number,
+        lineIndex: number,
+        hardLineIndex: number,
+      ): LineType => ({
+        content,
+        startIndex,
+        lineIndex,
+        hardLineIndex,
+        endIndex: startIndex + content.length,
+        width: ctx.measureText(content).width,
+      });
       if (!wrap) {
         // 不启用自动换行，只按硬换行分割
         const hardLines = value.split("\n");
         let startIndex = 0;
         const allLines = hardLines.map((line, index) => {
-          const result = {
-            content: line,
-            startIndex: startIndex,
-            lineIndex: index,
-            hardLineIndex: index,
-            endIndex: startIndex + line.length,
-            width: ctx.measureText(line).width,
-          };
+          const result = createLine(line, startIndex, index, index);
           startIndex += line.length + 1; // +1 是为了计算换行符
           return result;
         });
-        return checkInputOverflow(allLines);
+        return options?.isCheckOverflow
+          ? checkInputOverflow(allLines)
+          : { lines: allLines };
       }
       // 启用自动换行，需要同时考虑硬换行和软换行
       const allLines: LineType[] = [];
       const hardLines = value.split("\n");
       let currentStartIndex = 0;
+      let lineIndex = 0;
       hardLines.forEach((hardLine, hardLineIndex) => {
         // 如果是空行，直接添加
         if (hardLine.length === 0) {
-          allLines.push({
-            content: "",
-            startIndex: currentStartIndex,
-            lineIndex: hardLineIndex,
-            hardLineIndex: hardLineIndex,
-            endIndex: currentStartIndex + hardLine.length,
-            width: ctx.measureText(hardLine).width,
-          });
+          allLines.push(
+            createLine("", currentStartIndex, lineIndex++, hardLineIndex),
+          );
           currentStartIndex++; // 空行只包含一个换行符
           return;
         }
         // 处理当前硬行的软换行
         let currentLineStartIndex = currentStartIndex;
         let remainingText = hardLine;
-
         while (remainingText.length > 0) {
-          // 找到可以在当前行放置的最长文本
+          // 使用二分查找找到适合当前行宽度的最大文本长度
+          let low = 0,
+            high = remainingText.length;
           let bestLength = 0;
-
-          for (let i = remainingText.length; i >= 0; i--) {
-            const testText = remainingText.substring(0, i);
+          while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            const testText = remainingText.substring(0, mid);
             const width = ctx.measureText(testText).width;
-            // 否则，更新最佳长度和宽度
-            bestLength = i;
-            if (width <= cellWidth - config.inputPadding * 2) {
-              bestLength = i;
-              break;
+            if (width <= maxWidth) {
+              bestLength = mid;
+              low = mid + 1;
+            } else {
+              high = mid - 1;
             }
           }
-
-          // 如果找不到合适的长度，强制放置至少一个字符
-          if (bestLength === 0 && remainingText.length > 0) {
-            bestLength = 1;
-          }
-
+          // 确保至少放置一个字符
+          bestLength = Math.max(bestLength, 1);
           // 添加当前行
           const lineText = remainingText.substring(0, bestLength);
-          allLines.push({
-            content: lineText,
-            startIndex: currentLineStartIndex,
-            hardLineIndex: hardLineIndex,
-            lineIndex: allLines.length,
-            endIndex: currentLineStartIndex + lineText.length,
-            width: ctx.measureText(lineText).width,
-          });
-
+          allLines.push(
+            createLine(
+              lineText,
+              currentLineStartIndex,
+              lineIndex++,
+              hardLineIndex,
+            ),
+          );
           // 更新剩余文本和起始索引
           remainingText = remainingText.substring(bestLength);
           currentLineStartIndex += bestLength;
         }
-
         // 更新总起始索引（包括换行符）
         currentStartIndex += hardLine.length + 1;
       });
-      return checkInputOverflow(allLines);
+      return options?.isCheckOverflow
+        ? checkInputOverflow(allLines)
+        : {
+            lines: allLines,
+          };
     },
     [config.inputPadding, getInputStyle, getCellWidthHeight, getValue],
   );
+  // 获取当前光标所在行的索引
   const getCurrentLineIndex = useCallback(
     (selectedCell: CellData, cursorIndex: number) => {
       const { lines } = getLines({
@@ -237,6 +248,7 @@ export const CellInput = forwardRef<
     },
     [getLines],
   );
+  // 更新单元格信息
   const updateCell = useCallback(
     (
       selectedCell: CellData,
@@ -681,10 +693,16 @@ export const CellInput = forwardRef<
       if (currentFocusCell.current) {
         addDelta(originData);
         const row = currentFocusCell.current.row;
-        const { lines } = getLines({
-          ...currentFocusCell.current,
-          value,
-        });
+        const { lines } = getLines(
+          {
+            ...currentFocusCell.current,
+            value,
+          },
+          {
+            isCheckOverflow: false,
+          },
+        );
+        console.log(lines);
         const height = getInputHeight(currentFocusCell.current, lines);
         if (
           !currentFocusCell.current.mergeParent &&
@@ -931,11 +949,8 @@ export const CellInput = forwardRef<
         role="cellInput"
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
-        onWheel={(e) => {
-          e.stopPropagation();
-        }}
         onBlur={() => {
-          // handleCellInputActions.blur();
+          handleCellInputActions.blur();
         }}
         onFocus={() => {
           Promise.resolve().then(() => {
