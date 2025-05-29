@@ -702,7 +702,6 @@ export const CellInput = forwardRef<
             isCheckOverflow: false,
           },
         );
-        console.log(lines);
         const height = getInputHeight(currentFocusCell.current, lines);
         if (
           !currentFocusCell.current.mergeParent &&

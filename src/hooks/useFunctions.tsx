@@ -11,8 +11,8 @@ import {
   DATA_OPERATION_TYPE,
   DATA_SELECTION_RANGE,
 } from "@/constant/dom";
-import { useData } from "./useData";
 import { AlignType } from "@/types/sheet";
+import { produce } from "immer";
 
 export const useFunctions = () => {
   const {
@@ -29,7 +29,6 @@ export const useFunctions = () => {
     setHeaderRowsHeight,
   } = useStore();
   const { getDefaultCellStyle } = useComputed();
-  const { updateCellsBySelection } = useData();
   const { toHtmlTable, parseHtmlTable, parseSelectionRange } = useDom();
   const lastPasteHTMLString = useRef<string>("");
   const startRow = useMemo(() => {
@@ -132,63 +131,80 @@ export const useFunctions = () => {
               DATA_SELECTION_RANGE,
             );
             const operationType = getAttrFromHtml(html, DATA_OPERATION_TYPE);
-            // 代表是剪切数据
-            if (operationType === "cut" && cutSelection) {
-              const range = parseSelectionRange(selectionRangeString);
-              updateCellsBySelection(range, (cell) => {
-                return createDefaultCell(config, cell.row, cell.col);
-              });
-              // 如果是剪切数据，需要将剪切数据的范围设置到剪切板中
-              lastPasteHTMLString.current = html;
-            }
+
             const tableData = parseHtmlTable(html);
             if (tableData?.length) {
               const startRow = selection.start?.row ?? selectedCell.row;
               const startCol = selection.start?.col ?? selectedCell.col;
               const endRow = startRow + tableData.length - 1;
               const endCol = startCol + tableData[0].length - 1;
-              for (let i = 0; i < tableData.length; i++) {
-                for (let j = 0; j < tableData[i].length; j++) {
-                  if (!data[startRow + i] || !data[startRow + i][startCol + j])
-                    continue;
-                  const tableCell = tableData[i][j];
-                  const target = data[startRow + i][startCol + j];
-                  if (isPasteContent) {
-                    target.value = tableCell.value;
+              setData(
+                produce((data) => {
+                  // 代表是剪切数据
+                  if (operationType === "cut" && cutSelection) {
+                    const range = parseSelectionRange(selectionRangeString);
+                    for (
+                      let row = range.start.row;
+                      row <= range.end.row;
+                      row++
+                    ) {
+                      for (
+                        let col = range.start.col;
+                        col <= range.end.col;
+                        col++
+                      ) {
+                        data[row][col] = createDefaultCell(config, row, col);
+                      }
+                    }
+                    // 如果是剪切数据，需要将剪切数据的范围设置到剪切板中
+                    lastPasteHTMLString.current = html;
                   }
-                  const style = tableCell.style;
-                  target.style = {
-                    ...getDefaultCellStyle(),
-                    fontSize: +style.fontSize || config.fontSize,
-                    fontWeight: style.fontWeight || "normal",
-                    fontStyle: style.fontStyle,
-                    textDecoration: style.textDecoration || "normal",
-                    textAlign: (style.textAlign ||
-                      config.textAlign) as AlignType,
-                    color: style.color || config.color,
-                    backgroundColor:
-                      style.background ||
-                      style.backgroundColor ||
-                      config.backgroundColor,
-                    borderColor: getSmartBorderColor(
-                      style.background ||
-                        style.backgroundColor ||
-                        config.backgroundColor,
-                      config.borderColor,
-                    ),
-                    wrap: style.whiteSpace === "normal",
-                  };
-                  if (style.height) {
-                    const height = ptToPx(style.height);
-                    const rowHeight = headerRowsHeight[startRow + i];
-                    if (height > rowHeight) {
-                      headerRowsHeight[startRow + i] = height;
-                      setHeaderRowsHeight([...headerRowsHeight]);
+                  for (let i = 0; i < tableData.length; i++) {
+                    for (let j = 0; j < tableData[i].length; j++) {
+                      if (
+                        !data[startRow + i] ||
+                        !data[startRow + i][startCol + j]
+                      )
+                        continue;
+                      const tableCell = tableData[i][j];
+                      const target = data[startRow + i][startCol + j];
+                      if (isPasteContent) {
+                        target.value = tableCell.value;
+                      }
+                      const style = tableCell.style;
+                      target.style = {
+                        ...getDefaultCellStyle(),
+                        fontSize: +style.fontSize || config.fontSize,
+                        fontWeight: style.fontWeight || "normal",
+                        fontStyle: style.fontStyle,
+                        textDecoration: style.textDecoration || "normal",
+                        textAlign: (style.textAlign ||
+                          config.textAlign) as AlignType,
+                        color: style.color || config.color,
+                        backgroundColor:
+                          style.background ||
+                          style.backgroundColor ||
+                          config.backgroundColor,
+                        borderColor: getSmartBorderColor(
+                          style.background ||
+                            style.backgroundColor ||
+                            config.backgroundColor,
+                          config.borderColor,
+                        ),
+                        wrap: style.whiteSpace === "normal",
+                      };
+                      if (style.height) {
+                        const height = ptToPx(style.height);
+                        const rowHeight = headerRowsHeight[startRow + i];
+                        if (height > rowHeight) {
+                          headerRowsHeight[startRow + i] = height;
+                          setHeaderRowsHeight([...headerRowsHeight]);
+                        }
+                      }
                     }
                   }
-                }
-              }
-              setData([...data]);
+                }),
+              );
               setSelection({
                 start: { row: startRow, col: startCol },
                 end: { row: endRow, col: endCol },
@@ -216,10 +232,8 @@ export const useFunctions = () => {
       selectedCell,
       parseHtmlTable,
       parseSelectionRange,
-      updateCellsBySelection,
       config,
       setData,
-      data,
       setSelection,
       getDefaultCellStyle,
       headerRowsHeight,
