@@ -249,6 +249,15 @@ const Spreadsheet: React.FC<{
           if (["eraser"].includes(type)) {
             clearSelection();
           }
+          if (editingCell) {
+            const currentCell = getCurrentCell(
+              editingCell.row,
+              editingCell.col,
+            );
+            if (currentCell) {
+              cellInputActions?.updateInputSize(currentCell);
+            }
+          }
         }}
       />
       <Current />

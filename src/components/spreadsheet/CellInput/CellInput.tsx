@@ -34,6 +34,7 @@ export type LineType = {
   hardLineIndex: number;
   content: string;
   lineIndex: number;
+  width: number;
 };
 export const CellInput = forwardRef<
   CellInputActionsType,
@@ -72,7 +73,7 @@ export const CellInput = forwardRef<
   } = useStore();
   const { renderTextDecoration } = useRenderCell();
   const { getCellPosition, getValue } = useComputed();
-  const { getFontStyle, isOverflowMaxWidth } = useTools();
+  const { getFontStyle } = useTools();
   const {
     lastWidth,
     lastHeight,
@@ -80,6 +81,7 @@ export const CellInput = forwardRef<
     cursorLine,
     minSize,
     inputStyle,
+    getInputStyle,
     getInputHeight,
     setInputStyle,
     getCursorPosByXY,
@@ -94,32 +96,74 @@ export const CellInput = forwardRef<
   });
 
   const getLines = useCallback(
-    (selectedCell: CellData): LineType[] => {
+    (
+      selectedCell: CellData,
+      options?: {
+        wrap?: boolean;
+        cellWidth?: number;
+        scrollPosition?: PositionType;
+      },
+    ): {
+      lines: LineType[];
+    } => {
+      const checkInputOverflow = (allLines: LineType[]) => {
+        if (!options?.wrap) {
+          const { maxWidth } = getInputStyle(selectedCell, options);
+          const maxLineWidth =
+            Math.max(...allLines.map((item) => item.width)) +
+            config.inputPadding * 2;
+          if (maxLineWidth > maxWidth) {
+            const { lines } = getLines(selectedCell, {
+              wrap: true,
+              cellWidth: maxWidth,
+            });
+            return {
+              lines: lines,
+            };
+          } else {
+            return {
+              lines: allLines,
+            };
+          }
+        } else {
+          return {
+            lines: allLines,
+          };
+        }
+      };
       const ctx = canvasRef.current?.getContext("2d");
       const value = getValue(selectedCell);
-      if (!ctx) return [];
-      if (!selectedCell?.style.wrap) {
+      if (!ctx)
+        return {
+          lines: [],
+        };
+      let { cellWidth } = getCellWidthHeight(selectedCell);
+      if (options?.wrap) {
+        cellWidth = options.cellWidth || 0;
+      }
+      const wrap = !!options?.wrap || !!selectedCell?.style.wrap;
+      if (!wrap) {
         // 不启用自动换行，只按硬换行分割
         const hardLines = value.split("\n");
         let startIndex = 0;
-        return hardLines.map((line, index) => {
+        const allLines = hardLines.map((line, index) => {
           const result = {
             content: line,
             startIndex: startIndex,
             lineIndex: index,
             hardLineIndex: index,
             endIndex: startIndex + line.length,
+            width: ctx.measureText(line).width,
           };
           startIndex += line.length + 1; // +1 是为了计算换行符
           return result;
         });
+        return checkInputOverflow(allLines);
       }
-
       // 启用自动换行，需要同时考虑硬换行和软换行
       const allLines: LineType[] = [];
       const hardLines = value.split("\n");
       let currentStartIndex = 0;
-
       hardLines.forEach((hardLine, hardLineIndex) => {
         // 如果是空行，直接添加
         if (hardLine.length === 0) {
@@ -129,11 +173,11 @@ export const CellInput = forwardRef<
             lineIndex: hardLineIndex,
             hardLineIndex: hardLineIndex,
             endIndex: currentStartIndex + hardLine.length,
+            width: ctx.measureText(hardLine).width,
           });
           currentStartIndex++; // 空行只包含一个换行符
           return;
         }
-
         // 处理当前硬行的软换行
         let currentLineStartIndex = currentStartIndex;
         let remainingText = hardLine;
@@ -145,7 +189,6 @@ export const CellInput = forwardRef<
           for (let i = remainingText.length; i >= 0; i--) {
             const testText = remainingText.substring(0, i);
             const width = ctx.measureText(testText).width;
-            const { cellWidth } = getCellWidthHeight(selectedCell);
             // 否则，更新最佳长度和宽度
             bestLength = i;
             if (width <= cellWidth - config.inputPadding * 2) {
@@ -167,6 +210,7 @@ export const CellInput = forwardRef<
             hardLineIndex: hardLineIndex,
             lineIndex: allLines.length,
             endIndex: currentLineStartIndex + lineText.length,
+            width: ctx.measureText(lineText).width,
           });
 
           // 更新剩余文本和起始索引
@@ -177,10 +221,21 @@ export const CellInput = forwardRef<
         // 更新总起始索引（包括换行符）
         currentStartIndex += hardLine.length + 1;
       });
-
-      return allLines;
+      return checkInputOverflow(allLines);
     },
-    [config.inputPadding, getCellWidthHeight, getValue],
+    [config.inputPadding, getInputStyle, getCellWidthHeight, getValue],
+  );
+  const getCurrentLineIndex = useCallback(
+    (selectedCell: CellData, cursorIndex: number) => {
+      const { lines } = getLines({
+        ...selectedCell,
+      });
+      return lines.findIndex((line) => {
+        // 如果当前行包含光标位置，则返回该行的索引
+        return cursorIndex >= line.startIndex && cursorIndex <= line.endIndex;
+      });
+    },
+    [getLines],
   );
   const updateCell = useCallback(
     (
@@ -193,13 +248,18 @@ export const CellInput = forwardRef<
       setUndoStack((prev) => [...prev, content]);
       setValue(() => content);
       setCursorIndex(() => newCursor);
-      const lines = getLines({
-        ...selectedCell,
-        value: content,
-      });
-      setLines(() => [...lines]);
       onChange(content, selectedCell);
+      const { lines } = getLines(
+        {
+          ...selectedCell,
+          value: content,
+        },
+        {
+          ...options,
+        },
+      );
       setInputStyle(selectedCell, lines, newCursor, options);
+      setLines(() => [...lines]);
     },
     [getLines, onChange, setInputStyle],
   );
@@ -212,7 +272,7 @@ export const CellInput = forwardRef<
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const canvasWidth = canvasRef.current.width;
-      const lines = getLines({
+      const { lines } = getLines({
         ...selectedCell,
         value: value,
       });
@@ -224,7 +284,7 @@ export const CellInput = forwardRef<
         lines,
       );
       setCursorIndex(cursorIndex);
-      updateCursorPosition(selectedCell, lines, cursorIndex);
+      updateCursorPosition(selectedCell, lines, cursorIndex, canvasWidth);
       setSelectionText(null);
       isSelecting.current = true;
       selectionAnchor.current = cursorIndex;
@@ -271,8 +331,6 @@ export const CellInput = forwardRef<
       if (!selectedCell) return;
       const ctx = canvasRef.current?.getContext("2d");
       if (!ctx) return;
-      const { cellWidth } = getCellWidthHeight(selectedCell);
-      const wrap = selectedCell.style.wrap;
       // 刷新操作
       if ((e.ctrlKey || e.metaKey) && key === "r") return;
       const copy = () => {
@@ -366,6 +424,14 @@ export const CellInput = forwardRef<
             newCursor = selectionText.start + clipboardText.length;
             setSelectionText(null);
           }
+          const line = getCurrentLineIndex(
+            {
+              ...selectedCell,
+              value: newValue,
+            },
+            newCursor,
+          );
+          cursorLine.current = line;
           updateCell(selectedCell, newValue, newCursor);
         });
         return;
@@ -416,21 +482,30 @@ export const CellInput = forwardRef<
           setSelectionText(null);
           newCursor = selectionText.start + 1;
         }
-        const originLines = getLines({
+        const lineIndex = getCurrentLineIndex(
+          {
+            ...selectedCell,
+            value: newValue,
+          },
+          cursorIndex,
+        );
+        cursorLine.current = lineIndex;
+        const { lines: originLines } = getLines({
           ...selectedCell,
-          value: value,
+          value,
         });
-        const currentLine = originLines[cursorLine.current];
-        // 当前光标是当前行的最后一个字符 且 输入的字符会导致当前行溢出
-        if (cursorIndex === currentLine?.endIndex && wrap) {
-          const isOverflow = isOverflowMaxWidth(
-            ctx,
-            currentLine.content + e.key,
-            cellWidth,
-          );
-          if (isOverflow) {
-            cursorLine.current += 1;
-          }
+        const { lines } = getLines({
+          ...selectedCell,
+          value: newValue,
+        });
+        const currentLine = originLines?.[lineIndex];
+        const nextOriginLine = originLines?.[lineIndex + 1];
+        const nextLine = lines?.[lineIndex + 1];
+        if (
+          currentLine?.endIndex === cursorIndex &&
+          nextOriginLine?.content !== nextLine?.content
+        ) {
+          cursorLine.current = lineIndex + 1;
         }
         // 若更新内容则清空重做栈
         setRedoStack([]);
@@ -444,23 +519,26 @@ export const CellInput = forwardRef<
           const newValue =
             value.slice(0, selectionText.start) +
             value.slice(selectionText.end);
-          updateCell(selectedCell, newValue, selectionText.start);
-          if (selectionText.start === 0 && value.length === selectionText.end) {
-            cursorLine.current = 0;
-            setCursorIndex(0);
-          }
           setSelectionText(null);
-          if (cursorIndex === selectionText.start) {
-            cursorLine.current = Math.max(0, cursorLine.current - 1);
-          }
+          const currentLineIndex = getCurrentLineIndex(
+            {
+              ...selectedCell,
+              value: newValue,
+            },
+            selectionText.start,
+          );
+          setCursorIndex(() => selectionText.start);
+          cursorLine.current = currentLineIndex;
+          updateCell(selectedCell, newValue, selectionText.start);
+          return;
         } else if (cursorIndex > 0) {
           const newValue =
             value.slice(0, cursorIndex - 1) + value.slice(cursorIndex);
-          const originLines = getLines({
+          const { lines: originLines } = getLines({
             ...selectedCell,
             value,
           });
-          const lines = getLines({
+          const { lines } = getLines({
             ...selectedCell,
             value: newValue,
           });
@@ -479,6 +557,9 @@ export const CellInput = forwardRef<
           if (!currentLine) {
             cursorLine.current -= 1;
             newCursor = originLines[cursorLine.current]?.endIndex || 0;
+          }
+          if (lines.length <= 1) {
+            cursorLine.current = 0;
           }
           // 若更新内容则清空重做栈
           setRedoStack([]);
@@ -505,12 +586,14 @@ export const CellInput = forwardRef<
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         e.stopPropagation();
+        setSelectionText(null);
         updateCell(selectedCell, value, Math.max(0, cursorIndex - 1));
         return;
       }
       if (e.key === "ArrowRight") {
         e.preventDefault();
         e.stopPropagation();
+        setSelectionText(null);
         updateCell(
           selectedCell,
           value,
@@ -521,6 +604,7 @@ export const CellInput = forwardRef<
       if (e.key === "ArrowUp") {
         e.preventDefault();
         e.stopPropagation();
+        setSelectionText(null);
         if (cursorLine.current > 0) {
           // 获取当前行的信息
           const currentLineInfo = lines[cursorLine.current];
@@ -543,6 +627,7 @@ export const CellInput = forwardRef<
       if (e.key === "ArrowDown") {
         e.preventDefault();
         e.stopPropagation();
+        setSelectionText(null);
         if (cursorLine.current < lines.length - 1) {
           // 获取当前行的信息
           const currentLineInfo = lines[cursorLine.current];
@@ -578,8 +663,8 @@ export const CellInput = forwardRef<
       }
     },
     [
+      getCurrentLineIndex,
       selectedCell,
-      getCellWidthHeight,
       selectionText,
       value,
       updateCell,
@@ -588,7 +673,6 @@ export const CellInput = forwardRef<
       redoStack,
       cursorLine,
       getLines,
-      isOverflowMaxWidth,
       lines,
     ],
   );
@@ -597,7 +681,7 @@ export const CellInput = forwardRef<
       if (currentFocusCell.current) {
         addDelta(originData);
         const row = currentFocusCell.current.row;
-        const lines = getLines({
+        const { lines } = getLines({
           ...currentFocusCell.current,
           value,
         });
@@ -646,16 +730,19 @@ export const CellInput = forwardRef<
       focus(cell, originData) {
         const currentCell = cell;
         if (!currentCell) return;
+        isFocused.current = true;
         currentFocusCell.current = _.cloneDeep(cell);
         setSelectionText(null);
-        const lines = getLines(currentCell);
+        const { lines } = getLines(currentCell);
         setLines(lines);
         cursorLine.current = lines.length - 1;
-        const value = getValue(currentCell);
-        setCursorIndex(value.length);
-        setInputStyle(currentCell, lines, value.length);
+        const cursorIndex = lines[lines.length - 1]?.endIndex;
+        setCursorIndex(cursorIndex);
+        const style = setInputStyle(currentCell, lines, cursorIndex);
+        if (innerRef.current && style) {
+          innerRef.current.style.maxHeight = `${style.maxHeight}px`;
+        }
         setOriginData(originData);
-        isFocused.current = true;
       },
       blur() {
         handleBlur();
@@ -672,15 +759,7 @@ export const CellInput = forwardRef<
         );
       },
     };
-  }, [
-    isFocused,
-    getLines,
-    cursorLine,
-    setInputStyle,
-    handleBlur,
-    getValue,
-    updateCell,
-  ]);
+  }, [isFocused, getLines, cursorLine, setInputStyle, handleBlur, updateCell]);
   useEffect(() => {
     if (handleCellInputActions) {
       dispatch({ cellInputActions: handleCellInputActions });
@@ -849,10 +928,14 @@ export const CellInput = forwardRef<
           cursor: "text",
           ...inputStyle,
         }}
+        role="cellInput"
         onKeyDown={handleKeyDown}
         onMouseDown={handleMouseDown}
+        onWheel={(e) => {
+          e.stopPropagation();
+        }}
         onBlur={() => {
-          handleCellInputActions.blur();
+          // handleCellInputActions.blur();
         }}
         onFocus={() => {
           Promise.resolve().then(() => {
@@ -860,7 +943,11 @@ export const CellInput = forwardRef<
           });
         }}
       >
-        <div className="relative overflow-hidden" ref={innerRef}>
+        <div
+          className="relative overflow-y-auto overflow-x-hidden"
+          role="cellInputInner"
+          ref={innerRef}
+        >
           <canvas ref={canvasRef} style={{ pointerEvents: "none" }} />
           <div
             key={cursorIndex}

@@ -223,9 +223,9 @@ export const useComputed = () => {
   );
   // 获取 x - right
   const getRight = useCallback(
-    (col: number) => {
+    (col: number, _scrollPosition?: PositionType) => {
       const cellWidth = getCellWidth(col);
-      return containerWidth - getLeft(col) - cellWidth;
+      return containerWidth - getLeft(col, _scrollPosition) - cellWidth;
     },
     [containerWidth, getLeft, getCellWidth],
   );

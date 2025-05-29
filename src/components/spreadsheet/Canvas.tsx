@@ -140,7 +140,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   useEffect(() => {
     const currentWrapper = wrapperRef.current;
     if (currentWrapper) {
-      currentWrapper.addEventListener("wheel", handleWheel);
+      currentWrapper.addEventListener("wheel", handleWheel, { passive: false });
     }
     return () => {
       if (currentWrapper) {

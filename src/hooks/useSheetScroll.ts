@@ -13,7 +13,9 @@ export const useSheetScroll = (config: {
     zoomSize,
     cellInputActions,
     scrollPosition,
+    isFocused,
     setZoomSize,
+    getCurrentCell,
     setScrollPosition,
   } = useStore();
   const [isDragging, setIsDragging] = useState(false);
@@ -37,7 +39,10 @@ export const useSheetScroll = (config: {
     const onMouseMove = (e: MouseEvent) => {
       if (!dragRef.current.isDragging) return;
       if (selectedCell) {
-        cellInputActions?.updateInputSize(selectedCell);
+        const currentCell = getCurrentCell(selectedCell.row, selectedCell.col);
+        if (currentCell) {
+          cellInputActions?.updateInputSize(currentCell);
+        }
       }
       const { startPos, lastScrollPos, dragType } = dragRef.current;
 
@@ -86,7 +91,13 @@ export const useSheetScroll = (config: {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [cellInputActions, config, selectedCell, setScrollPosition]);
+  }, [
+    cellInputActions,
+    config,
+    selectedCell,
+    setScrollPosition,
+    getCurrentCell,
+  ]);
 
   const handleScrollbarDragStart = useCallback(
     (e: React.MouseEvent, type: "horizontal" | "vertical") => {
@@ -104,10 +115,10 @@ export const useSheetScroll = (config: {
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
+      if (isFocused.current) return;
+      const role = (e.target as HTMLElement).role;
       // 判断事件是否发生在 textarea 内
-      if ((e.target as HTMLElement).tagName === "TEXTAREA") {
-        return;
-      }
+      if (role && ["cellInput", "cellInputInner"].includes(role)) return;
       let deltaX = e.deltaX;
       let deltaY = e.deltaY;
       // 兼容 Windows 下 shift+滚轮横向滚动
@@ -153,16 +164,23 @@ export const useSheetScroll = (config: {
           y: newScrollY,
         });
         if (selectedCell) {
-          cellInputActions?.updateInputSize(selectedCell, {
-            scrollPosition: {
-              x: newScrollX,
-              y: newScrollY,
-            },
-          });
+          const currentCell = getCurrentCell(
+            selectedCell.row,
+            selectedCell.col,
+          );
+          if (currentCell) {
+            cellInputActions?.updateInputSize(currentCell, {
+              scrollPosition: {
+                x: newScrollX,
+                y: newScrollY,
+              },
+            });
+          }
         }
       }
     },
     [
+      isFocused,
       config.totalWidth,
       config.viewportWidth,
       config.totalHeight,
@@ -174,6 +192,7 @@ export const useSheetScroll = (config: {
       zoomSize,
       cellInputActions,
       setScrollPosition,
+      getCurrentCell,
     ],
   );
 
