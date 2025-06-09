@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { CellData, PositionType, TableData } from "@/types/sheet";
+import { CellData, PositionType } from "@/types/sheet";
 import { useStore } from "@/hooks/useStore";
 import { useComputed } from "@/hooks/useComputed";
 import { useTools } from "@/hooks/useSheetDraw/useTools";
@@ -20,7 +20,7 @@ export type CellInputUpdateInputOptions = {
   scrollPosition?: PositionType;
 };
 export type CellInputActionsType = {
-  focus: (cell: CellData | null, originData: TableData) => void;
+  focus: (cell: CellData | null) => void;
   blur: () => void;
   setValue: (value: string) => void;
   updateInputSize: (
@@ -60,7 +60,6 @@ export const CellInput = forwardRef<
   const currentFocusCell = useRef<CellData | null>(null);
   const [undoStack, setUndoStack] = useState<string[]>([]); // 撤销栈
   const [redoStack, setRedoStack] = useState<string[]>([]); // 重做栈
-  const [originData, setOriginData] = useState<TableData>([]);
   const {
     config,
     headerRowsHeight,
@@ -691,7 +690,7 @@ export const CellInput = forwardRef<
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
       if (currentFocusCell.current) {
-        addDelta(originData);
+        addDelta();
         const row = currentFocusCell.current.row;
         const { lines } = getLines(
           {
@@ -722,7 +721,6 @@ export const CellInput = forwardRef<
         setSelectionText(null);
         cursorLine.current = 0;
         setCursorIndex(0);
-        setOriginData(originData);
         setUndoStack([]);
         setRedoStack([]);
         onChange?.(value, currentFocusCell?.current);
@@ -733,7 +731,6 @@ export const CellInput = forwardRef<
   }, [
     isFocused,
     value,
-    originData,
     headerRowsHeight,
     getLines,
     addDelta,
@@ -744,7 +741,7 @@ export const CellInput = forwardRef<
   ]);
   const handleCellInputActions: CellInputActionsType = useMemo(() => {
     return {
-      focus(cell, originData) {
+      focus(cell) {
         const currentCell = cell;
         if (!currentCell) return;
         isFocused.current = true;
@@ -759,7 +756,6 @@ export const CellInput = forwardRef<
         if (innerRef.current && style) {
           innerRef.current.style.maxHeight = `${style.maxHeight}px`;
         }
-        setOriginData(originData);
       },
       blur() {
         handleBlur();

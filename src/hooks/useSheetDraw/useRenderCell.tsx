@@ -262,7 +262,6 @@ export const useRenderCell = () => {
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(x - 0.5, y - 0.5, cellWidth + 1, cellHeight + 1);
       }
-
       // 如果上次 selection 与当前 selection 不同，绘制选中背景
       if (_.isEqual(lastSelection.current, selection)) {
         return;

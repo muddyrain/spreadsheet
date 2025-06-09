@@ -20,7 +20,6 @@ import { Toaster } from "sonner";
 import { InfoIcon } from "lucide-react";
 import { TooltipProvider } from "../ui/tooltip/tooltip";
 import { useSetState } from "@/hooks/useSetState";
-import { getTableDiffs } from "@/utils/sheet";
 
 const RootSpreadsheet: React.FC<{
   config?: SpreadsheetConfig;
@@ -41,35 +40,24 @@ const RootSpreadsheet: React.FC<{
   const { state: sheetState, actions: sheetActions } = useSheetStore(sheet);
   const { isMac, isWindows } = getSystemInfo();
   const { currentSheet } = sheet;
-  const addDelta: SheetStoreActionType["addDelta"] = useCallback(
-    (_originData) => {
-      // 深拷贝后再比较，避免引用复用导致 isEqual 失效
-      const oldData = _.cloneDeep(_originData);
-      const newData = _.cloneDeep(currentSheet?.data || []);
-      // 数据全量对比，完全一致则不更新
-      if (_.isEqual(newData, oldData)) {
-        return;
-      }
-      const { originData, currentData } = getTableDiffs(oldData, newData);
-      const delta: DeltaItem = {
-        timestamp: Date.now(),
-        sheetId: currentSheet?.id || "",
-        originData,
-        currentData,
-      };
-      let index = Math.min(deltaIndex + 1, deltas.length);
-      // 把 deltaIndex 后的数据全部移除
-      const newDeltas = deltas.slice(0, index);
-      if (newDeltas.length >= 100) {
-        newDeltas.shift();
-        index -= 1;
-      }
-      newDeltas.push(delta);
-      setDeltaIndex(index);
-      setDeltas(newDeltas);
-    },
-    [currentSheet, deltas, deltaIndex, setDeltaIndex],
-  );
+  const addDelta: SheetStoreActionType["addDelta"] = useCallback(() => {
+    const delta: DeltaItem = {
+      timestamp: Date.now(),
+      sheetId: currentSheet?.id || "",
+      originData: [],
+      currentData: [],
+    };
+    let index = Math.min(deltaIndex + 1, deltas.length);
+    // 把 deltaIndex 后的数据全部移除
+    const newDeltas = deltas.slice(0, index);
+    if (newDeltas.length >= 100) {
+      newDeltas.shift();
+      index -= 1;
+    }
+    newDeltas.push(delta);
+    setDeltaIndex(index);
+    setDeltas(newDeltas);
+  }, [currentSheet, deltas, deltaIndex, setDeltaIndex]);
   const contextValue = useMemo(() => {
     return {
       ...localState,
@@ -138,13 +126,6 @@ const useSheetStore = (sheet: SpreadsheetType) => {
     (data) => {
       if (typeof data === "function") {
         data = data(currentSheet?.data || []);
-      }
-      // 深拷贝后再比较，避免引用复用导致 isEqual 失效
-      const oldData = _.cloneDeep(currentSheet?.data);
-      const newData = _.cloneDeep(data);
-      // 数据全量对比，完全一致则不更新
-      if (_.isEqual(newData, oldData)) {
-        return;
       }
       setCurrentSheet("cutSelection", null);
       setCurrentSheet("data", data);

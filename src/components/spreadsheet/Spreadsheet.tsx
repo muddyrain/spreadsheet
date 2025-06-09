@@ -11,7 +11,6 @@ import { useStore } from "@/hooks/useStore";
 import { Footer } from "./Footer/index";
 import { useTab } from "@/hooks/useTab";
 import { useDirection } from "@/hooks/useDirection";
-import { useComputed } from "@/hooks/useComputed";
 import { produce } from "immer";
 
 const Spreadsheet: React.FC<{
@@ -33,7 +32,6 @@ const Spreadsheet: React.FC<{
   } = useStore();
   const cellInputRef = useRef<CellInputActionsType>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { fitCellViewPort } = useComputed();
   const handleSelectAll = () => {
     setSelection({
       start: { row: 1, col: 1 },
@@ -156,9 +154,8 @@ const Spreadsheet: React.FC<{
     if (editingCell) {
       cellInputRef.current?.setValue(editingCell.value);
     }
-    fitCellViewPort(rowIndex, colIndex);
     Promise.resolve().then(() => {
-      cellInputRef.current?.focus(currentCell, _.cloneDeep(data));
+      cellInputRef.current?.focus(currentCell);
     });
   };
   const { onTabKeyDown } = useTab();
@@ -174,9 +171,9 @@ const Spreadsheet: React.FC<{
           colIndex = col;
           rowIndex = row;
         }
+
         if (!isFocused.current) {
           isFocused.current = false;
-          const originData = _.cloneDeep(data);
           const newValue = selectedCell.value + content;
           setData(
             produce((data) => {
@@ -185,10 +182,9 @@ const Spreadsheet: React.FC<{
                 target.value = newValue;
               }
               cellInputRef.current?.setValue(newValue);
-              cellInputRef.current?.focus(target, originData);
+              cellInputRef.current?.focus(target);
             }),
           );
-
           setEditingCell(() => ({ row: rowIndex, col: colIndex }));
         }
       }
@@ -217,17 +213,19 @@ const Spreadsheet: React.FC<{
         const row = _editingCell?.row || editingCell?.row;
         const col = _editingCell?.col || editingCell?.col;
         if (row && col) {
-          const newData = _.cloneDeep(data);
-          const targetCell = newData[row][col];
-          if (targetCell) {
-            targetCell.value = value;
-          }
-          setData(() => newData);
-          debouncedChange(newData);
+          setData(
+            produce((data) => {
+              const target = data[row][col];
+              if (target) {
+                target.value = value;
+              }
+              debouncedChange(data);
+            }),
+          );
         }
       }
     },
-    [editingCell, isFocused, data, setData, debouncedChange],
+    [editingCell, isFocused, setData, debouncedChange],
   );
   // 清除选中
   const clearSelection = useCallback(() => {
