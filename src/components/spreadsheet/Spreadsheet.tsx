@@ -136,7 +136,6 @@ const Spreadsheet: React.FC<{
       start: { row: rowIndex, col: colIndex },
       end: { row: rowIndex, col: colIndex },
     });
-    console.log("click", +new Date());
   };
   // 监听双击事件
   const onCellDoubleClick = (_rowIndex: number, _colIndex: number) => {

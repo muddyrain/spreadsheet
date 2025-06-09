@@ -1,29 +1,23 @@
 import { useCallback } from "react";
-import { DrawConfig, EditingCell, SelectionSheetType } from "@/types/sheet";
+import { useStore } from "../useStore";
 import { useDrawCell } from "./useDrawCell";
-
-export const useSheetDraw = (
-  drawConfig: DrawConfig & {
-    selection: SelectionSheetType | null;
-    selectedCell: EditingCell;
-  },
-) => {
-  const drawFunctions = useDrawCell(drawConfig);
+export const useSheetDraw = () => {
+  const { containerWidth, containerHeight } = useStore();
+  const {
+    drawCell,
+    drawMergeCellBorder,
+    drawCtSelectionBorder,
+    drawSelectionBorder,
+    drawSelectedCell,
+    drawFrozenCols,
+    drawFrozenRows,
+    drawHeaderSelectedAreaLine,
+    drawFrozenCrossCell,
+    drawDragLine,
+  } = useDrawCell();
   const drawTable = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const {
-        drawCell,
-        drawFrozenCols,
-        drawFrozenRows,
-        drawFrozenCrossCell,
-        drawSelectionBorder,
-        drawCtSelectionBorder,
-        drawSelectedCell,
-        drawDragLine,
-        drawMergeCellBorder,
-        drawHeaderSelectedAreaLine,
-      } = drawFunctions;
-      ctx.clearRect(0, 0, drawConfig.wrapperWidth, drawConfig.wrapperHeight);
+      ctx.clearRect(0, 0, containerWidth, containerHeight);
       ctx.translate(0.5, 0.5);
       // 绘制内容区（非冻结区）单元格
       drawCell(ctx);
@@ -46,7 +40,20 @@ export const useSheetDraw = (
       // 绘制拖拽标准线
       drawDragLine(ctx);
     },
-    [drawConfig, drawFunctions],
+    [
+      containerWidth,
+      containerHeight,
+      drawCell,
+      drawMergeCellBorder,
+      drawCtSelectionBorder,
+      drawSelectionBorder,
+      drawSelectedCell,
+      drawFrozenCols,
+      drawFrozenRows,
+      drawHeaderSelectedAreaLine,
+      drawFrozenCrossCell,
+      drawDragLine,
+    ],
   );
   return { drawTable };
 };

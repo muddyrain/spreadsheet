@@ -1,6 +1,6 @@
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { useStore } from "../useStore";
-import { CellData, DrawConfig } from "@/types/sheet";
+import { CellData } from "@/types/sheet";
 import { useRenderCell } from "./useRenderCell";
 import { useComputed } from "../useComputed";
 import { useCallback, useMemo } from "react";
@@ -9,7 +9,7 @@ import { useCallback, useMemo } from "react";
 const FROZEN_ROW_COUNT = 1;
 const FROZEN_COL_COUNT = 1;
 
-export const useDrawCell = (drawConfig: DrawConfig) => {
+export const useDrawCell = () => {
   const {
     config,
     data,
@@ -24,6 +24,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     headerColsWidth,
     selection,
     cutSelection,
+    containerWidth,
+    containerHeight,
   } = useStore();
   const { renderCell, renderText, renderBorder, renderSelectedCell } =
     useRenderCell();
@@ -37,12 +39,12 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     getRenderAreaCells,
   } = useComputed();
   const { startRow, endRow } = useMemo(
-    () => getStartEndRow(drawConfig.wrapperHeight),
-    [drawConfig.wrapperHeight, getStartEndRow],
+    () => getStartEndRow(containerHeight),
+    [containerHeight, getStartEndRow],
   );
   const { startCol, endCol } = useMemo(
-    () => getStartEndCol(drawConfig.wrapperWidth),
-    [drawConfig.wrapperWidth, getStartEndCol],
+    () => getStartEndCol(containerWidth),
+    [containerWidth, getStartEndCol],
   );
   const selectionCells: CellData[] = useMemo(() => {
     if (!selection) {
@@ -468,7 +470,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           ctx.setLineDash([5, 5]);
           ctx.beginPath();
           ctx.moveTo(currentColSideLinePosition, 0);
-          ctx.lineTo(currentColSideLinePosition, drawConfig.wrapperHeight);
+          ctx.lineTo(currentColSideLinePosition, containerHeight);
           ctx.stroke();
         }
         if (colFixedSideLinePosition) {
@@ -477,7 +479,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           ctx.setLineDash([5, 5]);
           ctx.beginPath();
           ctx.moveTo(colFixedSideLinePosition, 0);
-          ctx.lineTo(colFixedSideLinePosition, drawConfig.wrapperHeight);
+          ctx.lineTo(colFixedSideLinePosition, containerHeight);
           ctx.stroke();
         }
       }
@@ -494,7 +496,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           ctx.setLineDash([5, 5]);
           ctx.beginPath();
           ctx.moveTo(0, currentRowSideLinePosition);
-          ctx.lineTo(drawConfig.wrapperWidth, currentRowSideLinePosition);
+          ctx.lineTo(containerWidth, currentRowSideLinePosition);
           ctx.stroke();
         }
         if (rowFixedSideLinePosition) {
@@ -503,7 +505,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
           ctx.setLineDash([5, 5]);
           ctx.beginPath();
           ctx.moveTo(0, rowFixedSideLinePosition);
-          ctx.lineTo(drawConfig.wrapperWidth, rowFixedSideLinePosition);
+          ctx.lineTo(containerWidth, rowFixedSideLinePosition);
           ctx.stroke();
         }
       }
@@ -512,8 +514,8 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       config.selectionBorderColor,
       currentSideLineIndex,
       currentSideLinePosition,
-      drawConfig.wrapperHeight,
-      drawConfig.wrapperWidth,
+      containerWidth,
+      containerHeight,
       getLeft,
       getTop,
       isMouseDown,

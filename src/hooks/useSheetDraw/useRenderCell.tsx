@@ -2,9 +2,10 @@ import { CellData, SelectionSheetType } from "@/types/sheet";
 import { useStore } from "../useStore";
 import { getAbsoluteSelection } from "@/utils/sheet";
 import { useComputed } from "../useComputed";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useTools } from "./useTools";
 import { useDynamicRender } from "./useDynamicRender";
+import _ from "lodash";
 
 export interface RenderOptions {
   rowIndex: number;
@@ -18,6 +19,7 @@ export interface RenderOptions {
 }
 
 export const useRenderCell = () => {
+  const lastSelection = useRef<SelectionSheetType | null>(null);
   const { data, selection, config, headerColsWidth, headerRowsHeight } =
     useStore();
   const { getMergeCellSize } = useComputed();
@@ -260,6 +262,11 @@ export const useRenderCell = () => {
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(x - 0.5, y - 0.5, cellWidth + 1, cellHeight + 1);
       }
+
+      // 如果上次 selection 与当前 selection 不同，绘制选中背景
+      if (_.isEqual(lastSelection.current, selection)) {
+        return;
+      }
       // 如果是表头，并且当前列在选中范围内
       if ((isHeader || isRow) && selection?.start && selection?.end) {
         const { c1, c2, r1, r2 } = getAbsoluteSelection(selection);
@@ -273,6 +280,7 @@ export const useRenderCell = () => {
           ctx.globalAlpha = 1;
         }
       }
+      lastSelection.current = selection;
     },
     [
       config.backgroundColor,
@@ -342,7 +350,10 @@ export const useRenderCell = () => {
         ctx.lineTo(x + cellWidth, y + cellHeight);
         ctx.stroke();
         const key = `${rowIndex}:${colIndex}`;
-        const isDraw = drawBorderMap.get(key);
+        let isDraw = drawBorderMap.get(key);
+        if (cell.readOnly) {
+          isDraw = true;
+        }
         if (isDraw) {
           // 绘制右边框
           ctx.beginPath();

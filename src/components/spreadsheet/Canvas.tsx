@@ -30,7 +30,6 @@ interface CanvasProps {
 export const Canvas: React.FC<CanvasProps> = ({
   data,
   wrapperRef,
-  selectedCell,
   onCellClick,
   onCellDoubleClick,
 }) => {
@@ -91,12 +90,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     canvasRef,
   });
   // 绘制 hooks
-  const { drawTable } = useSheetDraw({
-    wrapperWidth: containerWidth,
-    wrapperHeight: containerHeight,
-    selection,
-    selectedCell,
-  });
+  const { drawTable } = useSheetDraw();
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;

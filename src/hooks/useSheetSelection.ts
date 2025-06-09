@@ -182,18 +182,27 @@ export function useSheetSelection() {
         // 行索引
         const row = Math.max(findIndexByAccumulate(headerRowsHeight, y), 1);
         if (row !== lastRow || col !== lastCol) {
-          setSelection(() => {
-            const { newStartRow, newStartCol, newEndRow, newEndCol } =
-              expandSelection(rowIndex, colIndex, row!, col!);
-            tempSelection = {
-              start: { row: newStartRow, col: newStartCol },
-              end: { row: newEndRow, col: newEndCol },
-            };
-            return {
-              start: { row: newStartRow, col: newStartCol },
-              end: { row: newEndRow, col: newEndCol },
-            };
-          });
+          const { newStartRow, newStartCol, newEndRow, newEndCol } =
+            expandSelection(rowIndex, colIndex, row!, col!);
+          if (
+            !(
+              tempSelection?.start?.row === newStartRow &&
+              tempSelection?.start?.col === newStartCol &&
+              tempSelection?.end?.row === newEndRow &&
+              tempSelection?.end?.col === newEndCol
+            )
+          ) {
+            setSelection((_selection) => {
+              tempSelection = {
+                start: { row: newStartRow, col: newStartCol },
+                end: { row: newEndRow, col: newEndCol },
+              };
+              return {
+                start: { row: newStartRow, col: newStartCol },
+                end: { row: newEndRow, col: newEndCol },
+              };
+            });
+          }
           movedRef.current = true;
           lastRow = row;
           lastCol = col;
