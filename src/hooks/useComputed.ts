@@ -5,10 +5,14 @@ import {
   SelectionSheetType,
 } from "@/types/sheet";
 import { useStore } from "./useStore";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { getAbsoluteSelection } from "@/utils/sheet";
 
 export const useComputed = () => {
+  const cellPositionCache = useRef<Map<string, { x: number; y: number }>>(
+    new Map(),
+  );
+  const scrollPositionCache = useRef<PositionType>(null);
   const {
     config,
     data,
@@ -341,19 +345,36 @@ export const useComputed = () => {
   // 获取单元格位置
   const getCellPosition = useCallback(
     (cell: CellData, _scrollPosition?: PositionType) => {
-      let col = cell.col;
-      let row = cell.row;
-      // 如果单元格是主单元格，则计算其位置
-      if (cell.mergeSpan) {
-        row = cell.mergeSpan.r1;
-        col = cell.mergeSpan.c1;
+      const ScrollPosition = _scrollPosition || scrollPosition;
+      // 如果滚动条位置没有变化，则直接返回清空缓存对象
+      if (
+        scrollPositionCache.current &&
+        (scrollPositionCache.current.x !== ScrollPosition.x ||
+          scrollPositionCache.current.y !== ScrollPosition.y)
+      ) {
+        cellPositionCache.current.clear();
       }
-      const x = getLeft(col, _scrollPosition);
-      const y = getTop(row, _scrollPosition);
-      const right = getRight(col);
-      return { x, y, right };
+      scrollPositionCache.current = ScrollPosition;
+      // 清空缓存 - 每次 scrollPosition 改变时需要重新计算
+      const cacheKey = `${ScrollPosition.x}:${ScrollPosition.y}:${cell.row}:${cell.col}`;
+      if (!cellPositionCache.current.has(cacheKey)) {
+        let col = cell.col;
+        let row = cell.row;
+        // 如果单元格是主单元格，则计算其位置
+        if (cell.mergeSpan) {
+          row = cell.mergeSpan.r1;
+          col = cell.mergeSpan.c1;
+        }
+        const x = getLeft(col, ScrollPosition);
+        const y = getTop(row, ScrollPosition);
+        const right = getRight(col);
+        const position = { x, y, right };
+        // 将计算结果缓存
+        cellPositionCache.current.set(cacheKey, position);
+      }
+      return cellPositionCache.current.get(cacheKey)!;
     },
-    [getLeft, getTop, getRight],
+    [getLeft, getTop, getRight, scrollPosition],
   );
 
   // 获取合并单元格大小
@@ -468,6 +489,59 @@ export const useComputed = () => {
     },
     [getMergeCellSize, headerColsWidth, headerRowsHeight],
   );
+
+  // 绘制内容区（非冻结区）单元格
+  // 添加缓存渲染区域的函数
+  const getRenderAreaCells = useCallback(
+    (startRow: number, endRow: number, startCol: number, endCol: number) => {
+      const cells: Array<{
+        cell: CellData;
+        x: number;
+        y: number;
+        rowIndex: number;
+        colIndex: number;
+      }> = [];
+
+      for (let rowIndex = startRow; rowIndex <= endRow; rowIndex++) {
+        for (let colIndex = startCol; colIndex <= endCol; colIndex++) {
+          // 忽略第一行和第一列
+          if (colIndex === 0 || rowIndex === 0) continue;
+          const cell = data[rowIndex]?.[colIndex];
+          // 如果单元格为空，跳过
+          if (!cell) continue;
+          // 处理合并单元格的情况
+          if (cell.mergeParent) {
+            const parentCell =
+              data[cell.mergeParent.row]?.[cell.mergeParent.col];
+            if (parentCell) {
+              const { x, y } = getCellPosition(parentCell);
+              // 确保主单元格只被添加一次
+              if (
+                !cells.some(
+                  (item) =>
+                    item.rowIndex === cell.mergeParent?.row &&
+                    item.colIndex === cell.mergeParent?.col,
+                )
+              ) {
+                cells.push({
+                  cell: parentCell,
+                  x,
+                  y,
+                  rowIndex: cell.mergeParent.row,
+                  colIndex: cell.mergeParent.col,
+                });
+              }
+              continue;
+            }
+          }
+          const { x, y } = getCellPosition(cell);
+          cells.push({ cell, x, y, rowIndex, colIndex });
+        }
+      }
+      return { cells };
+    },
+    [data, getCellPosition],
+  );
   return {
     findIndexByAccumulate,
     getMergeCellSize,
@@ -488,5 +562,6 @@ export const useComputed = () => {
     getRight,
     getValue,
     getCellWidthHeight,
+    getRenderAreaCells,
   };
 };

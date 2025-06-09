@@ -77,20 +77,20 @@ const Spreadsheet: React.FC<{
     if (colIndex === 0) {
       if (e.shiftKey) {
         setSelection((_selection) => {
-          setSelectedCell(data[_selection?.start?.row || 1][1]);
+          setSelectedCell(() => data[_selection?.start?.row || 1][1]);
           return {
             start: { row: _selection?.start?.row || 1, col: 1 },
             end: { row: rowIndex, col: data[0].length - 1 },
           };
         });
       } else {
-        setSelection({
+        setSelection(() => ({
           start: { row: rowIndex, col: 1 },
           end: { row: rowIndex, col: data[0].length - 1 },
-        });
-        setSelectedCell(data[rowIndex][1]);
+        }));
+        setSelectedCell(() => data[rowIndex][1]);
       }
-      setEditingCell(null);
+      setEditingCell(() => null);
       return;
     }
     const currentCell = data[rowIndex][colIndex];
@@ -136,6 +136,7 @@ const Spreadsheet: React.FC<{
       start: { row: rowIndex, col: colIndex },
       end: { row: rowIndex, col: colIndex },
     });
+    console.log("click", +new Date());
   };
   // 监听双击事件
   const onCellDoubleClick = (_rowIndex: number, _colIndex: number) => {

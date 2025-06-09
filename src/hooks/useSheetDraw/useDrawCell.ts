@@ -34,9 +34,16 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     getTop,
     getStartEndRow,
     getStartEndCol,
+    getRenderAreaCells,
   } = useComputed();
-  const { startRow, endRow } = getStartEndRow(drawConfig.wrapperHeight);
-  const { startCol, endCol } = getStartEndCol(drawConfig.wrapperWidth);
+  const { startRow, endRow } = useMemo(
+    () => getStartEndRow(drawConfig.wrapperHeight),
+    [drawConfig.wrapperHeight, getStartEndRow],
+  );
+  const { startCol, endCol } = useMemo(
+    () => getStartEndCol(drawConfig.wrapperWidth),
+    [drawConfig.wrapperWidth, getStartEndCol],
+  );
   const selectionCells: CellData[] = useMemo(() => {
     if (!selection) {
       return [];
@@ -102,64 +109,10 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
     };
   }, [headerColsWidth, headerRowsHeight, zoomSize]);
 
-  // 绘制内容区（非冻结区）单元格
-  // 添加缓存渲染区域的函数
-  const getRenderArea = useMemo(() => {
-    return (
-      startRow: number,
-      endRow: number,
-      startCol: number,
-      endCol: number,
-    ) => {
-      const cells: Array<{
-        cell: CellData;
-        x: number;
-        y: number;
-        rowIndex: number;
-        colIndex: number;
-      }> = [];
-      for (let rowIndex = startRow; rowIndex <= endRow; rowIndex++) {
-        for (let colIndex = startCol; colIndex <= endCol; colIndex++) {
-          if (colIndex === 0 || rowIndex === 0) continue;
-          const cell = data[rowIndex]?.[colIndex];
-          if (!cell) continue;
-          // 处理合并单元格的情况
-          if (cell.mergeParent) {
-            const parentCell =
-              data[cell.mergeParent.row]?.[cell.mergeParent.col];
-            if (parentCell) {
-              const { x, y } = getCellPosition(parentCell);
-              // 确保主单元格只被添加一次
-              if (
-                !cells.some(
-                  (item) =>
-                    item.rowIndex === cell.mergeParent?.row &&
-                    item.colIndex === cell.mergeParent?.col,
-                )
-              ) {
-                cells.push({
-                  cell: parentCell,
-                  x,
-                  y,
-                  rowIndex: cell.mergeParent.row,
-                  colIndex: cell.mergeParent.col,
-                });
-              }
-              continue;
-            }
-          }
-          const { x, y } = getCellPosition(cell);
-          cells.push({ cell, x, y, rowIndex, colIndex });
-        }
-      }
-      return { cells };
-    };
-  }, [data, getCellPosition]);
-
   // 优化后的 drawCell 函数
   const drawCell = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const { cells } = getRenderArea(startRow, endRow, startCol, endCol);
+      const { cells } = getRenderAreaCells(startRow, endRow, startCol, endCol);
       // 批量渲染单元格
       for (const { cell, x, y, rowIndex, colIndex } of cells) {
         renderCell(ctx, { rowIndex, colIndex, x, y, cell });
@@ -184,7 +137,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       }
     },
     [
-      getRenderArea,
+      getRenderAreaCells,
       startRow,
       endRow,
       startCol,
@@ -200,7 +153,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
   // 绘制所有合并单元格边框
   const drawMergeCellBorder = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const { cells } = getRenderArea(startRow, endRow, startCol, endCol);
+      const { cells } = getRenderAreaCells(startRow, endRow, startCol, endCol);
       for (const { cell } of cells) {
         if (cell.mergeSpan) {
           const borderColor = cell.style.borderColor || config.borderColor;
@@ -225,7 +178,7 @@ export const useDrawCell = (drawConfig: DrawConfig) => {
       endCol,
       endRow,
       getLeft,
-      getRenderArea,
+      getRenderAreaCells,
       getTop,
       headerColsWidth,
       headerRowsHeight,

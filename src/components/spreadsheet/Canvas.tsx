@@ -149,7 +149,18 @@ export const Canvas: React.FC<CanvasProps> = ({
       }
     };
   }, [wrapperRef, handleWheel]);
-
+  const totalWidth = useMemo(
+    () =>
+      headerColsWidth.reduce((sum, prev) => sum + prev, 0) * zoomSize -
+      scrollPosition.x,
+    [headerColsWidth, scrollPosition.x, zoomSize],
+  );
+  const totalHeight = useMemo(
+    () =>
+      headerRowsHeight.reduce((sum, prev) => sum + prev, 0) * zoomSize -
+      scrollPosition.y,
+    [headerRowsHeight, scrollPosition.y, zoomSize],
+  );
   const handleGetClient = useCallback(
     <T extends React.MouseEvent<HTMLCanvasElement, MouseEvent>>(
       e: T,
@@ -168,12 +179,6 @@ export const Canvas: React.FC<CanvasProps> = ({
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         // 检查是否在表格区域内
-        const totalWidth =
-          headerColsWidth.reduce((sum, prev) => sum + prev, 0) * zoomSize -
-          scrollPosition.x;
-        const totalHeight =
-          headerRowsHeight.reduce((sum, prev) => sum + prev, 0) * zoomSize -
-          scrollPosition.y;
         if (x > totalWidth || y > totalHeight || x < 0 || y < 0) {
           if (_ === "move") {
             setCurrentHoverCell(null);
@@ -237,11 +242,14 @@ export const Canvas: React.FC<CanvasProps> = ({
       config.fixedColWidth,
       config.height,
       zoomSize,
-      headerRowsHeight,
-      headerColsWidth,
-      scrollPosition,
+      totalWidth,
+      totalHeight,
       data,
       findIndexByAccumulate,
+      headerRowsHeight,
+      scrollPosition.y,
+      scrollPosition.x,
+      headerColsWidth,
     ],
   );
   const handleMouseDownResize = useCallback(

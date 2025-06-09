@@ -4,185 +4,168 @@ import { useTools } from "./useTools";
 import { useComputed } from "../useComputed";
 
 export const useDynamicRender = () => {
-  const { data, config } = useStore();
-  const { getCellWidthHeight } = useComputed();
+  const { data, config, containerHeight, containerWidth } = useStore();
+  const {
+    getCellWidthHeight,
+    getStartEndRow,
+    getStartEndCol,
+    getRenderAreaCells,
+  } = useComputed();
   const { getFontStyle } = useTools();
+  const { startRow, endRow } = useMemo(
+    () => getStartEndRow(containerHeight),
+    [containerHeight, getStartEndRow],
+  );
+  const { startCol, endCol } = useMemo(
+    () => getStartEndCol(containerWidth),
+    [containerWidth, getStartEndCol],
+  );
   // 1. 计算 MeasureMap
   const getMeasureMap = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const cells = data;
-      const measureMap: ({
-        textWidth: number;
-        row: number;
-        col: number;
-      } | null)[][] = [];
-      for (let row = 0; row < cells.length; row++) {
-        measureMap[row] = [];
-        for (let col = 0; col < cells[row].length; col++) {
-          const cell = cells[row][col];
-          if (!cell.value) {
-            measureMap[row][col] = {
-              textWidth: 0,
-              row: cell.row,
-              col: cell.col,
-            };
-            continue;
-          }
-          getFontStyle(ctx, {
-            cell,
-            rowIndex: row,
-            colIndex: col,
-            x: 0,
-            y: 0,
-          });
-          const contents = cell.value.split("\n");
-          const maxLengthContent = contents.reduce(
-            (a, b) => (a.length > b.length ? a : b),
-            "",
-          );
-          const textWidth = ctx.measureText(maxLengthContent).width;
-          measureMap[row][col] = {
-            textWidth,
-            row: cell.row,
-            col: cell.col,
-          };
+      const { cells } = getRenderAreaCells(startRow, endRow, startCol, endCol);
+      const measureMap: Map<string, number> = new Map();
+      for (let i = 0; i < cells.length; i++) {
+        const { cell } = cells[i];
+        const key = `${cell.row}:${cell.col}`;
+        measureMap.set(key, 0);
+        if (!cell.value) {
+          measureMap.set(key, 0);
+          continue;
         }
+        getFontStyle(ctx, {
+          cell,
+          rowIndex: cell.row,
+          colIndex: cell.col,
+          x: 0,
+          y: 0,
+        });
+        const contents = cell.value.split("\n");
+        const maxLengthContent = contents.reduce(
+          (a, b) => (a.length > b.length ? a : b),
+          "",
+        );
+        const textWidth = ctx.measureText(maxLengthContent).width;
+        measureMap.set(key, textWidth);
       }
       return measureMap;
     },
-    [data, getFontStyle],
+    [endCol, endRow, getFontStyle, getRenderAreaCells, startCol, startRow],
   );
 
   const measureMap = useMemo(() => {
     // 这里假设你有一个 ref 或 ctx 实例
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    if (!ctx) return [];
+    if (!ctx) return new Map() as Map<string, number>;
     return getMeasureMap(ctx);
   }, [getMeasureMap]);
   const drawBorderMap = useMemo(() => {
+    const { cells } = getRenderAreaCells(startRow, endRow, startCol, endCol);
     // 1. 初始化所有单元格边框为显示
-    const tempMap: ({
-      row: number;
-      col: number;
-      isDraw: boolean;
-    } | null)[][] = [];
-    for (let row = 0; row < data.length; row++) {
-      tempMap[row] = [];
-      for (let col = 0; col < data[row].length; col++) {
-        const cell = data[row][col];
-        tempMap[row].push({
-          row: cell.row,
-          col: cell.col,
-          isDraw: true,
-        });
-      }
+    const tempMap: Map<string, boolean> = new Map();
+    for (let i = 0; i < cells.length; i++) {
+      const { cell } = cells[i];
+      const key = `${cell.row}:${cell.col}`;
+      tempMap.set(key, true);
     }
-    for (let row = 0; row < data.length; row++) {
-      for (let col = 0; col < data[row].length; col++) {
-        const cell = data[row][col];
-        const temp = tempMap[row][col];
-        if (temp) {
-          const textAlign = cell.style.textAlign || config.textAlign;
-          const textWidth = measureMap[row][col]?.textWidth || 0;
-          if (!cell.readOnly && cell.value) {
-            const { cellWidth } = getCellWidthHeight(cell);
-            if (textAlign === "left") {
-              let remainWidth =
-                textWidth - (cellWidth - config.inputPadding * 2);
-              let nextCol = col + 1;
-              while (remainWidth > 0 && nextCol < data[row].length) {
-                const nextCell = data[row][nextCol];
-                if (nextCell.value) break;
-                const target = tempMap[row][nextCol - 1];
-                if (
-                  target &&
-                  target.isDraw &&
-                  !cell.style.wrap &&
-                  !cell.mergeSpan
-                ) {
-                  target.isDraw = false;
-                }
-                const { cellWidth } = getCellWidthHeight(nextCell);
-                remainWidth -= cellWidth;
-                nextCol++;
+    for (let i = 0; i < cells.length; i++) {
+      const { cell } = cells[i];
+      const row = cell.row;
+      const col = cell.col;
+      const key = `${row}:${col}`;
+      const temp = tempMap.get(key);
+      if (temp && cell) {
+        const textAlign = cell.style.textAlign || config.textAlign;
+        const textWidth = measureMap.get(key) || 0;
+        if (!cell.readOnly && cell.value) {
+          const { cellWidth } = getCellWidthHeight(cell);
+          if (textAlign === "left") {
+            let remainWidth = textWidth - (cellWidth - config.inputPadding * 2);
+            let nextCol = col + 1;
+            while (remainWidth > 0 && nextCol < data[row].length) {
+              const nextCell = data[row][nextCol];
+              if (nextCell.value) break;
+              const targetKey = `${row}:${nextCol - 1}`;
+              const target = tempMap.get(targetKey);
+              if (target && !cell.style.wrap && !cell.mergeSpan) {
+                tempMap.set(targetKey, false);
               }
-            } else if (textAlign === "right") {
-              let remainWidth =
-                textWidth - (cellWidth - config.inputPadding * 2);
-              let preCol = col - 1;
-              while (remainWidth > 0 && preCol >= 0) {
-                const preCell = data[row][preCol];
-                if (preCell.value) break;
-                const target = tempMap[row][preCol];
-                if (
-                  target &&
-                  target.isDraw &&
-                  !cell.style.wrap &&
-                  !cell.mergeSpan
-                ) {
-                  target.isDraw = false;
-                }
-                const { cellWidth } = getCellWidthHeight(preCell);
-                remainWidth -= cellWidth;
-                preCol--;
+              const { cellWidth } = getCellWidthHeight(nextCell);
+              remainWidth -= cellWidth;
+              nextCol++;
+            }
+          } else if (textAlign === "right") {
+            let remainWidth = textWidth - (cellWidth - config.inputPadding * 2);
+            let preCol = col - 1;
+            while (remainWidth > 0 && preCol >= 0) {
+              const preCell = data[row][preCol];
+              if (preCell.value) break;
+              const targetKey = `${row}:${preCol}`;
+              const target = tempMap.get(targetKey);
+              if (target && !cell.style.wrap && !cell.mergeSpan) {
+                tempMap.set(targetKey, false);
               }
-            } else if (textAlign === "center") {
-              const remainWidth =
-                textWidth - (cellWidth - config.inputPadding * 2);
-              let leftCol = col - 1;
-              let rightCol = col + 1;
-              let leftRemain = remainWidth / 2;
-              let rightRemain = remainWidth / 2;
-              // 向右扩展
-              while (rightRemain > 0 && rightCol < data[row].length) {
-                const rightCell = data[row][rightCol];
-                if (rightCell.value) break;
-                const target = tempMap[row][rightCol - 1];
-                if (
-                  target &&
-                  target.isDraw &&
-                  !cell.style.wrap &&
-                  !cell.mergeSpan
-                ) {
-                  target.isDraw = false;
-                }
-                const { cellWidth } = getCellWidthHeight(rightCell);
-                rightRemain -= cellWidth;
-                rightCol++;
+              const { cellWidth } = getCellWidthHeight(preCell);
+              remainWidth -= cellWidth;
+              preCol--;
+            }
+          } else if (textAlign === "center") {
+            const remainWidth =
+              textWidth - (cellWidth - config.inputPadding * 2);
+            let leftCol = col - 1;
+            let rightCol = col + 1;
+            let leftRemain = remainWidth / 2;
+            let rightRemain = remainWidth / 2;
+            // 向右扩展
+            while (rightRemain > 0 && rightCol < data[row].length) {
+              const rightCell = data[row][rightCol];
+              if (rightCell.value) break;
+              const targetKey = `${row}:${rightCol - 1}`;
+              const target = tempMap.get(targetKey);
+              if (target && !cell.style.wrap && !cell.mergeSpan) {
+                tempMap.set(targetKey, false);
               }
-              // 向左扩展
-              while (leftRemain > 0 && leftCol >= 0) {
-                const leftCell = data[row][leftCol];
-                if (leftCell.value) break;
-                const target = tempMap[row][leftCol];
-                if (
-                  target &&
-                  target.isDraw &&
-                  !cell.style.wrap &&
-                  !cell.mergeSpan
-                ) {
-                  target.isDraw = false;
-                }
-                const { cellWidth } = getCellWidthHeight(leftCell);
-                leftRemain -= cellWidth;
-                leftCol--;
+              const { cellWidth } = getCellWidthHeight(rightCell);
+              rightRemain -= cellWidth;
+              rightCol++;
+            }
+            // 向左扩展
+            while (leftRemain > 0 && leftCol >= 0) {
+              const leftCell = data[row][leftCol];
+              if (leftCell.value) break;
+              const targetKey = `${row}:${leftCol}`;
+              const target = tempMap.get(targetKey);
+              if (target && !cell.style.wrap && !cell.mergeSpan) {
+                tempMap.set(targetKey, false);
               }
+              const { cellWidth } = getCellWidthHeight(leftCell);
+              leftRemain -= cellWidth;
+              leftCol--;
             }
           }
-          if (cell.readOnly) {
-            temp.isDraw = true;
+        }
+        if (cell.readOnly) {
+          const key = `${row}:${col}`;
+          const target = tempMap.get(key);
+          if (target) {
+            tempMap.set(key, false);
           }
         }
       }
     }
     return tempMap;
   }, [
+    data,
     config.textAlign,
     config.inputPadding,
-    data,
     measureMap,
     getCellWidthHeight,
+    endCol,
+    endRow,
+    getRenderAreaCells,
+    startCol,
+    startRow,
   ]);
 
   return { measureMap, drawBorderMap };

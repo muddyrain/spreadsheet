@@ -341,8 +341,9 @@ export const useRenderCell = () => {
         ctx.moveTo(x, y + cellHeight);
         ctx.lineTo(x + cellWidth, y + cellHeight);
         ctx.stroke();
-        const current = drawBorderMap[rowIndex][colIndex];
-        if (current?.isDraw) {
+        const key = `${rowIndex}:${colIndex}`;
+        const isDraw = drawBorderMap.get(key);
+        if (isDraw) {
           // 绘制右边框
           ctx.beginPath();
           ctx.moveTo(x + cellWidth, y);

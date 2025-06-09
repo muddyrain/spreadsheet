@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { useStore } from "./useStore";
 import { useComputed } from "./useComputed";
 import { SelectionSheetType } from "@/types/sheet";
@@ -15,7 +15,6 @@ export function useSheetSelection() {
     headerRowsHeight,
   } = useStore();
   const { handleUpdaterBrush } = useUpdateStyle();
-  const [isSelection, setIsSelection] = useState(false);
   const movedRef = useRef(false);
   const scrollPositionRef = useRef(scrollPosition);
   const { findIndexByAccumulate } = useComputed();
@@ -169,7 +168,6 @@ export function useSheetSelection() {
       colIndex: number,
       wrapperRef: React.RefObject<HTMLDivElement | null>,
     ) => {
-      setIsSelection(false);
       movedRef.current = false;
       let lastRow = rowIndex;
       let lastCol = colIndex;
@@ -196,7 +194,6 @@ export function useSheetSelection() {
               end: { row: newEndRow, col: newEndCol },
             };
           });
-          setIsSelection(true);
           movedRef.current = true;
           lastRow = row;
           lastCol = col;
@@ -206,7 +203,6 @@ export function useSheetSelection() {
       const handleMouseUp = () => {
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
-        setIsSelection(false);
         if (formatBrushStyles.length) {
           if (tempSelection) {
             handleUpdaterBrush(tempSelection);
@@ -243,7 +239,6 @@ export function useSheetSelection() {
   );
   return {
     selection,
-    isSelection,
     movedRef,
     setSelection,
     handleCellMouseDown,
