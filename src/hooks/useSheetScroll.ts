@@ -18,7 +18,7 @@ export const useSheetScroll = (config: {
     getCurrentCell,
     setScrollPosition,
   } = useStore();
-  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
   const [dragType, setDragType] = useState<"horizontal" | "vertical" | null>(
     null,
   );
@@ -26,18 +26,22 @@ export const useSheetScroll = (config: {
   const dragRef = useRef<{
     startPos: PositionType;
     lastScrollPos: PositionType;
-    isDragging: boolean;
     dragType: "horizontal" | "vertical" | null;
   }>({
     startPos: { x: 0, y: 0 },
     lastScrollPos: { x: 0, y: 0 },
-    isDragging: false,
     dragType: null,
   });
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
-      if (!dragRef.current.isDragging) return;
+      if (!isDraggingRef.current) return;
+      if (e.buttons !== 1) {
+        dragRef.current.dragType = null;
+        isDraggingRef.current = false;
+        setDragType(null);
+        return;
+      }
       if (selectedCell) {
         const currentCell = getCurrentCell(selectedCell.row, selectedCell.col);
         if (currentCell) {
@@ -80,16 +84,18 @@ export const useSheetScroll = (config: {
     };
 
     const onMouseUp = () => {
-      dragRef.current.isDragging = false;
       dragRef.current.dragType = null;
-      setIsDragging(false);
+      isDraggingRef.current = false;
       setDragType(null);
     };
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+    // 新增：窗口失焦时强制停止拖动
+    window.addEventListener("blur", onMouseUp);
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("blur", onMouseUp);
     };
   }, [
     cellInputActions,
@@ -101,12 +107,11 @@ export const useSheetScroll = (config: {
 
   const handleScrollbarDragStart = useCallback(
     (e: React.MouseEvent, type: "horizontal" | "vertical") => {
-      setIsDragging(true);
+      isDraggingRef.current = true;
       setDragType(type);
       dragRef.current = {
         startPos: { x: e.clientX, y: e.clientY },
         lastScrollPos: scrollPosition,
-        isDragging: true,
         dragType: type,
       };
     },
@@ -204,15 +209,13 @@ export const useSheetScroll = (config: {
 
   // handleScrollbarDragEnd 只用于外部主动取消拖动（一般用不到）
   const handleScrollbarDragEnd = useCallback(() => {
-    dragRef.current.isDragging = false;
     dragRef.current.dragType = null;
-    setIsDragging(false);
+    isDraggingRef.current = false;
     setDragType(null);
   }, []);
 
   return {
     scrollPosition,
-    isDragging,
     dragType,
     handleScrollbarDragStart,
     handleWheel,

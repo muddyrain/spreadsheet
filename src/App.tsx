@@ -4,7 +4,7 @@ function App() {
     <>
       <Spreadsheet
         config={{
-          rows: 7600,
+          rows: 200,
         }}
       />
     </>
