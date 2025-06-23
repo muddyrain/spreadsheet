@@ -152,7 +152,7 @@ const Spreadsheet: React.FC<{
     setEditingCell(() => ({ row: rowIndex, col: colIndex })); // 双击才进入编辑
     const editingCell = getCurrentCell(rowIndex, colIndex);
     if (editingCell) {
-      cellInputRef.current?.setValue(editingCell.value);
+      cellInputRef.current?.setValue(editingCell.value, editingCell.value);
     }
     Promise.resolve().then(() => {
       cellInputRef.current?.focus(currentCell);
@@ -178,11 +178,12 @@ const Spreadsheet: React.FC<{
           setData(
             produce((data) => {
               const target = data[selectedCell.row][selectedCell.col];
+              const originValue = target?.value || "";
               if (target) {
                 target.value = newValue;
               }
-              cellInputRef.current?.setValue(newValue);
               cellInputRef.current?.focus(target);
+              cellInputRef.current?.setValue(newValue, originValue);
             }),
           );
           setEditingCell(() => ({ row: rowIndex, col: colIndex }));

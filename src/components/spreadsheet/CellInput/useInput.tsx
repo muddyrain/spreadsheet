@@ -502,7 +502,13 @@ export const useInput = ({
             lines: allLines,
           };
     },
-    [config.inputPadding, getInputStyle, getCellWidthHeight, getValue],
+    [
+      canvasRef,
+      getValue,
+      getCellWidthHeight,
+      config.inputPadding,
+      getInputStyle,
+    ],
   );
   const getCurrentLineIndex = useCallback(
     (selectedCell: CellData, cursorIndex: number) => {

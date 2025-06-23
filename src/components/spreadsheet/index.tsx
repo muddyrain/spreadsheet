@@ -40,24 +40,27 @@ const RootSpreadsheet: React.FC<{
   const { state: sheetState, actions: sheetActions } = useSheetStore(sheet);
   const { isMac, isWindows } = getSystemInfo();
   const { currentSheet } = sheet;
-  const addDelta: SheetStoreActionType["addDelta"] = useCallback(() => {
-    const delta: DeltaItem = {
-      timestamp: Date.now(),
-      sheetId: currentSheet?.id || "",
-      originData: [],
-      currentData: [],
-    };
-    let index = Math.min(deltaIndex + 1, deltas.length);
-    // 把 deltaIndex 后的数据全部移除
-    const newDeltas = deltas.slice(0, index);
-    if (newDeltas.length >= 100) {
-      newDeltas.shift();
-      index -= 1;
-    }
-    newDeltas.push(delta);
-    setDeltaIndex(index);
-    setDeltas(newDeltas);
-  }, [currentSheet, deltas, deltaIndex, setDeltaIndex]);
+  const addDelta: SheetStoreActionType["addDelta"] = useCallback(
+    (originData, newData) => {
+      const delta: DeltaItem = {
+        timestamp: Date.now(),
+        sheetId: currentSheet?.id || "",
+        originData,
+        currentData: newData,
+      };
+      let index = Math.min(deltaIndex + 1, deltas.length);
+      // 把 deltaIndex 后的数据全部移除
+      const newDeltas = deltas.slice(0, index);
+      if (newDeltas.length >= 100) {
+        newDeltas.shift();
+        index -= 1;
+      }
+      newDeltas.push(delta);
+      setDeltaIndex(index);
+      setDeltas(newDeltas);
+    },
+    [currentSheet, deltas, deltaIndex, setDeltaIndex],
+  );
   const contextValue = useMemo(() => {
     return {
       ...localState,

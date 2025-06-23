@@ -49,7 +49,7 @@ export type SheetStoreActionType = {
   setEditingCell: React.Dispatch<React.SetStateAction<EditingCell | null>>;
   setSelection: React.Dispatch<React.SetStateAction<SelectionSheetType | null>>;
   setData: React.Dispatch<React.SetStateAction<TableData>>;
-  addDelta: () => void;
+  addDelta: (originData: CellData[], newData: CellData[]) => void;
 };
 export const SpreadsheetContext = React.createContext<
   | ({

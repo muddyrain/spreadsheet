@@ -22,7 +22,7 @@ export type CellInputUpdateInputOptions = {
 export type CellInputActionsType = {
   focus: (cell: CellData | null) => void;
   blur: () => void;
-  setValue: (value: string) => void;
+  setValue: (value: string, originValue: string) => void;
   updateInputSize: (
     currentCell: CellData,
     options?: CellInputUpdateInputOptions,
@@ -46,6 +46,7 @@ export const CellInput = forwardRef<
 >(({ onChange }, ref) => {
   const rafId = useRef<number | null>(null);
   const [value, setValue] = useState("");
+  const [originValue, setOriginValue] = useState("");
   const [cursorIndex, setCursorIndex] = useState(0);
   const [lines, setLines] = useState<LineType[]>([]);
   const isSelecting = useRef(false);
@@ -549,7 +550,25 @@ export const CellInput = forwardRef<
   const handleBlur = useCallback(() => {
     if (containerRef.current) {
       if (currentFocusCell.current) {
-        addDelta();
+        if (originValue === value) {
+          // 如果值没有变化，则不进行任何操作
+          containerRef.current.style.display = "none";
+          containerRef.current.blur();
+          setValue("");
+          setLines([]);
+          setSelectionText(null);
+          cursorLine.current = 0;
+          setCursorIndex(0);
+          setUndoStack([]);
+          setRedoStack([]);
+          currentFocusCell.current = null;
+          isFocused.current = false;
+          return;
+        }
+        addDelta(
+          [{ ...currentFocusCell.current, value: originValue }],
+          [{ ...currentFocusCell.current, value }],
+        );
         const row = currentFocusCell.current.row;
         const { lines } = getLines(
           {
@@ -582,7 +601,7 @@ export const CellInput = forwardRef<
         setCursorIndex(0);
         setUndoStack([]);
         setRedoStack([]);
-        onChange?.(value, currentFocusCell?.current);
+        onChange?.(value, currentFocusCell.current);
         currentFocusCell.current = null;
         isFocused.current = false;
       }
@@ -619,8 +638,9 @@ export const CellInput = forwardRef<
       blur() {
         handleBlur();
       },
-      setValue(content) {
+      setValue(content, originValue) {
         setValue(content);
+        setOriginValue(originValue);
       },
       updateInputSize(currentCell, options = {}) {
         updateCell(
